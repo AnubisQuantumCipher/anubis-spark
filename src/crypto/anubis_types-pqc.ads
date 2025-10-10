@@ -136,6 +136,39 @@ package Anubis_Types.PQC is
       Pre  => Is_Valid (Hybrid_Secret),
       Post => (if Success then Is_Valid (Encryption_Key));
 
+   -------------------------------------------------------------------------
+   -- Hybrid Signatures (Ed25519 + ML-DSA-87)
+   -- PLATINUM LEVEL: Dual signatures provide quantum + classical security
+   -------------------------------------------------------------------------
+
+   -- Hybrid signature combines both classical and PQ signatures
+   type Hybrid_Signature is private;
+
+   -- Generate hybrid signature (sign with BOTH Ed25519 AND ML-DSA-87)
+   -- Both signatures must verify for the hybrid signature to be valid
+   -- PLATINUM LEVEL: Dual signatures zeroized on failure (proven in body)
+   procedure Hybrid_Sign (
+      Message     : in     Byte_Array;
+      Ed25519_SK  : in     Ed25519_Secret_Key;
+      ML_DSA_SK   : in     ML_DSA_Secret_Key;
+      Signature   : out    Hybrid_Signature;
+      Success     : out    Boolean
+   ) with
+      Pre    => Is_Valid (Ed25519_SK) and
+                Is_Valid (ML_DSA_SK) and
+                Message'Length > 0,
+      Global => null;
+
+   -- Verify hybrid signature (BOTH Ed25519 AND ML-DSA-87 must verify)
+   function Hybrid_Verify (
+      Message     : Byte_Array;
+      Signature   : Hybrid_Signature;
+      Ed25519_PK  : Ed25519_Public_Key;
+      ML_DSA_PK   : ML_DSA_Public_Key
+   ) return Boolean with
+      Pre    => Message'Length > 0,
+      Global => null;
+
 private
 
    -- Hybrid shared secret combines both classical and PQ secrets
@@ -144,6 +177,13 @@ private
       Classical_Secret : Byte_Array (1 .. 32);  -- X25519 shared secret
       PQ_Secret       : Byte_Array (1 .. 32);  -- ML-KEM shared secret
       Valid           : Boolean := False;
+   end record;
+
+   -- Hybrid signature combines both classical and PQ signatures
+   -- PLATINUM SPARK: Both signatures must verify for overall validity
+   type Hybrid_Signature is record
+      Ed25519_Sig : Ed25519_Signature;  -- Classical signature (64 bytes)
+      ML_DSA_Sig  : ML_DSA_Signature;   -- Post-quantum signature (4627 bytes)
    end record;
 
 end Anubis_Types.PQC;

@@ -479,4 +479,16 @@ package body Anubis_Types.Classical is
       sodium_memzero (PRK (PRK'First)'Address, PRK'Length);
    end HKDF_Derive;
 
+begin
+   -- Package initialization: Initialize libsodium
+   -- This must succeed for all cryptographic operations to work
+   declare
+      Init_Result : Interfaces.C.int;
+   begin
+      Init_Result := sodium_init;
+      if Init_Result < 0 then
+         raise Program_Error with "Failed to initialize libsodium";
+      end if;
+   end;
+
 end Anubis_Types.Classical;
