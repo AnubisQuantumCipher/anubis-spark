@@ -362,4 +362,97 @@ package body Anubis_Types.PQC is
       end if;
    end Derive_Encryption_Key;
 
+   -------------------------------------------------------------------------
+   -- Hybrid Signatures (Classical + Post-Quantum)
+   -- PLATINUM LEVEL: Both signatures must verify for overall validity
+   -------------------------------------------------------------------------
+
+   procedure Hybrid_Sign (
+      Message     : in     Byte_Array;
+      Ed25519_SK  : in     Ed25519_Secret_Key;
+      ML_DSA_SK   : in     ML_DSA_Secret_Key;
+      Signature   : out    Hybrid_Signature;
+      Success     : out    Boolean
+   ) is
+      Ed25519_Success : Boolean;
+      ML_DSA_Success  : Boolean;
+   begin
+      -- Step 1: Sign with Ed25519 (classical)
+      Classical.Ed25519_Sign (
+         Message    => Message,
+         Secret_Key => Ed25519_SK,
+         Signature  => Signature.Ed25519_Sig,
+         Success    => Ed25519_Success
+      );
+
+      if not Ed25519_Success then
+         -- Zeroize Ed25519 signature on failure
+         for I in Signature.Ed25519_Sig.Data'Range loop
+            Signature.Ed25519_Sig.Data (I) := 0;
+         end loop;
+         -- Zeroize ML-DSA signature (contractually required)
+         for I in Signature.ML_DSA_Sig.Data'Range loop
+            Signature.ML_DSA_Sig.Data (I) := 0;
+         end loop;
+         Success := False;
+         return;
+      end if;
+
+      -- Step 2: Sign with ML-DSA-87 (post-quantum)
+      ML_DSA_Sign (
+         Message    => Message,
+         Secret_Key => ML_DSA_SK,
+         Signature  => Signature.ML_DSA_Sig,
+         Success    => ML_DSA_Success
+      );
+
+      if not ML_DSA_Success then
+         -- Zeroize both signatures on failure
+         for I in Signature.Ed25519_Sig.Data'Range loop
+            Signature.Ed25519_Sig.Data (I) := 0;
+         end loop;
+         for I in Signature.ML_DSA_Sig.Data'Range loop
+            Signature.ML_DSA_Sig.Data (I) := 0;
+         end loop;
+         Success := False;
+         return;
+      end if;
+
+      -- Both signatures succeeded
+      Success := True;
+   end Hybrid_Sign;
+
+   function Hybrid_Verify (
+      Message     : Byte_Array;
+      Signature   : Hybrid_Signature;
+      Ed25519_PK  : Ed25519_Public_Key;
+      ML_DSA_PK   : ML_DSA_Public_Key
+   ) return Boolean
+   is
+      Ed25519_Valid : Boolean;
+      ML_DSA_Valid  : Boolean;
+   begin
+      -- Step 1: Verify Ed25519 signature (classical)
+      Ed25519_Valid := Classical.Ed25519_Verify (
+         Message    => Message,
+         Signature  => Signature.Ed25519_Sig,
+         Public_Key => Ed25519_PK
+      );
+
+      -- Short-circuit: If Ed25519 fails, no need to check ML-DSA
+      if not Ed25519_Valid then
+         return False;
+      end if;
+
+      -- Step 2: Verify ML-DSA-87 signature (post-quantum)
+      ML_DSA_Valid := ML_DSA_Verify (
+         Message    => Message,
+         Signature  => Signature.ML_DSA_Sig,
+         Public_Key => ML_DSA_PK
+      );
+
+      -- PLATINUM LEVEL: BOTH signatures must verify
+      return Ed25519_Valid and ML_DSA_Valid;
+   end Hybrid_Verify;
+
 end Anubis_Types.PQC;
