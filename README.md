@@ -323,11 +323,14 @@ MIT OR Apache-2.0 (dual-licensed)
 - [x] **Constant-time operations**
 
 ### 🚧 Phase 2: Core Implementation (IN PROGRESS)
-- [ ] Secure entropy source implementation (OS/hardware RNG)
-- [ ] Argon2id key derivation integration
-- [ ] Hybrid encryption core (X25519 + ML-KEM)
-- [ ] Hybrid signing (Ed25519 + ML-DSA)
-- [ ] XChaCha20-Poly1305 AEAD encryption
+- [x] **libsodium Ada FFI bindings (complete)**
+  - X25519, Ed25519, XChaCha20-Poly1305, Argon2id, HKDF
+- [x] **Hybrid key encapsulation (X25519 + ML-KEM-1024)**
+- [x] **Hybrid signatures (Ed25519 + ML-DSA-87)**
+- [x] **File encryption header infrastructure**
+- [x] **Gold-level SPARK verification achieved**
+- [ ] Complete Encrypt_File implementation (file I/O)
+- [ ] Complete Decrypt_File implementation (file I/O)
 - [ ] CLI interface and commands
 
 ### 📋 Phase 3: Advanced Features (PLANNED)
