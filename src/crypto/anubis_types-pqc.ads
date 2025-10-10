@@ -144,6 +144,18 @@ package Anubis_Types.PQC is
    -- Hybrid signature combines both classical and PQ signatures
    type Hybrid_Signature is private;
 
+   -------------------------------------------------------------------------
+   -- PLATINUM LEVEL: Ghost Functions for Hybrid Signatures
+   -------------------------------------------------------------------------
+
+   -- Ghost: Check if hybrid signature is properly zeroized
+   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean with
+      Ghost;
+
+   -- Ghost: Check if both signatures in hybrid are valid
+   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean with
+      Ghost;
+
    -- Generate hybrid signature (sign with BOTH Ed25519 AND ML-DSA-87)
    -- Both signatures must verify for the hybrid signature to be valid
    -- PLATINUM LEVEL: Dual signatures zeroized on failure (proven in body)
@@ -157,7 +169,9 @@ package Anubis_Types.PQC is
       Pre    => Is_Valid (Ed25519_SK) and
                 Is_Valid (ML_DSA_SK) and
                 Message'Length > 0,
-      Global => null;
+      Global => null,
+      Post   => (if not Success then
+                    Hybrid_Signature_Zeroed (Signature));
 
    -- Verify hybrid signature (BOTH Ed25519 AND ML-DSA-87 must verify)
    function Hybrid_Verify (
@@ -185,5 +199,19 @@ private
       Ed25519_Sig : Ed25519_Signature;  -- Classical signature (64 bytes)
       ML_DSA_Sig  : ML_DSA_Signature;   -- Post-quantum signature (4627 bytes)
    end record;
+
+   -------------------------------------------------------------------------
+   -- PLATINUM: Ghost Function Implementations
+   -------------------------------------------------------------------------
+
+   -- Check if hybrid signature is properly zeroized
+   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean is
+      ((for all I in Sig.Ed25519_Sig.Data'Range => Sig.Ed25519_Sig.Data (I) = 0) and
+       (for all I in Sig.ML_DSA_Sig.Data'Range => Sig.ML_DSA_Sig.Data (I) = 0));
+
+   -- Check if both signatures in hybrid are valid (non-zero)
+   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean is
+      ((for some I in Sig.Ed25519_Sig.Data'Range => Sig.Ed25519_Sig.Data (I) /= 0) and
+       (for some I in Sig.ML_DSA_Sig.Data'Range => Sig.ML_DSA_Sig.Data (I) /= 0));
 
 end Anubis_Types.PQC;

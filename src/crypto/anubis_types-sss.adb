@@ -110,7 +110,7 @@ package body Anubis_Types.SSS is
       for I in Shares'Range loop
          for J in Shares'Range loop
             if I /= J and then
-               Shares (I).Valid and Shares (J).Valid and then
+               (Shares (I).Valid and then Shares (J).Valid) and then
                Shares (I).X = Shares (J).X
             then
                return False;
@@ -119,6 +119,60 @@ package body Anubis_Types.SSS is
       end loop;
       return True;
    end Shares_Have_Unique_Indices;
+
+   -- PLATINUM: Check all shares are valid
+   function All_Shares_Valid (Shares : Share_Array) return Boolean is
+   begin
+      for I in Shares'Range loop
+         if not Shares (I).Valid then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end All_Shares_Valid;
+
+   -- PLATINUM: Check all shares have the same length
+   function Shares_Same_Length (Shares : Share_Array; Len : Natural) return Boolean is
+   begin
+      for I in Shares'Range loop
+         if Shares (I).Length /= Len then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Shares_Same_Length;
+
+   -- PLATINUM: GF(256) Field Axioms (Ghost functions for proof assistance)
+   -- These axioms help the prover understand GF(256) algebraic properties
+
+   function GF_Add_Commutative (A, B : Byte) return Boolean is
+   begin
+      -- Proof hint: XOR is commutative (a xor b = b xor a)
+      pragma Warnings (Off, "actuals for this call may be in wrong order");
+      return GF_Add (A, B) = GF_Add (B, A);
+      pragma Warnings (On, "actuals for this call may be in wrong order");
+   end GF_Add_Commutative;
+
+   function GF_Add_Associative (A, B, C : Byte) return Boolean is
+   begin
+      -- Proof hint: XOR is associative ((a xor b) xor c = a xor (b xor c))
+      return GF_Add (GF_Add (A, B), C) = GF_Add (A, GF_Add (B, C));
+   end GF_Add_Associative;
+
+   function GF_Mult_Commutative (A, B : Byte) return Boolean is
+   begin
+      -- Proof hint: Multiplication in GF(256) is commutative
+      pragma Warnings (Off, "actuals for this call may be in wrong order");
+      return GF_Mult (A, B) = GF_Mult (B, A);
+      pragma Warnings (On, "actuals for this call may be in wrong order");
+   end GF_Mult_Commutative;
+
+   function GF_Mult_Distributive (A, B, C : Byte) return Boolean is
+   begin
+      -- Proof hint: Multiplication distributes over addition in GF(256)
+      -- a * (b + c) = a*b + a*c
+      return GF_Mult (A, GF_Add (B, C)) = GF_Add (GF_Mult (A, B), GF_Mult (A, C));
+   end GF_Mult_Distributive;
 
    -------------------------------------------------------------------------
    -- Split Secret into Shares
@@ -131,6 +185,7 @@ package body Anubis_Types.SSS is
       Shares     : out    Share_Array;
       Success    : out    Boolean
    ) is
+      pragma Unreferenced (Num_Shares);  -- Used only in postcondition
       -- Polynomial coefficients: P(x) = secret + c1*x + c2*x^2 + ... + c(k-1)*x^(k-1)
       -- Coefficient[0] = secret byte, others are random
       Coeffs : Byte_Array (0 .. Threshold - 1);
@@ -212,22 +267,26 @@ package body Anubis_Types.SSS is
          Temp := 0;
 
          -- Lagrange interpolation: sum over all shares
-         for I in Shares'First .. Shares'First + Threshold - 1 loop
-            pragma Loop_Invariant (True);
-            pragma Loop_Variant (Increases => I);
+         declare
+            Last_Index : constant Share_Index :=
+               Share_Index (Natural (Shares'First) + Threshold - 1);
+         begin
+            for I in Shares'First .. Last_Index loop
+               pragma Loop_Invariant (True);
+               pragma Loop_Variant (Increases => I);
 
-            if not Shares (I).Valid then
-               Success := False;
-               return;
-            end if;
+               if not Shares (I).Valid then
+                  Success := False;
+                  return;
+               end if;
 
-            declare
-               Xi : constant Byte := Byte (Shares (I).X);
-               Yi : constant Byte := Shares (I).Y (Byte_Idx - Reconstructed'First + 1);
-               Basis : Byte := Yi;
-            begin
-               -- Calculate Lagrange basis polynomial
-               for J in Shares'First .. Shares'First + Threshold - 1 loop
+               declare
+                  Xi : constant Byte := Byte (Shares (I).X);
+                  Yi : constant Byte := Shares (I).Y (Byte_Idx - Reconstructed'First + 1);
+                  Basis : Byte := Yi;
+               begin
+                  -- Calculate Lagrange basis polynomial
+                  for J in Shares'First .. Last_Index loop
                   pragma Loop_Invariant (True);
                   pragma Loop_Variant (Increases => J);
 
@@ -247,10 +306,11 @@ package body Anubis_Types.SSS is
                   end if;
                end loop;
 
-               -- Add this term to result
-               Temp := GF_Add (Temp, Basis);
-            end;
-         end loop;
+                  -- Add this term to result
+                  Temp := GF_Add (Temp, Basis);
+               end;
+            end loop;
+         end;
 
          Reconstructed (Byte_Idx) := Temp;
       end loop;

@@ -1,0 +1,59 @@
+Phase 1 of 3: generation of data representation information ...
+Phase 2 of 3: generation of Global contracts ...
+Phase 3 of 3: flow analysis and proof ...
+anubis_types.adb:51:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:51:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:51:83: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:52:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:61:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:61:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:61:83: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:62:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:71:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:71:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:71:83: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:72:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:81:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:81:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:81:83: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:82:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:91:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:91:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:91:83: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:92:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:101:33: info: loop invariant initialization proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:101:33: info: loop invariant preservation proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:101:62: info: overflow check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:101:75: info: index check proved (CVC5: 4 VC in max 0.0 seconds and 1 step)
+anubis_types.adb:102:31: info: loop variant proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:82:13: info: implicit aspect Always_Terminates on "Is_All_Zero" has been proved, subprogram will terminate
+anubis_types.ads:83:41: info: index check proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:87:13: info: implicit aspect Always_Terminates on "Arrays_Equal" has been proved, subprogram will terminate
+anubis_types.ads:89:36: info: index check proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:89:46: info: overflow check proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:89:56: info: overflow check proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:89:56: info: index check proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:96:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:97:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:98:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:99:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:100:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:101:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:102:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:103:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:104:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+anubis_types.ads:107:13: info: implicit aspect Always_Terminates on "Is_Zeroed" has been proved, subprogram will terminate
+anubis_types.ads:108:13: info: implicit aspect Always_Terminates on "Is_Zeroed" has been proved, subprogram will terminate
+anubis_types.ads:109:13: info: implicit aspect Always_Terminates on "Is_Zeroed" has been proved, subprogram will terminate
+anubis_types.ads:110:13: info: implicit aspect Always_Terminates on "Is_Zeroed" has been proved, subprogram will terminate
+anubis_types.ads:111:13: info: implicit aspect Always_Terminates on "Is_Zeroed" has been proved, subprogram will terminate
+anubis_types.ads:119:15: info: postcondition proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:122:15: info: postcondition proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:125:15: info: postcondition proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:128:15: info: postcondition proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:131:15: info: postcondition proved (CVC5: 2 VC in max 0.0 seconds and 1 step)
+anubis_types.ads:136:15: info: postcondition proved (CVC5: 1 VC in max 0.0 seconds and 1 step)
+anubis_types-classical.ads:15:13: info: implicit aspect Always_Terminates on "HKDF_Output_Valid" has been proved, subprogram will terminate
+anubis_types-classical.ads:20:13: info: implicit aspect Always_Terminates on "Decryption_Failed_Zeroed" has been proved, subprogram will terminate
+anubis_types-pqc.ads:152:13: info: implicit aspect Always_Terminates on "Hybrid_Signature_Zeroed" has been proved, subprogram will terminate
+anubis_types-pqc.ads:156:13: info: implicit aspect Always_Terminates on "Both_Signatures_Present" has been proved, subprogram will terminate
