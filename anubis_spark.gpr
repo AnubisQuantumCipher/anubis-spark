@@ -1,0 +1,59 @@
+project Anubis_Spark is
+
+   for Languages use ("Ada");
+   for Source_Dirs use ("src/**");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("anubis_main.adb", "test_pqc.adb", "test_minimal.adb");
+   for Create_Missing_Dirs use "True";
+
+   type Build_Mode_Type is ("dev", "release", "spark");
+   Build_Mode : Build_Mode_Type := external ("BUILD_MODE", "dev");
+
+   Ada_Switches := ();
+   case Build_Mode is
+      when "dev" =>
+         Ada_Switches := ("-g", "-O0", "-gnat2012", "-gnatwa", "-gnatwe");
+      when "release" =>
+         Ada_Switches := ("-O3", "-gnat2012", "-gnatp", "-gnatn");
+      when "spark" =>
+         Ada_Switches := ("-g", "-O1", "-gnat2012", "-gnatwa", "-gnatwe",
+                          "-gnata", "-gnatQ");
+   end case;
+
+   package Compiler is
+      for Default_Switches ("Ada") use Ada_Switches &
+         ("-fstack-check",           -- Runtime stack overflow checking
+          "-fstack-protector-strong", -- Stack smashing protection
+          "-D_FORTIFY_SOURCE=2"       -- Additional security checks
+         );
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es"); -- Symbolic traceback
+   end Binder;
+
+   package Builder is
+      for Switches ("Ada") use ("-s", "-j0"); -- Recompile if needed, parallel build
+   end Builder;
+
+   package Linker is
+      for Switches ("Ada") use (
+         "/opt/homebrew/lib/liboqs.a",         -- Link liboqs static library directly
+         "/opt/homebrew/lib/libssl.dylib",     -- OpenSSL libssl (full path)
+         "/opt/homebrew/lib/libcrypto.dylib"   -- OpenSSL libcrypto (full path)
+      );
+   end Linker;
+
+   package Prove is
+      for Proof_Switches ("Ada") use
+         ("--level=2",              -- Proof level
+          "--prover=cvc5,z3",       -- Use CVC5 and Z3 provers
+          "--timeout=30",           -- 30 second timeout per proof
+          "--steps=0",              -- No step limit
+          "--counterexamples=on",   -- Show counterexamples
+          "--checks-as-errors"      -- Treat failed checks as errors
+         );
+   end Prove;
+
+end Anubis_Spark;

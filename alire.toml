@@ -1,0 +1,18 @@
+name = "anubis_spark"
+version = "0.1.0"
+description = "Hybrid Post-Quantum Zero-Knowledge File Encryption System"
+authors = ["ANUBIS Team"]
+licenses = "MIT OR Apache-2.0"
+maintainers = ["anubis@quantum-secure.dev"]
+maintainers-logins = ["anubis-team"]
+
+project-files = ["anubis_spark.gpr"]
+
+[[depends-on]]
+# We'll add dependencies here as we progress
+
+[environment]
+# Post-quantum crypto requires
+PATH.prepend = "${CRATE_ROOT}/lib"
+LD_LIBRARY_PATH.prepend = "${CRATE_ROOT}/lib"
+DYLD_LIBRARY_PATH.prepend = "${CRATE_ROOT}/lib"
