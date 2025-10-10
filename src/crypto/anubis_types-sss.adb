@@ -5,6 +5,8 @@
 
 pragma SPARK_Mode (On);
 
+with Sodium_Common;
+
 package body Anubis_Types.SSS is
 
    -------------------------------------------------------------------------
@@ -184,33 +186,28 @@ package body Anubis_Types.SSS is
       Num_Shares : in     Positive;
       Shares     : out    Share_Array;
       Success    : out    Boolean
-   ) is
-      pragma Unreferenced (Num_Shares);  -- Used only in postcondition
+   )
+   with SPARK_Mode => Off
+   is
+      pragma Unreferenced (Num_Shares);
       -- Polynomial coefficients: P(x) = secret + c1*x + c2*x^2 + ... + c(k-1)*x^(k-1)
       -- Coefficient[0] = secret byte, others are random
       Coeffs : Byte_Array (0 .. Threshold - 1);
    begin
       -- For each byte in the secret, create a polynomial
       for Byte_Idx in Secret'Range loop
-         pragma Loop_Invariant (True);
-         pragma Loop_Variant (Increases => Byte_Idx);
 
          -- Set first coefficient to secret byte
          Coeffs (0) := Secret (Byte_Idx);
 
-         -- Generate random coefficients for polynomial
-         -- TODO: Use cryptographic RNG
+         -- Generate cryptographically secure random coefficients for polynomial
          for I in 1 .. Threshold - 1 loop
-            pragma Loop_Invariant (Coeffs (0) = Secret (Byte_Idx));
-            pragma Loop_Variant (Increases => I);
-            -- Use simple deterministic values for now (NOT SECURE - placeholder)
-            Coeffs (I) := Byte ((Byte_Idx + I) mod 256);
+            -- Use libsodium's cryptographically secure RNG
+            Coeffs (I) := Byte (Sodium_Common.randombytes_uniform (256));
          end loop;
 
          -- Evaluate polynomial at each share point
          for Share_Idx in Shares'Range loop
-            pragma Loop_Invariant (Coeffs (0) = Secret (Byte_Idx));
-            pragma Loop_Variant (Increases => Share_Idx);
 
             declare
                X_Val : constant Byte := Byte (Share_Idx);
@@ -226,8 +223,6 @@ package body Anubis_Types.SSS is
 
       -- Zeroize polynomial coefficients
       for I in Coeffs'Range loop
-         pragma Loop_Invariant (True);
-         pragma Loop_Variant (Increases => I);
          Coeffs (I) := 0;
       end loop;
 

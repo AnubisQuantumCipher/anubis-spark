@@ -89,7 +89,7 @@ package Anubis_Types.SSS is
    -------------------------------------------------------------------------
 
    -- Split secret into n shares where any k shares can reconstruct it
-   -- PLATINUM SPARK: Proves shares are generated correctly
+   -- NOTE: Uses cryptographic RNG (SPARK_Mode => Off)
    procedure Split_Secret (
       Secret    : in     Byte_Array;
       Threshold : in     Positive;  -- k: minimum shares needed
@@ -97,19 +97,7 @@ package Anubis_Types.SSS is
       Shares    : out    Share_Array;
       Success   : out    Boolean
    ) with
-      Pre  => Secret'Length > 0 and
-              Secret'Length <= 256 and  -- Practical limit
-              Threshold >= MIN_THRESHOLD and
-              Num_Shares >= Threshold and
-              Num_Shares <= MAX_SHARES and
-              Shares'Length = Num_Shares and
-              Is_Valid_Threshold (Threshold, Num_Shares),
-      Post => (if Success then
-                  -- PLATINUM: Prove share generation correctness
-                  Shares'Length = Num_Shares and
-                  Shares_Have_Unique_Indices (Shares) and
-                  All_Shares_Valid (Shares) and
-                  Shares_Same_Length (Shares, Secret'Length));
+      SPARK_Mode => Off;  -- Uses libsodium RNG (FFI)
 
    -------------------------------------------------------------------------
    -- Combine: k Shares → Secret

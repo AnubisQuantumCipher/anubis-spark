@@ -9,6 +9,9 @@ with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Ada.Streams; use Ada.Streams;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
+with Sodium_Common;
+with System;
+with Interfaces.C;
 
 package body Anubis_File_Encryption is
 
@@ -19,13 +22,13 @@ package body Anubis_File_Encryption is
    -------------------------------------------------------------------------
 
    procedure Generate_Nonce (Nonce : out XChaCha20_Nonce) is
+      use Interfaces.C;
    begin
-      -- Use liboqs/libsodium RNG (automatically seeded)
-      -- For now, just fill with non-zero pattern
-      -- TODO: Use proper crypto RNG
-      for I in Nonce.Data'Range loop
-         Nonce.Data (I) := Byte (I mod 256);
-      end loop;
+      -- Use libsodium's cryptographically secure RNG
+      Sodium_Common.randombytes_buf (
+         buf  => Nonce.Data (Nonce.Data'First)'Address,
+         size => size_t (Nonce.Data'Length)
+      );
    end Generate_Nonce;
 
    -------------------------------------------------------------------------
