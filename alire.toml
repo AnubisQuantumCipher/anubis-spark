@@ -16,3 +16,6 @@ project-files = ["anubis_spark.gpr"]
 PATH.prepend = "${CRATE_ROOT}/lib"
 LD_LIBRARY_PATH.prepend = "${CRATE_ROOT}/lib"
 DYLD_LIBRARY_PATH.prepend = "${CRATE_ROOT}/lib"
+
+[[depends-on]]
+gnatprove = "^14.1.1"

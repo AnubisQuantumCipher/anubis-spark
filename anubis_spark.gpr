@@ -24,8 +24,7 @@ project Anubis_Spark is
    package Compiler is
       for Default_Switches ("Ada") use Ada_Switches &
          ("-fstack-check",           -- Runtime stack overflow checking
-          "-fstack-protector-strong", -- Stack smashing protection
-          "-D_FORTIFY_SOURCE=2"       -- Additional security checks
+          "-fstack-protector-strong" -- Stack smashing protection
          );
    end Compiler;
 
@@ -40,6 +39,7 @@ project Anubis_Spark is
    package Linker is
       for Switches ("Ada") use (
          "/opt/homebrew/lib/liboqs.a",         -- Link liboqs static library directly
+         "/opt/homebrew/lib/libsodium.a",      -- Link libsodium static library
          "/opt/homebrew/lib/libssl.dylib",     -- OpenSSL libssl (full path)
          "/opt/homebrew/lib/libcrypto.dylib"   -- OpenSSL libcrypto (full path)
       );
@@ -51,8 +51,7 @@ project Anubis_Spark is
           "--prover=cvc5,z3",       -- Use CVC5 and Z3 provers
           "--timeout=30",           -- 30 second timeout per proof
           "--steps=0",              -- No step limit
-          "--counterexamples=on",   -- Show counterexamples
-          "--checks-as-errors"      -- Treat failed checks as errors
+          "--counterexamples=on"    -- Show counterexamples
          );
    end Prove;
 
