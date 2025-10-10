@@ -10,6 +10,7 @@ with System;
 with OQS_Common; use OQS_Common;
 with OQS_KEM_ML_KEM;
 with OQS_SIG_ML_DSA;
+with Anubis_Types.Classical;
 
 package body Anubis_Types.PQC is
 
@@ -242,15 +243,42 @@ package body Anubis_Types.PQC is
       Hybrid_Secret  : out    Hybrid_Shared_Secret;
       Success        : out    Boolean
    ) is
-      pragma Unreferenced (X25519_Public);
-      pragma Unreferenced (X25519_Ephemeral_Secret);
-      ML_KEM_Shared : ML_KEM_Shared_Secret;
-      PQ_Success    : Boolean;
+      ML_KEM_Shared     : ML_KEM_Shared_Secret;
+      X25519_Shared     : X25519_Shared_Secret;
+      X25519_Ephemeral_Pub : X25519_Public_Key;
+      PQ_Success        : Boolean;
+      Classical_Success : Boolean;
+      Combined_Input    : Byte_Array (1 .. 64);  -- 32 bytes classical + 32 bytes PQ
    begin
-      -- TODO: Implement X25519 key exchange (needs SPARKNaCl or similar)
-      -- For now, this is a placeholder showing the architecture
+      -- Step 1: Generate ephemeral X25519 keypair
+      Classical.X25519_Generate_Keypair (
+         Public_Key  => X25519_Ephemeral_Pub,
+         Secret_Key  => X25519_Ephemeral_Secret,
+         Success     => Classical_Success
+      );
 
-      -- Step 1: Perform ML-KEM-1024 encapsulation (post-quantum)
+      if not Classical_Success then
+         Success := False;
+         Hybrid_Secret.Valid := False;
+         return;
+      end if;
+
+      -- Step 2: Perform X25519 ECDH (classical key exchange)
+      Classical.X25519_Compute_Shared (
+         Our_Secret_Key   => X25519_Ephemeral_Secret,
+         Their_Public_Key => X25519_Public,
+         Shared_Secret    => X25519_Shared,
+         Success          => Classical_Success
+      );
+
+      if not Classical_Success then
+         Success := False;
+         Hybrid_Secret.Valid := False;
+         Classical.Zeroize_X25519_Secret (X25519_Ephemeral_Secret);
+         return;
+      end if;
+
+      -- Step 3: Perform ML-KEM-1024 encapsulation (post-quantum)
       ML_KEM_Encapsulate (
          Recipient_Public_Key => ML_KEM_Public,
          Ciphertext           => Ciphertext,
@@ -261,20 +289,41 @@ package body Anubis_Types.PQC is
       if not PQ_Success then
          Success := False;
          Hybrid_Secret.Valid := False;
+         Classical.Zeroize_X25519_Secret (X25519_Ephemeral_Secret);
+         Classical.Zeroize_X25519_Shared (X25519_Shared);
          return;
       end if;
 
-      -- Step 2: Would perform X25519 key exchange here
-      -- X25519_ECDH (X25519_Public, X25519_Ephemeral_Secret, Classical_Shared)
+      -- Step 4: Combine both secrets using HKDF-SHA256
+      -- Input: Classical (32 bytes) || PQ (32 bytes)
+      Combined_Input (1 .. 32) := X25519_Shared.Data;
+      Combined_Input (33 .. 64) := ML_KEM_Shared.Data;
 
-      -- Step 3: Combine both secrets using HKDF
-      -- For now, copy PQ secret (will be properly combined later)
-      Hybrid_Secret.PQ_Secret := ML_KEM_Shared.Data;
-      Hybrid_Secret.Valid := True;
-      Success := True;
+      -- Derive hybrid secret using HKDF
+      declare
+         Temp_Key : Byte_Array (1 .. 32);
+      begin
+         Classical.HKDF_Derive (
+            Input_Key_Material => Combined_Input,
+            Context_String     => "anubis-hybrid-kem-v1",
+            Output_Key         => Temp_Key,
+            Success            => Success
+         );
+         Hybrid_Secret.PQ_Secret := Temp_Key;
+      end;
 
-      -- Zeroize intermediate secret
+      if Success then
+         Hybrid_Secret.Valid := True;
+      else
+         Hybrid_Secret.Valid := False;
+      end if;
+
+      -- Step 5: Secure cleanup
       Zeroize_Shared_Secret (ML_KEM_Shared);
+      Classical.Zeroize_X25519_Shared (X25519_Shared);
+      for I in Combined_Input'Range loop
+         Combined_Input (I) := 0;
+      end loop;
    end Hybrid_Encapsulate;
 
    procedure Derive_Encryption_Key (
@@ -283,21 +332,34 @@ package body Anubis_Types.PQC is
       Success        : out    Boolean
    ) is
    begin
-      -- TODO: Implement proper HKDF key derivation
-      -- For now, use first 32 bytes of hybrid secret
-      -- SECURITY NOTE: This is a placeholder - real implementation must use HKDF
-
       if not Hybrid_Secret.Valid then
          Success := False;
          Encryption_Key.Valid := False;
          return;
       end if;
 
-      -- Derive encryption key from hybrid secret
-      -- In production: HKDF-SHA256(Classical || PQ, "anubis-encryption", 32)
-      Encryption_Key.Data := Hybrid_Secret.PQ_Secret;
-      Encryption_Key.Valid := True;
-      Success := True;
+      -- Derive XChaCha20 encryption key from hybrid secret using HKDF
+      declare
+         Temp_Input : Byte_Array (1 .. 32);
+         Temp_Key   : Byte_Array (1 .. 32);
+      begin
+         -- Copy from volatile record to local variable
+         Temp_Input := Hybrid_Secret.PQ_Secret;
+
+         Classical.HKDF_Derive (
+            Input_Key_Material => Temp_Input,
+            Context_String     => "anubis-xchacha20-key-v1",
+            Output_Key         => Temp_Key,
+            Success            => Success
+         );
+         Encryption_Key.Data := Temp_Key;
+      end;
+
+      if Success then
+         Encryption_Key.Valid := True;
+      else
+         Encryption_Key.Valid := False;
+      end if;
    end Derive_Encryption_Key;
 
 end Anubis_Types.PQC;
