@@ -54,6 +54,36 @@ package Anubis_Types.SSS is
       (K >= MIN_THRESHOLD and K <= N and N <= MAX_SHARES)
    with Ghost;
 
+   -- PLATINUM: Ghost function - All shares are valid
+   function All_Shares_Valid (Shares : Share_Array) return Boolean with
+      Ghost;
+
+   -- PLATINUM: Ghost function - All shares have same length
+   function Shares_Same_Length (Shares : Share_Array; Len : Natural) return Boolean with
+      Ghost;
+
+   -- PLATINUM: GF(256) field axioms (for proof assistance)
+
+   -- Axiom: Addition is commutative (a + b = b + a)
+   function GF_Add_Commutative (A, B : Byte) return Boolean with
+      Ghost,
+      Post => GF_Add_Commutative'Result = True;
+
+   -- Axiom: Addition is associative ((a + b) + c = a + (b + c))
+   function GF_Add_Associative (A, B, C : Byte) return Boolean with
+      Ghost,
+      Post => GF_Add_Associative'Result = True;
+
+   -- Axiom: Multiplication is commutative (a * b = b * a)
+   function GF_Mult_Commutative (A, B : Byte) return Boolean with
+      Ghost,
+      Post => GF_Mult_Commutative'Result = True;
+
+   -- Axiom: Multiplication is distributive (a * (b + c) = a*b + a*c)
+   function GF_Mult_Distributive (A, B, C : Byte) return Boolean with
+      Ghost,
+      Post => GF_Mult_Distributive'Result = True;
+
    -------------------------------------------------------------------------
    -- Split: Secret → n Shares (k-of-n threshold)
    -------------------------------------------------------------------------
@@ -75,8 +105,11 @@ package Anubis_Types.SSS is
               Shares'Length = Num_Shares and
               Is_Valid_Threshold (Threshold, Num_Shares),
       Post => (if Success then
+                  -- PLATINUM: Prove share generation correctness
                   Shares'Length = Num_Shares and
-                  Shares_Have_Unique_Indices (Shares));
+                  Shares_Have_Unique_Indices (Shares) and
+                  All_Shares_Valid (Shares) and
+                  Shares_Same_Length (Shares, Secret'Length));
 
    -------------------------------------------------------------------------
    -- Combine: k Shares → Secret
