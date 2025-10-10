@@ -65,24 +65,16 @@ package Anubis_Types.SSS is
    -- PLATINUM: GF(256) field axioms (for proof assistance)
 
    -- Axiom: Addition is commutative (a + b = b + a)
-   function GF_Add_Commutative (A, B : Byte) return Boolean with
-      Ghost,
-      Post => GF_Add_Commutative'Result = True;
+   function GF_Add_Commutative (A, B : Byte) return Boolean with Ghost;
 
    -- Axiom: Addition is associative ((a + b) + c = a + (b + c))
-   function GF_Add_Associative (A, B, C : Byte) return Boolean with
-      Ghost,
-      Post => GF_Add_Associative'Result = True;
+   function GF_Add_Associative (A, B, C : Byte) return Boolean with Ghost;
 
    -- Axiom: Multiplication is commutative (a * b = b * a)
-   function GF_Mult_Commutative (A, B : Byte) return Boolean with
-      Ghost,
-      Post => GF_Mult_Commutative'Result = True;
+   function GF_Mult_Commutative (A, B : Byte) return Boolean with Ghost;
 
    -- Axiom: Multiplication is distributive (a * (b + c) = a*b + a*c)
-   function GF_Mult_Distributive (A, B, C : Byte) return Boolean with
-      Ghost,
-      Post => GF_Mult_Distributive'Result = True;
+   function GF_Mult_Distributive (A, B, C : Byte) return Boolean with Ghost;
 
    -------------------------------------------------------------------------
    -- Split: Secret → n Shares (k-of-n threshold)

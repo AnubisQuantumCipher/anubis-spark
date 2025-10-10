@@ -1,0 +1,141 @@
+[
+{
+  "name": "Anubis_Types.Sss.Gf_Mult.Result",
+  "location": "anubis_types-sss.adb:29:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Gf_Mult.Aa",
+  "location": "anubis_types-sss.adb:30:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Gf_Mult.Bb",
+  "location": "anubis_types-sss.adb:31:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Gf_Mult.B_2.High_Bit_Set",
+  "location": "anubis_types-sss.adb:43:13",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Gf_Div.Inv",
+  "location": "anubis_types-sss.adb:61:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Eval_Polynomial.Result",
+  "location": "anubis_types-sss.adb:89:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Eval_Polynomial.X_Power",
+  "location": "anubis_types-sss.adb:90:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Split_Secret.Coeffs",
+  "location": "anubis_types-sss.adb:195:7",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Split_Secret.B_12.X_Val",
+  "location": "anubis_types-sss.adb:213:16",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Split_Secret.B_12.Y_Val",
+  "location": "anubis_types-sss.adb:214:16",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.Temp",
+  "location": "anubis_types-sss.adb:242:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.Failed",
+  "location": "anubis_types-sss.adb:243:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.Last_Index",
+  "location": "anubis_types-sss.adb:261:13",
+  "Size": 16,
+  "Alignment": 2
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.Xi",
+  "location": "anubis_types-sss.adb:274:19",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.Yi",
+  "location": "anubis_types-sss.adb:275:19",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.Basis",
+  "location": "anubis_types-sss.adb:276:19",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.B_18.Xj",
+  "location": "anubis_types-sss.adb:284:28",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.B_18.Numerator",
+  "location": "anubis_types-sss.adb:285:28",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Combine_Shares.B_14.B_16.B_18.Denominator",
+  "location": "anubis_types-sss.adb:286:28",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Sss.Make_Share.Share",
+  "location": "anubis_types-sss.adb:325:7",
+  "Size": 2144,
+  "Alignment": 4
+}
+]

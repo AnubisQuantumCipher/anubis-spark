@@ -1,0 +1,34 @@
+anubis_key_manager.adb:38:13: info: loop invariant initialization proved
+anubis_key_manager.adb:38:13: info: loop invariant preservation proved
+anubis_key_manager.adb:38:46: info: overflow check proved
+anubis_key_manager.adb:39:39: info: overflow check proved
+anubis_key_manager.adb:39:56: info: overflow check proved
+anubis_key_manager.adb:39:56: info: index check proved
+anubis_key_manager.adb:39:73: info: index check proved
+anubis_key_manager.adb:40:31: info: loop variant proved
+anubis_key_manager.adb:42:49: info: overflow check proved
+anubis_key_manager.adb:42:66: info: overflow check proved
+anubis_key_manager.adb:42:66: info: range check proved
+anubis_key_manager.adb:44:28: info: assertion proved
+anubis_key_manager.adb:45:35: info: index check proved
+anubis_key_manager.adb:49:33: info: range check proved
+anubis_key_manager.adb:83:45: info: overflow check proved
+anubis_key_manager.adb:96:33: info: loop invariant preservation proved
+anubis_key_manager.adb:96:33: info: loop invariant initialization proved
+anubis_key_manager.adb:97:54: info: index check proved
+anubis_key_manager.adb:98:31: info: loop variant proved
+anubis_key_manager.ads:32:26: info: initialization of "Key" proved
+anubis_key_manager.ads:33:07: info: data dependencies proved
+anubis_key_manager.ads:34:15: info: postcondition proved
+anubis_key_manager.ads:41:07: info: initialization of "Managed" proved
+anubis_key_manager.ads:42:07: info: initialization of "Success" proved
+anubis_key_manager.ads:46:13: info: implicit aspect Always_Terminates on "Needs_Rotation" has been proved, subprogram will terminate
+anubis_key_manager.ads:47:13: info: implicit aspect Always_Terminates on "Get_Key_Status" has been proved, subprogram will terminate
+anubis_key_manager.ads:48:13: info: implicit aspect Always_Terminates on "Get_Usage_Count" has been proved, subprogram will terminate
+anubis_key_manager.ads:58:13: info: implicit aspect Always_Terminates on "Key_Material_Zeroed" has been proved, subprogram will terminate
+anubis_key_manager.ads:63:15: info: postcondition proved
+
+anubis_key_manager.ads:84:59: high: array index check might fail
+   84 |      ((for all I in 1 .. Key.Length => Key.Key_Material (I) = 0) and
+      |                                                          ^ here
+  reason for check: value must be a valid index into the array

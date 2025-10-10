@@ -1,0 +1,377 @@
+[
+{
+  "name": "Anubis_Types.Byte",
+  "location": "anubis_types.ads:17:9",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Byte_Array",
+  "location": "anubis_types.ads:18:9",
+  "Alignment": 1,
+  "Component_Size": 8
+}
+,
+{
+  "name": "Anubis_Types.Key_Status",
+  "location": "anubis_types.ads:75:9",
+  "Object_Size": 8,
+  "Value_Size": 3,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.X25519_Public_Key",
+  "location": "anubis_types.ads:144:9",
+  "Size": 256,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 256
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.X25519_Secret_Key",
+  "location": "anubis_types.ads:148:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.X25519_Shared_Secret",
+  "location": "anubis_types.ads:153:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ed25519_Public_Key",
+  "location": "anubis_types.ads:158:9",
+  "Size": 256,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 256
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ed25519_Secret_Key",
+  "location": "anubis_types.ads:162:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ed25519_Signature",
+  "location": "anubis_types.ads:167:9",
+  "Size": 512,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 512
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Xchacha20_Key",
+  "location": "anubis_types.ads:171:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Xchacha20_Nonce",
+  "location": "anubis_types.ads:176:9",
+  "Size": 192,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 192
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Poly1305_Tag",
+  "location": "anubis_types.ads:180:9",
+  "Size": 128,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 128
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Xchacha20_Auth_Tag",
+  "location": "anubis_types.ads:55:12",
+  "Size": 128,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 128
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Kem_Public_Key",
+  "location": "anubis_types.ads:184:9",
+  "Size": 12544,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 12544
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Kem_Secret_Key",
+  "location": "anubis_types.ads:188:9",
+  "Size": 25352,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":    0,
+      "First_Bit": 0,
+      "Size": 25344
+    },
+    {
+      "name": "Valid",
+      "Position": 3168,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Kem_Ciphertext",
+  "location": "anubis_types.ads:193:9",
+  "Size": 12544,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 12544
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Kem_Shared_Secret",
+  "location": "anubis_types.ads:197:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Dsa_Public_Key",
+  "location": "anubis_types.ads:202:9",
+  "Size": 20736,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 20736
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Dsa_Secret_Key",
+  "location": "anubis_types.ads:206:9",
+  "Size": 39176,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":    0,
+      "First_Bit": 0,
+      "Size": 39168
+    },
+    {
+      "name": "Valid",
+      "Position": 4896,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Ml_Dsa_Signature",
+  "location": "anubis_types.ads:211:9",
+  "Size": 37016,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 37016
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Master_Key",
+  "location": "anubis_types.ads:215:9",
+  "Size": 520,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 512
+    },
+    {
+      "name": "Valid",
+      "Position": 64,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Argon2_Salt",
+  "location": "anubis_types.ads:220:9",
+  "Size": 256,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 256
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Argon2_Derived_Key",
+  "location": "anubis_types.ads:224:9",
+  "Size": 264,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Data",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+]

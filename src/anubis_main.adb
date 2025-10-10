@@ -11,6 +11,8 @@ with Anubis_Types; use Anubis_Types;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 with Anubis_Types.Storage;
+with Anubis_Types.Streaming;
+use Anubis_Types.Streaming;  -- Make Result_Code operators visible
 
 procedure Anubis_Main is
 
@@ -307,11 +309,138 @@ begin
             Storage.Zeroize_Identity (Identity);
          end;
       elsif Command = "encrypt" then
-         Put_Line ("Encrypt command not yet implemented.");
-         Put_Line ("File encryption infrastructure is ready but needs file I/O.");
+         -- Parse arguments: --key <identity> --input <file> [--output <file>]
+         declare
+            Key_File    : constant String := (if Argument_Count >= 3 and then Argument (2) = "--key"
+                                               then Argument (3)
+                                               else "identity.key");
+            Input_File  : constant String := (if Argument_Count >= 5 and then Argument (4) = "--input"
+                                               then Argument (5)
+                                               else "");
+            Output_File : constant String := (if Argument_Count >= 7 and then Argument (6) = "--output"
+                                               then Argument (7)
+                                               else Input_File & ".anubis");
+            Identity    : Storage.Identity_Keypair;
+            Success     : Boolean;
+         begin
+            if Input_File = "" then
+               Put_Line ("ERROR: --input <file> required");
+               Put_Line ("Usage: anubis-spark encrypt --key <identity> --input <file> [--output <file>]");
+               return;
+            end if;
+
+            Print_Banner;
+            Put_Line ("Encrypting File with Hybrid Post-Quantum Protection...");
+            Put_Line ("═══════════════════════════════════════════════════");
+            New_Line;
+
+            Put ("Loading identity from " & Key_File & "... ");
+            Storage.Load_Identity (Key_File, Identity, Success);
+            if not Success then
+               Put_Line ("✗ FAILED");
+               Put_Line ("ERROR: Cannot load identity keypair.");
+               return;
+            end if;
+            Put_Line ("✓");
+
+            Put ("Encrypting " & Input_File & " (streaming mode)... ");
+            declare
+               Rc : Streaming.Result_Code;
+            begin
+               Streaming.Encrypt_File_Streaming (
+                  Input_Path      => Input_File,
+                  Output_Path     => Output_File,
+                  X25519_PK       => Storage.Get_X25519_Public (Identity),
+                  ML_KEM_PK       => Storage.Get_ML_KEM_Public (Identity),
+                  Ed25519_SK      => Storage.Get_Ed25519_Secret (Identity),
+                  ML_DSA_SK       => Storage.Get_ML_DSA_Secret (Identity),
+                  Result          => Rc,
+                  Chunk_Size      => 67_108_864  -- 64 MB chunks
+               );
+
+               if Rc /= Streaming.Success then
+                  Put_Line ("✗ FAILED");
+                  Put_Line ("ERROR: Encryption failed - " & Rc'Image);
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+               Put_Line ("✓");
+            end;
+
+            New_Line;
+            Put_Line ("═══════════════════════════════════════════════════");
+            Put_Line ("File encrypted successfully!");
+            Put_Line ("Output: " & Output_File);
+            New_Line;
+
+            Storage.Zeroize_Identity (Identity);
+         end;
       elsif Command = "decrypt" then
-         Put_Line ("Decrypt command not yet implemented.");
-         Put_Line ("File decryption infrastructure is ready but needs file I/O.");
+         -- Parse arguments: --key <identity> --input <file> [--output <file>]
+         declare
+            Key_File    : constant String := (if Argument_Count >= 3 and then Argument (2) = "--key"
+                                               then Argument (3)
+                                               else "identity.key");
+            Input_File  : constant String := (if Argument_Count >= 5 and then Argument (4) = "--input"
+                                               then Argument (5)
+                                               else "");
+            Output_File : constant String := (if Argument_Count >= 7 and then Argument (6) = "--output"
+                                               then Argument (7)
+                                               else Input_File & ".decrypted");
+            Identity    : Storage.Identity_Keypair;
+            Success     : Boolean;
+         begin
+            if Input_File = "" then
+               Put_Line ("ERROR: --input <file> required");
+               Put_Line ("Usage: anubis-spark decrypt --key <identity> --input <file> [--output <file>]");
+               return;
+            end if;
+
+            Print_Banner;
+            Put_Line ("Decrypting File with Hybrid Post-Quantum Protection...");
+            Put_Line ("═══════════════════════════════════════════════════");
+            New_Line;
+
+            Put ("Loading identity from " & Key_File & "... ");
+            Storage.Load_Identity (Key_File, Identity, Success);
+            if not Success then
+               Put_Line ("✗ FAILED");
+               Put_Line ("ERROR: Cannot load identity keypair.");
+               return;
+            end if;
+            Put_Line ("✓");
+
+            Put ("Decrypting " & Input_File & " (streaming mode)... ");
+            declare
+               Rc : Streaming.Result_Code;
+            begin
+               Streaming.Decrypt_File_Streaming (
+                  Input_Path      => Input_File,
+                  Output_Path     => Output_File,
+                  X25519_SK       => Storage.Get_X25519_Secret (Identity),
+                  ML_KEM_SK       => Storage.Get_ML_KEM_Secret (Identity),
+                  Ed25519_PK      => Storage.Get_Ed25519_Public (Identity),
+                  ML_DSA_PK       => Storage.Get_ML_DSA_Public (Identity),
+                  Result          => Rc
+               );
+
+               if Rc /= Streaming.Success then
+                  Put_Line ("✗ FAILED");
+                  Put_Line ("ERROR: Decryption failed - " & Rc'Image);
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+               Put_Line ("✓");
+            end;
+
+            New_Line;
+            Put_Line ("═══════════════════════════════════════════════════");
+            Put_Line ("File decrypted and verified successfully!");
+            Put_Line ("Output: " & Output_File);
+            New_Line;
+
+            Storage.Zeroize_Identity (Identity);
+         end;
       elsif Command = "sign" then
          Put_Line ("Sign command not yet implemented.");
          Put_Line ("Use: anubis-spark test (includes hybrid signature test)");

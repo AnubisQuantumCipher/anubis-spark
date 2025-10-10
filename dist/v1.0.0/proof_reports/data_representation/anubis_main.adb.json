@@ -1,0 +1,169 @@
+[
+{
+  "name": "Anubis_Main.Run_Self_Test.Success",
+  "location": "anubis_main.adb:87:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_1.Pk",
+  "location": "anubis_main.adb:97:10",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_1.Sk",
+  "location": "anubis_main.adb:98:10",
+  "Size": 25352,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_2.Alice_Pk",
+  "location": "anubis_main.adb:113:10",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_2.Alice_Sk",
+  "location": "anubis_main.adb:114:10",
+  "Size": 25352,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_2.Ct",
+  "location": "anubis_main.adb:115:10",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_2.Bob_Secret",
+  "location": "anubis_main.adb:116:10",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_2.Alice_Secret",
+  "location": "anubis_main.adb:117:10",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_3.Pk",
+  "location": "anubis_main.adb:154:10",
+  "Size": 20736,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_3.Sk",
+  "location": "anubis_main.adb:155:10",
+  "Size": 39176,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_3.Msg",
+  "location": "anubis_main.adb:156:10",
+  "Size": 40,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_3.Sig",
+  "location": "anubis_main.adb:157:10",
+  "Size": 37016,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_3.Valid",
+  "location": "anubis_main.adb:158:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Ed_Pk",
+  "location": "anubis_main.adb:186:10",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Ed_Sk",
+  "location": "anubis_main.adb:187:10",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Dsa_Pk",
+  "location": "anubis_main.adb:188:10",
+  "Size": 20736,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Dsa_Sk",
+  "location": "anubis_main.adb:189:10",
+  "Size": 39176,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Msg",
+  "location": "anubis_main.adb:190:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Sig",
+  "location": "anubis_main.adb:191:10",
+  "Size": 37528,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.Run_Self_Test.B_4.Valid",
+  "location": "anubis_main.adb:192:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.B_5.Command",
+  "location": "anubis_main.adb:240:7",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.B_5.B_6.Output_File",
+  "location": "anubis_main.adb:251:13",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.B_5.B_6.Identity",
+  "location": "anubis_main.adb:254:13",
+  "Size": 98856,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Main.B_5.B_6.Success",
+  "location": "anubis_main.adb:255:13",
+  "Size": 8,
+  "Alignment": 1
+}
+]

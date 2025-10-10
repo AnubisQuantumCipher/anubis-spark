@@ -1,0 +1,2 @@
+anubis_types-classical.ads:15:13: info: implicit aspect Always_Terminates on "HKDF_Output_Valid" has been proved, subprogram will terminate
+anubis_types-classical.ads:20:13: info: implicit aspect Always_Terminates on "Decryption_Failed_Zeroed" has been proved, subprogram will terminate

@@ -239,40 +239,35 @@ package body Anubis_Types.SSS is
       Reconstructed : out    Byte_Array;
       Success       : out    Boolean
    ) is
-      Temp : Byte;
+      Temp   : Byte;
+      Failed : Boolean := False;
    begin
-      -- Initialize output
-      for I in Reconstructed'Range loop
-         pragma Loop_Invariant (True);
-         pragma Loop_Variant (Increases => I);
-         Reconstructed (I) := 0;
-      end loop;
+      Reconstructed := (others => 0);
 
-      -- Check we have enough shares
       if Shares'Length < Threshold then
          Success := False;
          return;
       end if;
 
-      -- Use Lagrange interpolation to reconstruct each byte
+      Byte_Loop :
       for Byte_Idx in Reconstructed'Range loop
-         pragma Loop_Invariant (True);
+         pragma Loop_Invariant
+           (not Failed or else (for all K in Reconstructed'First .. Byte_Idx - 1 => Reconstructed (K) = 0));
          pragma Loop_Variant (Increases => Byte_Idx);
 
          Temp := 0;
 
-         -- Lagrange interpolation: sum over all shares
          declare
             Last_Index : constant Share_Index :=
                Share_Index (Natural (Shares'First) + Threshold - 1);
          begin
             for I in Shares'First .. Last_Index loop
-               pragma Loop_Invariant (True);
+               pragma Loop_Invariant (not Failed);
                pragma Loop_Variant (Increases => I);
 
                if not Shares (I).Valid then
-                  Success := False;
-                  return;
+                  Failed := True;
+                  exit Byte_Loop;
                end if;
 
                declare
@@ -280,37 +275,40 @@ package body Anubis_Types.SSS is
                   Yi : constant Byte := Shares (I).Y (Byte_Idx - Reconstructed'First + 1);
                   Basis : Byte := Yi;
                begin
-                  -- Calculate Lagrange basis polynomial
                   for J in Shares'First .. Last_Index loop
-                  pragma Loop_Invariant (True);
-                  pragma Loop_Variant (Increases => J);
+                     pragma Loop_Invariant (not Failed);
+                     pragma Loop_Variant (Increases => J);
 
-                  if I /= J then
-                     declare
-                        Xj : constant Byte := Byte (Shares (J).X);
-                        Numerator : constant Byte := GF_Sub (0, Xj);  -- -Xj = 0 - Xj
-                        Denominator : constant Byte := GF_Sub (Xi, Xj);  -- Xi - Xj
-                     begin
-                        if Denominator = 0 then
-                           Success := False;
-                           return;  -- Duplicate x-values
-                        end if;
+                     if I /= J then
+                        declare
+                           Xj : constant Byte := Byte (Shares (J).X);
+                           Numerator : constant Byte := GF_Sub (0, Xj);
+                           Denominator : constant Byte := GF_Sub (Xi, Xj);
+                        begin
+                           if Denominator = 0 then
+                              Failed := True;
+                              exit Byte_Loop;
+                           end if;
 
-                        Basis := GF_Mult (Basis, GF_Div (Numerator, Denominator));
-                     end;
-                  end if;
-               end loop;
+                           Basis := GF_Mult (Basis, GF_Div (Numerator, Denominator));
+                        end;
+                     end if;
+                  end loop;
 
-                  -- Add this term to result
                   Temp := GF_Add (Temp, Basis);
                end;
             end loop;
          end;
 
+         exit Byte_Loop when Failed;
          Reconstructed (Byte_Idx) := Temp;
-      end loop;
+      end loop Byte_Loop;
 
-      Success := True;
+      Success := not Failed;
+
+      if not Success then
+         Reconstructed := (others => 0);
+      end if;
    end Combine_Shares;
 
    -------------------------------------------------------------------------
@@ -328,6 +326,7 @@ package body Anubis_Types.SSS is
    begin
       Share.X := Index;
       Share.Length := Data'Length;
+      Share.Y := (others => 0);
       for I in Data'Range loop
          pragma Loop_Invariant (Share.X = Index and Share.Length = Data'Length);
          pragma Loop_Variant (Increases => I);

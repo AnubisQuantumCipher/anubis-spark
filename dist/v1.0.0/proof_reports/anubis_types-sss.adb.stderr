@@ -1,0 +1,81 @@
+anubis_types-sss.adb:18:13: info: implicit aspect Always_Terminates on "GF_Add" has been proved, subprogram will terminate
+anubis_types-sss.adb:23:13: info: implicit aspect Always_Terminates on "GF_Sub" has been proved, subprogram will terminate
+anubis_types-sss.adb:28:13: info: implicit aspect Always_Terminates on "GF_Mult" has been proved, subprogram will terminate
+anubis_types-sss.adb:34:33: info: loop invariant preservation proved, in call inlined at anubis_types-sss.adb:168
+anubis_types-sss.adb:34:33: info: loop invariant initialization proved, in call inlined at anubis_types-sss.adb:168
+anubis_types-sss.adb:34:33: info: loop invariant initialization proved, in call inlined at anubis_types-sss.adb:176
+anubis_types-sss.adb:34:33: info: loop invariant preservation proved, in call inlined at anubis_types-sss.adb:176
+anubis_types-sss.adb:34:33: info: loop invariant preservation proved, in call inlined at anubis_types-sss.adb:293
+anubis_types-sss.adb:34:33: info: loop invariant initialization proved, in call inlined at anubis_types-sss.adb:293
+anubis_types-sss.adb:34:33: info: loop invariant initialization proved, in call inlined at anubis_types-sss.adb:73
+anubis_types-sss.adb:34:33: info: loop invariant preservation proved, in call inlined at anubis_types-sss.adb:73
+anubis_types-sss.adb:34:33: info: loop invariant initialization proved, in call inlined at anubis_types-sss.adb:75
+anubis_types-sss.adb:34:33: info: loop invariant preservation proved, in call inlined at anubis_types-sss.adb:75
+anubis_types-sss.adb:35:31: info: loop variant proved, in call inlined at anubis_types-sss.adb:168
+anubis_types-sss.adb:35:31: info: loop variant proved, in call inlined at anubis_types-sss.adb:176
+anubis_types-sss.adb:35:31: info: loop variant proved, in call inlined at anubis_types-sss.adb:293
+anubis_types-sss.adb:35:31: info: loop variant proved, in call inlined at anubis_types-sss.adb:73
+anubis_types-sss.adb:35:31: info: loop variant proved, in call inlined at anubis_types-sss.adb:75
+anubis_types-sss.adb:51:19: info: division check proved, in call inlined at anubis_types-sss.adb:168
+anubis_types-sss.adb:51:19: info: division check proved, in call inlined at anubis_types-sss.adb:176
+anubis_types-sss.adb:51:19: info: division check proved, in call inlined at anubis_types-sss.adb:293
+anubis_types-sss.adb:51:19: info: division check proved, in call inlined at anubis_types-sss.adb:73
+anubis_types-sss.adb:51:19: info: division check proved, in call inlined at anubis_types-sss.adb:75
+anubis_types-sss.adb:59:13: info: implicit aspect Always_Terminates on "GF_Div" has been proved, subprogram will terminate
+anubis_types-sss.adb:61:07: info: initialization of "Inv" proved
+anubis_types-sss.adb:71:36: info: loop invariant preservation proved
+anubis_types-sss.adb:71:36: info: loop invariant initialization proved
+anubis_types-sss.adb:72:34: info: loop variant proved
+anubis_types-sss.adb:85:13: info: implicit aspect Always_Terminates on "Eval_Polynomial" has been proved, subprogram will terminate
+anubis_types-sss.adb:242:07: info: initialization of "Temp" proved
+anubis_types-sss.adb:245:21: info: length check proved
+anubis_types-sss.adb:247:16: info: range check proved
+anubis_types-sss.adb:255:13: info: loop invariant initialization proved
+anubis_types-sss.adb:255:13: info: loop invariant preservation proved
+anubis_types-sss.adb:255:78: info: overflow check proved
+anubis_types-sss.adb:255:100: info: index check proved
+anubis_types-sss.adb:256:31: info: loop variant proved
+anubis_types-sss.adb:262:44: info: range check proved
+anubis_types-sss.adb:262:52: info: overflow check proved
+anubis_types-sss.adb:262:64: info: range check proved
+anubis_types-sss.adb:265:39: info: loop invariant initialization proved
+anubis_types-sss.adb:265:39: info: loop invariant preservation proved
+anubis_types-sss.adb:266:37: info: loop variant proved
+anubis_types-sss.adb:268:31: info: index check proved
+anubis_types-sss.adb:274:55: info: index check proved
+anubis_types-sss.adb:275:49: info: index check proved
+anubis_types-sss.adb:275:64: info: overflow check proved
+anubis_types-sss.adb:275:86: info: overflow check proved
+anubis_types-sss.adb:275:86: info: index check proved
+anubis_types-sss.adb:279:45: info: loop invariant initialization proved
+anubis_types-sss.adb:279:45: info: loop invariant preservation proved
+anubis_types-sss.adb:280:43: info: loop variant proved
+anubis_types-sss.adb:284:64: info: index check proved
+anubis_types-sss.adb:310:24: info: length check proved
+anubis_types-sss.adb:325:07: info: initialization of "Share" proved
+anubis_types-sss.adb:328:27: info: range check proved
+anubis_types-sss.adb:331:33: info: loop invariant initialization proved
+anubis_types-sss.adb:331:33: info: loop invariant preservation proved
+anubis_types-sss.adb:331:72: info: range check proved
+anubis_types-sss.adb:332:31: info: loop variant proved
+anubis_types-sss.adb:333:21: info: overflow check proved
+anubis_types-sss.adb:333:34: info: overflow check proved
+anubis_types-sss.adb:333:34: info: index check proved
+anubis_types-sss.adb:345:33: info: loop invariant initialization proved
+anubis_types-sss.adb:345:33: info: loop invariant preservation proved
+anubis_types-sss.adb:345:81: info: index check proved
+anubis_types-sss.adb:346:31: info: loop variant proved
+anubis_types-sss.ads:49:13: info: implicit aspect Always_Terminates on "Shares_Have_Unique_Indices" has been proved, subprogram will terminate
+anubis_types-sss.ads:53:13: info: implicit aspect Always_Terminates on "Is_Valid_Threshold" has been proved, subprogram will terminate
+anubis_types-sss.ads:58:13: info: implicit aspect Always_Terminates on "All_Shares_Valid" has been proved, subprogram will terminate
+anubis_types-sss.ads:62:13: info: implicit aspect Always_Terminates on "Shares_Same_Length" has been proved, subprogram will terminate
+anubis_types-sss.ads:68:13: info: implicit aspect Always_Terminates on "GF_Add_Commutative" has been proved, subprogram will terminate
+anubis_types-sss.ads:71:13: info: implicit aspect Always_Terminates on "GF_Add_Associative" has been proved, subprogram will terminate
+anubis_types-sss.ads:74:13: info: implicit aspect Always_Terminates on "GF_Mult_Commutative" has been proved, subprogram will terminate
+anubis_types-sss.ads:77:13: info: implicit aspect Always_Terminates on "GF_Mult_Distributive" has been proved, subprogram will terminate
+anubis_types-sss.ads:103:07: info: initialization of "Reconstructed" proved
+anubis_types-sss.ads:104:07: info: initialization of "Success" proved
+anubis_types-sss.ads:111:15: info: postcondition proved
+anubis_types-sss.ads:119:13: info: implicit aspect Always_Terminates on "Get_Share_Index" has been proved, subprogram will terminate
+anubis_types-sss.ads:122:13: info: implicit aspect Always_Terminates on "Make_Share" has been proved, subprogram will terminate
+anubis_types-sss.ads:129:13: info: implicit aspect Always_Terminates on "Get_Share_Length" has been proved, subprogram will terminate

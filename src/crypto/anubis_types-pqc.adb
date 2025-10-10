@@ -238,6 +238,7 @@ package body Anubis_Types.PQC is
    procedure Hybrid_Encapsulate (
       X25519_Public  : in     X25519_Public_Key;
       ML_KEM_Public  : in     ML_KEM_Public_Key;
+      X25519_Ephemeral_Public : out X25519_Public_Key;
       X25519_Ephemeral_Secret : out X25519_Secret_Key;
       Ciphertext     : out ML_KEM_Ciphertext;
       Hybrid_Secret  : out    Hybrid_Shared_Secret;
@@ -245,14 +246,13 @@ package body Anubis_Types.PQC is
    ) is
       ML_KEM_Shared     : ML_KEM_Shared_Secret;
       X25519_Shared     : X25519_Shared_Secret;
-      X25519_Ephemeral_Pub : X25519_Public_Key;
       PQ_Success        : Boolean;
       Classical_Success : Boolean;
       Combined_Input    : Byte_Array (1 .. 64);  -- 32 bytes classical + 32 bytes PQ
    begin
       -- Step 1: Generate ephemeral X25519 keypair
       Classical.X25519_Generate_Keypair (
-         Public_Key  => X25519_Ephemeral_Pub,
+         Public_Key  => X25519_Ephemeral_Public,
          Secret_Key  => X25519_Ephemeral_Secret,
          Success     => Classical_Success
       );
@@ -326,6 +326,81 @@ package body Anubis_Types.PQC is
       end loop;
    end Hybrid_Encapsulate;
 
+   procedure Hybrid_Decapsulate (
+      X25519_Secret       : in     X25519_Secret_Key;
+      ML_KEM_Secret       : in     ML_KEM_Secret_Key;
+      X25519_Ephemeral    : in     X25519_Public_Key;
+      ML_KEM_CT           : in     ML_KEM_Ciphertext;
+      Hybrid_Secret       : out    Hybrid_Shared_Secret;
+      Success             : out    Boolean
+   ) is
+      ML_KEM_Shared     : ML_KEM_Shared_Secret;
+      X25519_Shared     : X25519_Shared_Secret;
+      PQ_Success        : Boolean;
+      Classical_Success : Boolean;
+      Combined_Input    : Byte_Array (1 .. 64);  -- 32 bytes classical + 32 bytes PQ
+   begin
+      -- Step 1: Perform X25519 ECDH with ephemeral public key (classical key exchange)
+      Classical.X25519_Compute_Shared (
+         Our_Secret_Key   => X25519_Secret,
+         Their_Public_Key => X25519_Ephemeral,
+         Shared_Secret    => X25519_Shared,
+         Success          => Classical_Success
+      );
+
+      if not Classical_Success then
+         Success := False;
+         Hybrid_Secret.Valid := False;
+         return;
+      end if;
+
+      -- Step 2: Perform ML-KEM-1024 decapsulation (post-quantum)
+      ML_KEM_Decapsulate (
+         Ciphertext    => ML_KEM_CT,
+         Secret_Key    => ML_KEM_Secret,
+         Shared_Secret => ML_KEM_Shared,
+         Success       => PQ_Success
+      );
+
+      if not PQ_Success then
+         Success := False;
+         Hybrid_Secret.Valid := False;
+         Classical.Zeroize_X25519_Shared (X25519_Shared);
+         return;
+      end if;
+
+      -- Step 3: Combine both secrets using HKDF-SHA256 (same as encapsulation)
+      -- Input: Classical (32 bytes) || PQ (32 bytes)
+      Combined_Input (1 .. 32) := X25519_Shared.Data;
+      Combined_Input (33 .. 64) := ML_KEM_Shared.Data;
+
+      -- Derive hybrid secret using HKDF
+      declare
+         Temp_Key : Byte_Array (1 .. 32);
+      begin
+         Classical.HKDF_Derive (
+            Input_Key_Material => Combined_Input,
+            Context_String     => "anubis-hybrid-kem-v1",
+            Output_Key         => Temp_Key,
+            Success            => Success
+         );
+         Hybrid_Secret.PQ_Secret := Temp_Key;
+      end;
+
+      if Success then
+         Hybrid_Secret.Valid := True;
+      else
+         Hybrid_Secret.Valid := False;
+      end if;
+
+      -- Step 4: Secure cleanup
+      Zeroize_Shared_Secret (ML_KEM_Shared);
+      Classical.Zeroize_X25519_Shared (X25519_Shared);
+      for I in Combined_Input'Range loop
+         Combined_Input (I) := 0;
+      end loop;
+   end Hybrid_Decapsulate;
+
    procedure Derive_Encryption_Key (
       Hybrid_Secret : in     Hybrid_Shared_Secret;
       Encryption_Key : out    XChaCha20_Key;
@@ -361,6 +436,68 @@ package body Anubis_Types.PQC is
          Encryption_Key.Valid := False;
       end if;
    end Derive_Encryption_Key;
+
+   -------------------------------------------------------------------------
+   -- Ghost Function Implementations
+   -------------------------------------------------------------------------
+
+   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean is
+   begin
+      for I in Sig.Ed25519_Sig.Data'Range loop
+         if Sig.Ed25519_Sig.Data (I) /= 0 then
+            return False;
+         end if;
+      end loop;
+      for I in Sig.ML_DSA_Sig.Data'Range loop
+         if Sig.ML_DSA_Sig.Data (I) /= 0 then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Hybrid_Signature_Zeroed;
+
+   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean is
+      Ed_Present : Boolean := False;
+      DSA_Present : Boolean := False;
+   begin
+      for I in Sig.Ed25519_Sig.Data'Range loop
+         if Sig.Ed25519_Sig.Data (I) /= 0 then
+            Ed_Present := True;
+            exit;
+         end if;
+      end loop;
+      for I in Sig.ML_DSA_Sig.Data'Range loop
+         if Sig.ML_DSA_Sig.Data (I) /= 0 then
+            DSA_Present := True;
+            exit;
+         end if;
+      end loop;
+      return Ed_Present and DSA_Present;
+   end Both_Signatures_Present;
+
+   -------------------------------------------------------------------------
+   -- Hybrid Signature Accessors
+   -------------------------------------------------------------------------
+
+   procedure Get_Signature_Components (
+      Sig         : in     Hybrid_Signature;
+      Ed25519_Sig : out    Ed25519_Signature;
+      ML_DSA_Sig  : out    ML_DSA_Signature
+   ) is
+   begin
+      Ed25519_Sig := Sig.Ed25519_Sig;
+      ML_DSA_Sig := Sig.ML_DSA_Sig;
+   end Get_Signature_Components;
+
+   procedure Set_Signature_Components (
+      Sig         : out    Hybrid_Signature;
+      Ed25519_Sig : in     Ed25519_Signature;
+      ML_DSA_Sig  : in     ML_DSA_Signature
+   ) is
+   begin
+      Sig.Ed25519_Sig := Ed25519_Sig;
+      Sig.ML_DSA_Sig := ML_DSA_Sig;
+   end Set_Signature_Components;
 
    -------------------------------------------------------------------------
    -- Hybrid Signatures (Classical + Post-Quantum)

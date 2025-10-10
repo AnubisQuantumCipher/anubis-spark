@@ -1,0 +1,29 @@
+[
+{
+  "name": "Oqs_Common.Oqs_Status",
+  "location": "oqs_common.ads:19:9",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Oqs_Common.Oqs_Success",
+  "location": "oqs_common.ads:21:4",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Oqs_Common.Oqs_Error",
+  "location": "oqs_common.ads:22:4",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Oqs_Common.Oqs_External_Lib_Error_Openssl",
+  "location": "oqs_common.ads:23:4",
+  "Size": 32,
+  "Alignment": 4
+}
+]

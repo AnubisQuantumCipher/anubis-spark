@@ -1,0 +1,228 @@
+Summary of SPARK analysis
+=========================
+
+----------------------------------------------------------------------------------------------------
+SPARK Analysis results        Total        Flow                       Provers   Justified   Unproved
+----------------------------------------------------------------------------------------------------
+Data Dependencies                 1           1                             .           .          .
+Flow Dependencies                 .           .                             .           .          .
+Initialization                    8           8                             .           .          .
+Non-Aliasing                      .           .                             .           .          .
+Run-time Checks                  57           .     56 (CVC5 99%, Trivial 1%)           .          1
+Assertions                       45           .    45 (CVC5 63%, Trivial 38%)           .          .
+Functional Contracts             10           .     10 (CVC5 95%, Trivial 5%)           .          .
+LSP Verification                  .           .                             .           .          .
+Termination                      63          41                     22 (CVC5)           .          .
+Concurrency                       .           .                             .           .          .
+----------------------------------------------------------------------------------------------------
+Total                           184    50 (27%)                     133 (72%)           .     1 (1%)
+
+
+max steps used for successful proof: 164
+
+Analyzed 22 units
+in unit anubis_key_manager, 11 subprograms and packages out of 11 analyzed
+  Anubis_Key_Manager at anubis_key_manager.ads:10 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Create_Managed_Key at anubis_key_manager.ads:37 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (14 checks)
+  Anubis_Key_Manager.Destroy_Key at anubis_key_manager.ads:62 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Key_Manager.Expire_Key at anubis_key_manager.ads:51 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Get_Key_Status at anubis_key_manager.ads:47 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Get_Usage_Count at anubis_key_manager.ads:48 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Initialize at anubis_key_manager.ads:32 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (1 checks)
+  Anubis_Key_Manager.Key_Material_Zeroed at anubis_key_manager.ads:58 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and not proved, 0 checks out of 1 proved
+  Anubis_Key_Manager.Managed_Key at anubis_key_manager.ads:68 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Needs_Rotation at anubis_key_manager.ads:46 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Key_Manager.Record_Usage at anubis_key_manager.ads:50 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (1 checks)
+in unit anubis_main, 0 subprograms and packages out of 0 analyzed
+in unit anubis_types, 42 subprograms and packages out of 42 analyzed
+  Anubis_Types at anubis_types.ads:10 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Argon2_Derived_Key at anubis_types.ads:224 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Argon2_Salt at anubis_types.ads:220 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Arrays_Equal at anubis_types.ads:87 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (4 checks)
+  Anubis_Types.Ed25519_Public_Key at anubis_types.ads:158 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Ed25519_Secret_Key at anubis_types.ads:162 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Ed25519_Signature at anubis_types.ads:167 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_All_Zero at anubis_types.ads:82 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (1 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:96 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:97 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:98 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:99 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:100 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:101 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:102 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:103 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Valid at anubis_types.ads:104 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Zeroed at anubis_types.ads:107 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Zeroed at anubis_types.ads:108 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Zeroed at anubis_types.ads:109 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Zeroed at anubis_types.ads:110 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Is_Zeroed at anubis_types.ads:111 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_DSA_Public_Key at anubis_types.ads:202 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_DSA_Secret_Key at anubis_types.ads:206 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_DSA_Signature at anubis_types.ads:211 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_KEM_Ciphertext at anubis_types.ads:193 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_KEM_Public_Key at anubis_types.ads:184 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_KEM_Secret_Key at anubis_types.ads:188 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.ML_KEM_Shared_Secret at anubis_types.ads:197 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Master_Key at anubis_types.ads:215 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Poly1305_Tag at anubis_types.ads:180 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.X25519_Public_Key at anubis_types.ads:144 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.X25519_Secret_Key at anubis_types.ads:148 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.X25519_Shared_Secret at anubis_types.ads:153 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.XChaCha20_Key at anubis_types.ads:171 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.XChaCha20_Nonce at anubis_types.ads:176 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:118 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:121 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:124 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:127 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:130 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (5 checks)
+  Anubis_Types.Zeroize at anubis_types.ads:135 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (6 checks)
+in unit anubis_types-classical, 2 subprograms and packages out of 18 analyzed
+  Anubis_Types.Classical at anubis_types-classical.ads:8 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Argon2id_Derive_Key at anubis_types-classical.ads:147 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Decryption_Failed_Zeroed at anubis_types-classical.ads:20 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Classical.Ed25519_Generate_Keypair at anubis_types-classical.ads:66 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Ed25519_Sign at anubis_types-classical.ads:76 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Ed25519_Verify at anubis_types-classical.ads:85 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.HKDF_Derive at anubis_types-classical.ads:169 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.HKDF_Output_Valid at anubis_types-classical.ads:15 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.Classical.X25519_Compute_Shared at anubis_types-classical.ads:39 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.X25519_Generate_Keypair at anubis_types-classical.ads:29 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.XChaCha20_Decrypt at anubis_types-classical.ads:123 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.XChaCha20_Encrypt at anubis_types-classical.ads:111 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.XChaCha20_Generate_Key at anubis_types-classical.ads:102 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Zeroize_Argon2_Key at anubis_types-classical.ads:158 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Zeroize_Ed25519_Secret at anubis_types-classical.ads:92 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Zeroize_X25519_Secret at anubis_types-classical.ads:50 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Zeroize_X25519_Shared at anubis_types-classical.ads:56 skipped; body is SPARK_Mode => Off
+  Anubis_Types.Classical.Zeroize_XChaCha20_Key at anubis_types-classical.ads:137 skipped; body is SPARK_Mode => Off
+in unit anubis_types-file_crypto, 0 subprograms and packages out of 0 analyzed
+in unit anubis_types-pqc, 5 subprograms and packages out of 21 analyzed
+  Anubis_Types.PQC at anubis_types-pqc.ads:9 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Both_Signatures_Present at anubis_types-pqc.ads:156 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.PQC.Combine_Secrets at anubis_types-pqc.ads:217 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (4 checks)
+  Anubis_Types.PQC.Derive_Encryption_Key at anubis_types-pqc.ads:131 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Hybrid_Encapsulate at anubis_types-pqc.ads:120 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Hybrid_Shared_Secret at anubis_types-pqc.ads:190 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.PQC.Hybrid_Sign at anubis_types-pqc.ads:162 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Hybrid_Signature at anubis_types-pqc.ads:198 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.PQC.Hybrid_Signature_Zeroed at anubis_types-pqc.ads:152 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.PQC.Hybrid_Verify at anubis_types-pqc.ads:177 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Is_Valid at anubis_types-pqc.ads:118 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_DSA_Generate_Keypair at anubis_types-pqc.ads:52 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_DSA_Sign at anubis_types-pqc.ads:64 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_DSA_Verify at anubis_types-pqc.ads:74 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_KEM_Decapsulate at anubis_types-pqc.ads:38 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_KEM_Encapsulate at anubis_types-pqc.ads:28 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.ML_KEM_Generate_Keypair at anubis_types-pqc.ads:16 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Secrets_Match at anubis_types-pqc.ads:87 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Zeroize_ML_DSA_Secret at anubis_types-pqc.ads:105 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Zeroize_ML_KEM_Secret at anubis_types-pqc.ads:99 skipped; body is SPARK_Mode => Off
+  Anubis_Types.PQC.Zeroize_Shared_Secret at anubis_types-pqc.ads:93 skipped; body is SPARK_Mode => Off
+in unit anubis_types-sss, 20 subprograms and packages out of 20 analyzed
+  Anubis_Types.SSS at anubis_types-sss.ads:23 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.All_Shares_Valid at anubis_types-sss.ads:58 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Combine_Shares at anubis_types-sss.ads:100 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (29 checks)
+  Anubis_Types.SSS.Eval_Polynomial at anubis_types-sss.adb:85 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.GF_Add at anubis_types-sss.adb:18 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.GF_Add_Associative at anubis_types-sss.ads:71 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.GF_Add_Commutative at anubis_types-sss.ads:68 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.GF_Div at anubis_types-sss.adb:59 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (11 checks)
+  Anubis_Types.SSS.GF_Mult at anubis_types-sss.adb:28 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.GF_Mult_Commutative at anubis_types-sss.ads:74 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (8 checks)
+  Anubis_Types.SSS.GF_Mult_Distributive at anubis_types-sss.ads:77 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (12 checks)
+  Anubis_Types.SSS.GF_Sub at anubis_types-sss.adb:23 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Get_Share_Index at anubis_types-sss.ads:119 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Get_Share_Length at anubis_types-sss.ads:129 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Is_Valid_Threshold at anubis_types-sss.ads:53 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Make_Share at anubis_types-sss.ads:122 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (8 checks)
+  Anubis_Types.SSS.Secret_Share at anubis_types-sss.ads:140 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Shares_Have_Unique_Indices at anubis_types-sss.ads:49 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Shares_Same_Length at anubis_types-sss.ads:62 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (0 checks)
+  Anubis_Types.SSS.Zeroize_Share at anubis_types-sss.ads:132 flow analyzed (0 errors, 0 checks, 0 warnings and 0 pragma Assume statements) and proved (4 checks)
+in unit anubis_types-storage, 0 subprograms and packages out of 0 analyzed
+in unit oqs_common, 0 subprograms and packages out of 7 analyzed
+  OQS_Common.OQS_MEM_cleanse at oqs_common.ads:51 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_MEM_secure_bcmp at oqs_common.ads:66 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_MEM_secure_free at oqs_common.ads:58 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_destroy at oqs_common.ads:38 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_init at oqs_common.ads:30 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_thread_stop at oqs_common.ads:34 skipped; SPARK_Mode => Off
+  OQS_Common.OQS_version at oqs_common.ads:42 skipped; SPARK_Mode => Off
+in unit oqs_kem_ml_kem, 0 subprograms and packages out of 3 analyzed
+  OQS_KEM_ML_KEM.OQS_KEM_ml_kem_1024_decaps at oqs_kem_ml_kem.ads:53 skipped; SPARK_Mode => Off
+  OQS_KEM_ML_KEM.OQS_KEM_ml_kem_1024_encaps at oqs_kem_ml_kem.ads:42 skipped; SPARK_Mode => Off
+  OQS_KEM_ML_KEM.OQS_KEM_ml_kem_1024_keypair at oqs_kem_ml_kem.ads:32 skipped; SPARK_Mode => Off
+in unit oqs_sig_ml_dsa, 0 subprograms and packages out of 5 analyzed
+  OQS_SIG_ML_DSA.OQS_SIG_ml_dsa_87_keypair at oqs_sig_ml_dsa.ads:33 skipped; SPARK_Mode => Off
+  OQS_SIG_ML_DSA.OQS_SIG_ml_dsa_87_sign at oqs_sig_ml_dsa.ads:45 skipped; SPARK_Mode => Off
+  OQS_SIG_ML_DSA.OQS_SIG_ml_dsa_87_sign_with_ctx_str at oqs_sig_ml_dsa.ads:76 skipped; SPARK_Mode => Off
+  OQS_SIG_ML_DSA.OQS_SIG_ml_dsa_87_verify at oqs_sig_ml_dsa.ads:61 skipped; SPARK_Mode => Off
+  OQS_SIG_ML_DSA.OQS_SIG_ml_dsa_87_verify_with_ctx_str at oqs_sig_ml_dsa.ads:89 skipped; SPARK_Mode => Off
+in unit sodium_aead, 0 subprograms and packages out of 5 analyzed
+  Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_decrypt at sodium_aead.ads:69 skipped; SPARK_Mode => Off
+  Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_decrypt_detached at sodium_aead.ads:125 skipped; SPARK_Mode => Off
+  Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_encrypt at sodium_aead.ads:40 skipped; SPARK_Mode => Off
+  Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_encrypt_detached at sodium_aead.ads:99 skipped; SPARK_Mode => Off
+  Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_keygen at sodium_aead.ads:144 skipped; SPARK_Mode => Off
+in unit sodium_common, 0 subprograms and packages out of 12 analyzed
+  Sodium_Common.randombytes_buf at sodium_common.ads:87 skipped; SPARK_Mode => Off
+  Sodium_Common.randombytes_random at sodium_common.ads:94 skipped; SPARK_Mode => Off
+  Sodium_Common.randombytes_uniform at sodium_common.ads:98 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_bin2hex at sodium_common.ads:108 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_hex2bin at sodium_common.ads:117 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_init at sodium_common.ads:29 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_is_zero at sodium_common.ads:76 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_memcmp at sodium_common.ads:67 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_memzero at sodium_common.ads:45 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_mlock at sodium_common.ads:52 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_munlock at sodium_common.ads:59 skipped; SPARK_Mode => Off
+  Sodium_Common.sodium_version_string at sodium_common.ads:36 skipped; SPARK_Mode => Off
+in unit sodium_kdf, 0 subprograms and packages out of 8 analyzed
+  Sodium_KDF.crypto_kdf_derive_from_key at sodium_kdf.ads:153 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha256_derive_from_key at sodium_kdf.ads:80 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha256_expand at sodium_kdf.ads:56 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha256_extract at sodium_kdf.ads:35 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha512_derive_from_key at sodium_kdf.ads:124 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha512_expand at sodium_kdf.ads:113 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_hkdf_sha512_extract at sodium_kdf.ads:102 skipped; SPARK_Mode => Off
+  Sodium_KDF.crypto_kdf_keygen at sodium_kdf.ads:164 skipped; SPARK_Mode => Off
+in unit sodium_pwhash, 0 subprograms and packages out of 8 analyzed
+  Sodium_Pwhash.crypto_pwhash at sodium_pwhash.ads:81 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_argon2id at sodium_pwhash.ads:94 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_argon2id_str at sodium_pwhash.ads:126 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_argon2id_str_needs_rehash at sodium_pwhash.ads:166 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_argon2id_str_verify at sodium_pwhash.ads:147 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_str at sodium_pwhash.ads:117 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_str_needs_rehash at sodium_pwhash.ads:159 skipped; SPARK_Mode => Off
+  Sodium_Pwhash.crypto_pwhash_str_verify at sodium_pwhash.ads:140 skipped; SPARK_Mode => Off
+in unit sodium_scalarmult, 0 subprograms and packages out of 6 analyzed
+  Sodium_Scalarmult.crypto_box_beforenm at sodium_scalarmult.ads:98 skipped; SPARK_Mode => Off
+  Sodium_Scalarmult.crypto_box_keypair at sodium_scalarmult.ads:34 skipped; SPARK_Mode => Off
+  Sodium_Scalarmult.crypto_scalarmult at sodium_scalarmult.ads:74 skipped; SPARK_Mode => Off
+  Sodium_Scalarmult.crypto_scalarmult_base at sodium_scalarmult.ads:51 skipped; SPARK_Mode => Off
+  Sodium_Scalarmult.crypto_scalarmult_curve25519 at sodium_scalarmult.ads:66 skipped; SPARK_Mode => Off
+  Sodium_Scalarmult.crypto_scalarmult_curve25519_base at sodium_scalarmult.ads:44 skipped; SPARK_Mode => Off
+in unit sodium_sign, 0 subprograms and packages out of 14 analyzed
+  Sodium_Sign.crypto_sign at sodium_sign.ads:146 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_detached at sodium_sign.ads:91 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519 at sodium_sign.ads:137 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_detached at sodium_sign.ads:82 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_keypair at sodium_sign.ads:39 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_open at sodium_sign.ads:162 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_seed_keypair at sodium_sign.ads:57 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_sk_to_pk at sodium_sign.ads:188 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_sk_to_seed at sodium_sign.ads:198 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_ed25519_verify_detached at sodium_sign.ads:110 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_keypair at sodium_sign.ads:46 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_open at sodium_sign.ads:171 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_seed_keypair at sodium_sign.ads:64 skipped; SPARK_Mode => Off
+  Sodium_Sign.crypto_sign_verify_detached at sodium_sign.ads:118 skipped; SPARK_Mode => Off
+in unit test_comprehensive, 0 subprograms and packages out of 0 analyzed
+in unit test_hybrid_sign, 0 subprograms and packages out of 0 analyzed
+in unit test_minimal, 0 subprograms and packages out of 1 analyzed
+  Test_Minimal at test_minimal.adb:8 skipped; SPARK_Mode => Off
+in unit test_pqc, 0 subprograms and packages out of 1 analyzed
+  Test_PQC at test_pqc.adb:11 skipped; SPARK_Mode => Off
+in unit test_simple_output, 0 subprograms and packages out of 1 analyzed
+  Test_Simple_Output at test_simple_output.adb:3 skipped; SPARK_Mode => Off

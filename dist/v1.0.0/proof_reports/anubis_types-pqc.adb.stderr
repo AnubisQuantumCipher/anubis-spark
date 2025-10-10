@@ -1,0 +1,7 @@
+anubis_types-pqc.ads:152:13: info: implicit aspect Always_Terminates on "Hybrid_Signature_Zeroed" has been proved, subprogram will terminate
+anubis_types-pqc.ads:156:13: info: implicit aspect Always_Terminates on "Both_Signatures_Present" has been proved, subprogram will terminate
+anubis_types-pqc.ads:217:13: info: implicit aspect Always_Terminates on "Combine_Secrets" has been proved, subprogram will terminate
+anubis_types-pqc.ads:220:18: info: range check proved
+anubis_types-pqc.ads:225:15: info: postcondition proved
+anubis_types-pqc.ads:226:30: info: range check proved
+anubis_types-pqc.ads:227:30: info: range check proved

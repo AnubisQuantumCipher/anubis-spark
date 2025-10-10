@@ -1,0 +1,49 @@
+[
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Shared_Secret",
+  "location": "anubis_types-pqc.ads:190:9",
+  "Size": 520,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Classical_Secret",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Pq_Secret",
+      "Position": 32,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Valid",
+      "Position": 64,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Signature",
+  "location": "anubis_types-pqc.ads:198:9",
+  "Size": 37528,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "Ed25519_Sig",
+      "Position":  0,
+      "First_Bit": 0,
+      "Size": 512
+    },
+    {
+      "name": "Ml_Dsa_Sig",
+      "Position": 64,
+      "First_Bit": 0,
+      "Size": 37016
+    }
+  ]
+}
+]

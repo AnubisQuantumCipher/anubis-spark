@@ -1,0 +1,85 @@
+[
+{
+  "name": "Anubis_Types.Storage.Magic",
+  "location": "anubis_types-storage.adb:14:4",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Version",
+  "location": "anubis_types-storage.adb:15:4",
+  "Size": 16,
+  "Alignment": 2
+}
+,
+{
+  "name": "Anubis_Types.Storage.Key_Type_Identity",
+  "location": "anubis_types-storage.adb:16:4",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Storage.Generate_Identity.Op_Success",
+  "location": "anubis_types-storage.adb:26:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Storage.Save_Identity.File_Handle",
+  "location": "anubis_types-storage.adb:95:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Save_Identity.File_Stream",
+  "location": "anubis_types-storage.adb:96:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.File_Handle",
+  "location": "anubis_types-storage.adb:171:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.File_Stream",
+  "location": "anubis_types-storage.adb:172:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.Magic_Bytes",
+  "location": "anubis_types-storage.adb:173:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.Version_Bytes",
+  "location": "anubis_types-storage.adb:174:7",
+  "Size": 16,
+  "Alignment": 2
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.Key_Type",
+  "location": "anubis_types-storage.adb:175:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Storage.Load_Identity.Stream_Byte",
+  "location": "anubis_types-storage.adb:176:7",
+  "Size": 8,
+  "Alignment": 1
+}
+]

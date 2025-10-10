@@ -1,0 +1,52 @@
+
+anubis_types-file_crypto.adb:86:10: error: unmatched actual "X25519_Ephemeral_Public" in call
+   86 |         X25519_Ephemeral_Public => Ephemeral_X25519_PK,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:244:28: error: invalid prefix in selected component "File_Signature"
+  244 |                  for B of File_Signature.Ed25519_Sig.Data loop
+      |                           ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:245:56: error: "B" is undefined (more references follow)
+  245 |                     Byte'Write (Stream (Update_File), B);
+      |                                                       ^ here
+
+anubis_types-file_crypto.adb:249:28: error: invalid prefix in selected component "File_Signature"
+  249 |                  for B of File_Signature.ML_DSA_Sig.Data loop
+      |                           ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:321:22: error: invalid prefix in selected component "File_Signature"
+  321 |            for I in File_Signature.Ed25519_Sig.Data'Range loop
+      |                     ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:322:39: error: invalid prefix in selected component "File_Signature"
+  322 |               Byte_IO.Write (Output, File_Signature.Ed25519_Sig.Data (I));
+      |                                      ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:324:22: error: invalid prefix in selected component "File_Signature"
+  324 |            for I in File_Signature.ML_DSA_Sig.Data'Range loop
+      |                     ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:325:39: error: invalid prefix in selected component "File_Signature"
+  325 |               Byte_IO.Write (Output, File_Signature.ML_DSA_Sig.Data (I));
+      |                                      ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:435:16: error: invalid prefix in selected component "File_Signature"
+  435 |      for I in File_Signature.Ed25519_Sig.Data'Range loop
+      |               ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:436:31: error: invalid prefix in selected component "File_Signature"
+  436 |         Byte_IO.Read (Input, File_Signature.Ed25519_Sig.Data (I));
+      |                              ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:439:16: error: invalid prefix in selected component "File_Signature"
+  439 |      for I in File_Signature.ML_DSA_Sig.Data'Range loop
+      |               ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:440:31: error: invalid prefix in selected component "File_Signature"
+  440 |         Byte_IO.Read (Input, File_Signature.ML_DSA_Sig.Data (I));
+      |                              ^~~~~~~~~~~~~~
+
+anubis_types-file_crypto.adb:449:10: error: "Hybrid_Decapsulate" not declared in "PQC"
+  449 |      PQC.Hybrid_Decapsulate (
+      |      ~~~^~~~~~~~~~~~~~~~~~~

@@ -6,6 +6,17 @@ pragma SPARK_Mode (On);
 
 package body Anubis_Key_Manager is
 
+   procedure Initialize (Key : out Managed_Key) is
+   begin
+      Key.Key_Material := (others => 0);
+      Key.Length := 0;
+      Key.Purpose := Encryption;
+      Key.Status := Uninitialized;
+      Key.Usage_Count := 0;
+      Key.Policy := Default_Rotation;
+      Key.Valid := False;
+   end Initialize;
+
    procedure Create_Managed_Key (
       Key_Data   : in     Byte_Array;
       Purpose    : in     Key_Purpose;
@@ -14,6 +25,8 @@ package body Anubis_Key_Manager is
       Success    : out    Boolean
    ) is
    begin
+      Initialize (Managed);
+
       if Key_Data'Length > Managed.Key_Material'Length then
          Success := False;
          return;
@@ -21,9 +34,16 @@ package body Anubis_Key_Manager is
 
       -- Copy key material
       for I in Key_Data'Range loop
-         pragma Loop_Invariant (I >= Key_Data'First);
+         pragma Loop_Invariant
+           (for all J in Key_Data'First .. I - 1 =>
+              Managed.Key_Material (J - Key_Data'First + 1) = Key_Data (J));
          pragma Loop_Variant (Increases => I);
-         Managed.Key_Material (I - Key_Data'First + 1) := Key_Data (I);
+         declare
+            Dest_Index : constant Positive := I - Key_Data'First + 1;
+         begin
+            pragma Assert (Dest_Index in Managed.Key_Material'Range);
+            Managed.Key_Material (Dest_Index) := Key_Data (I);
+         end;
       end loop;
 
       Managed.Length := Key_Data'Length;

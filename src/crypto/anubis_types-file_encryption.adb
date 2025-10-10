@@ -10,12 +10,9 @@ with Ada.Streams; use Ada.Streams;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 with Sodium_Common;
-with System;
 with Interfaces.C;
 
-package body Anubis_File_Encryption is
-
-   package Byte_IO is new Ada.Sequential_IO (Byte);
+package body Anubis_Types.File_Encryption is
 
    -------------------------------------------------------------------------
    -- Helper: Generate Random Nonce
@@ -86,7 +83,7 @@ package body Anubis_File_Encryption is
       Recipient_X25519_PK     : in     X25519_Public_Key;
       Recipient_ML_KEM_PK     : in     ML_KEM_Public_Key;
       Ephemeral_X25519_PK     : in     X25519_Public_Key;
-      ML_KEM_Ciphertext       : in     ML_KEM_Ciphertext;
+      ML_KEM_CT               : in     ML_KEM_Ciphertext;
       Nonce                   : in     XChaCha20_Nonce;
       Sender_Ed25519_SK       : in     Ed25519_Secret_Key;
       Sender_ML_DSA_SK        : in     ML_DSA_Secret_Key;
@@ -94,7 +91,7 @@ package body Anubis_File_Encryption is
       Success                 : out    Boolean
    ) is
       -- Data to be signed (everything except the signature fields)
-      Header_To_Sign : Byte_Array (1 .. 3_236);  -- Up to nonce
+      Header_To_Sign : Byte_Array (1 .. 3_238);  -- Up to and including nonce
       Sign_Success   : Boolean;
    begin
       -- Fill magic and version
@@ -113,12 +110,13 @@ package body Anubis_File_Encryption is
       Header.Recipient_X25519 := Recipient_X25519_PK;
       Header.Recipient_ML_KEM := Recipient_ML_KEM_PK;
       Header.Ephemeral_X25519 := Ephemeral_X25519_PK;
-      Header.ML_KEM_CT := ML_KEM_Ciphertext;
+      Header.ML_KEM_CT := ML_KEM_CT;
       Header.Nonce := Nonce;
 
       -- Build message to sign (all header data up to signature)
       declare
          Offset : Natural := 0;
+         pragma Unreferenced (Offset);
       begin
          -- Magic
          Header_To_Sign (1 .. 8) := Header.Magic;
@@ -145,7 +143,7 @@ package body Anubis_File_Encryption is
          Offset := 1_646;
 
          -- ML-KEM Ciphertext
-         Header_To_Sign (1_647 .. 3_214) := ML_KEM_Ciphertext.Data;
+         Header_To_Sign (1_647 .. 3_214) := ML_KEM_CT.Data;
          Offset := 3_214;
 
          -- Nonce
@@ -170,8 +168,11 @@ package body Anubis_File_Encryption is
          end if;
 
          -- Extract signatures from hybrid signature
-         Header.Ed25519_Sig := Hybrid_Sig.Ed25519_Sig;
-         Header.ML_DSA_Sig := Hybrid_Sig.ML_DSA_Sig;
+         PQC.Get_Signature_Components (
+            Sig         => Hybrid_Sig,
+            Ed25519_Sig => Header.Ed25519_Sig,
+            ML_DSA_Sig  => Header.ML_DSA_Sig
+         );
       end;
 
       Success := True;
@@ -188,7 +189,7 @@ package body Anubis_File_Encryption is
       Recipient_X25519_PK     : out    X25519_Public_Key;
       Recipient_ML_KEM_PK     : out    ML_KEM_Public_Key;
       Ephemeral_X25519_PK     : out    X25519_Public_Key;
-      ML_KEM_Ciphertext       : out    ML_KEM_Ciphertext;
+      ML_KEM_CT               : out    ML_KEM_Ciphertext;
       Nonce                   : out    XChaCha20_Nonce;
       Success                 : out    Boolean
    ) is
@@ -241,8 +242,8 @@ package body Anubis_File_Encryption is
       end loop;
 
       -- Parse ML-KEM ciphertext
-      for I in ML_KEM_Ciphertext.Data'Range loop
-         ML_KEM_Ciphertext.Data (I) := Header_Data (Offset);
+      for I in ML_KEM_CT.Data'Range loop
+         ML_KEM_CT.Data (I) := Header_Data (Offset);
          Offset := Offset + 1;
       end loop;
 
@@ -253,16 +254,27 @@ package body Anubis_File_Encryption is
       end loop;
 
       -- Parse Ed25519 signature
-      for I in Hybrid_Sig.Ed25519_Sig.Data'Range loop
-         Hybrid_Sig.Ed25519_Sig.Data (I) := Header_Data (Offset);
-         Offset := Offset + 1;
-      end loop;
+      declare
+         Ed_Sig : Ed25519_Signature;
+         DSA_Sig : ML_DSA_Signature;
+      begin
+         for I in Ed_Sig.Data'Range loop
+            Ed_Sig.Data (I) := Header_Data (Offset);
+            Offset := Offset + 1;
+         end loop;
 
-      -- Parse ML-DSA signature
-      for I in Hybrid_Sig.ML_DSA_Sig.Data'Range loop
-         Hybrid_Sig.ML_DSA_Sig.Data (I) := Header_Data (Offset);
-         Offset := Offset + 1;
-      end loop;
+         -- Parse ML-DSA signature
+         for I in DSA_Sig.Data'Range loop
+            DSA_Sig.Data (I) := Header_Data (Offset);
+            Offset := Offset + 1;
+         end loop;
+
+         PQC.Set_Signature_Components (
+            Sig         => Hybrid_Sig,
+            Ed25519_Sig => Ed_Sig,
+            ML_DSA_Sig  => DSA_Sig
+         );
+      end;
 
       -- Build message to verify (header without signatures)
       Header_To_Verify (1 .. 3_238) := Header_Data (Header_Data'First .. Header_Data'First + 3_237);
@@ -317,9 +329,10 @@ package body Anubis_File_Encryption is
    begin
       -- Step 1: Read plaintext file
       declare
+         type Plaintext_Access is access Stream_Element_Array;
          File_Stream : Stream_Access;
          File_Size   : Stream_Element_Count;
-         Plaintext   : Stream_Element_Array (1 .. 1_000_000);  -- Max 1MB for now
+         Plaintext   : Plaintext_Access;
          Last        : Stream_Element_Offset;
       begin
          begin
@@ -331,33 +344,25 @@ package body Anubis_File_Encryption is
          end;
 
          File_Stream := Stream (Input_File);
-         File_Size := Size (Input_File);
+         File_Size := Stream_Element_Count (Size (Input_File));
 
-         if File_Size > Plaintext'Length then
+         if File_Size > 2_200_000_000 then
             Close (Input_File);
             Success := False;
             return;
          end if;
 
-         Read (File_Stream.all, Plaintext, Last);
+         -- Allocate buffer on heap
+         Plaintext := new Stream_Element_Array (1 .. File_Size);
+
+         Read (File_Stream.all, Plaintext.all, Last);
          Close (Input_File);
 
-         -- Step 2: Generate ephemeral X25519 keypair
-         Classical.X25519_Generate_Keypair (
-            Public_Key => Ephemeral_X25519_PK,
-            Secret_Key => Ephemeral_X25519_SK,
-            Success    => Op_Success
-         );
-
-         if not Op_Success then
-            Success := False;
-            return;
-         end if;
-
-         -- Step 3: Perform hybrid key exchange
+         -- Step 2: Perform hybrid key exchange (generates ephemeral keypair internally)
          PQC.Hybrid_Encapsulate (
             X25519_Public           => Recipient_X25519_PK,
             ML_KEM_Public           => Recipient_ML_KEM_PK,
+            X25519_Ephemeral_Public => Ephemeral_X25519_PK,
             X25519_Ephemeral_Secret => Ephemeral_X25519_SK,
             Ciphertext              => ML_KEM_CT,
             Hybrid_Secret           => Hybrid_Secret,
@@ -370,7 +375,7 @@ package body Anubis_File_Encryption is
             return;
          end if;
 
-         -- Step 4: Derive encryption key
+         -- Step 3: Derive encryption key
          PQC.Derive_Encryption_Key (
             Hybrid_Secret  => Hybrid_Secret,
             Encryption_Key => Encryption_Key,
@@ -383,24 +388,29 @@ package body Anubis_File_Encryption is
             return;
          end if;
 
-         -- Step 5: Generate nonce
+         -- Step 4: Generate nonce
          Generate_Nonce (Nonce);
 
-         -- Step 6: Encrypt data
+         -- Step 5: Encrypt data
          declare
-            Plain_Bytes  : Byte_Array (1 .. Natural (Last));
-            Cipher_Bytes : Byte_Array (1 .. Natural (Last));
+            type Byte_Array_Access is access Byte_Array;
+            Plain_Bytes  : Byte_Array_Access;
+            Cipher_Bytes : Byte_Array_Access;
          begin
+            -- Allocate on heap
+            Plain_Bytes := new Byte_Array (1 .. Natural (Last));
+            Cipher_Bytes := new Byte_Array (1 .. Natural (Last));
+
             -- Convert Stream_Element_Array to Byte_Array
             for I in Plain_Bytes'Range loop
                Plain_Bytes (I) := Byte (Plaintext (Stream_Element_Offset (I)));
             end loop;
 
             Classical.XChaCha20_Encrypt (
-               Plaintext  => Plain_Bytes,
+               Plaintext  => Plain_Bytes.all,
                Key        => Encryption_Key,
                Nonce      => Nonce,
-               Ciphertext => Cipher_Bytes,
+               Ciphertext => Cipher_Bytes.all,
                Auth_Tag   => Auth_Tag,
                Success    => Op_Success
             );
@@ -412,12 +422,12 @@ package body Anubis_File_Encryption is
                return;
             end if;
 
-            -- Step 7: Create header
+            -- Step 6: Create header
             Create_Header (
                Recipient_X25519_PK => Recipient_X25519_PK,
                Recipient_ML_KEM_PK => Recipient_ML_KEM_PK,
                Ephemeral_X25519_PK => Ephemeral_X25519_PK,
-               ML_KEM_Ciphertext   => ML_KEM_CT,
+               ML_KEM_CT           => ML_KEM_CT,
                Nonce               => Nonce,
                Sender_Ed25519_SK   => Sender_Ed25519_SK,
                Sender_ML_DSA_SK    => Sender_ML_DSA_SK,
@@ -432,7 +442,7 @@ package body Anubis_File_Encryption is
                return;
             end if;
 
-            -- Step 8: Write encrypted file
+            -- Step 7: Write encrypted file
             declare
                Output_Stream : Stream_Access;
             begin
@@ -536,9 +546,10 @@ package body Anubis_File_Encryption is
    begin
       -- Step 1: Read encrypted file
       declare
+         type Encrypted_Access is access Stream_Element_Array;
          File_Stream : Stream_Access;
          File_Size   : Stream_Element_Count;
-         Encrypted   : Stream_Element_Array (1 .. 2_000_000);  -- Max 2MB (header + 1MB data + overhead)
+         Encrypted   : Encrypted_Access;
          Last        : Stream_Element_Offset;
       begin
          begin
@@ -550,9 +561,9 @@ package body Anubis_File_Encryption is
          end;
 
          File_Stream := Stream (Input_File);
-         File_Size := Size (Input_File);
+         File_Size := Stream_Element_Count (Size (Input_File));
 
-         if File_Size > Encrypted'Length then
+         if File_Size > 2_200_010_000 then
             Close (Input_File);
             Success := False;
             return;
@@ -565,16 +576,22 @@ package body Anubis_File_Encryption is
             return;
          end if;
 
-         Read (File_Stream.all, Encrypted, Last);
+         -- Allocate buffer on heap
+         Encrypted := new Stream_Element_Array (1 .. File_Size);
+
+         Read (File_Stream.all, Encrypted.all, Last);
          Close (Input_File);
 
          -- Step 2: Parse and verify header
          declare
+            type Byte_Array_Access is access Byte_Array;
             Header_Bytes : Byte_Array (1 .. Header_Size);
             Ciphertext_Size : constant Natural := Natural (Last) - Header_Size - 16;
-            Ciphertext_Bytes : Byte_Array (1 .. Ciphertext_Size);
+            Ciphertext_Bytes : Byte_Array_Access;
             Auth_Tag : Poly1305_Tag;
          begin
+            -- Allocate ciphertext buffer on heap
+            Ciphertext_Bytes := new Byte_Array (1 .. Ciphertext_Size);
             -- Extract header
             for I in Header_Bytes'Range loop
                Header_Bytes (I) := Byte (Encrypted (Stream_Element_Offset (I)));
@@ -588,7 +605,7 @@ package body Anubis_File_Encryption is
                Recipient_X25519_PK => Parsed_Recipient_X25519,
                Recipient_ML_KEM_PK => Parsed_Recipient_ML_KEM,
                Ephemeral_X25519_PK => Ephemeral_X25519_PK,
-               ML_KEM_Ciphertext   => ML_KEM_CT,
+               ML_KEM_CT           => ML_KEM_CT,
                Nonce               => Nonce,
                Success             => Op_Success
             );
@@ -604,7 +621,7 @@ package body Anubis_File_Encryption is
                X25519_Secret       => Recipient_X25519_SK,
                ML_KEM_Secret       => Recipient_ML_KEM_SK,
                X25519_Ephemeral    => Ephemeral_X25519_PK,
-               ML_KEM_Ciphertext   => ML_KEM_CT,
+               ML_KEM_CT           => ML_KEM_CT,
                Hybrid_Secret       => Hybrid_Secret,
                Success             => Op_Success
             );
@@ -639,14 +656,18 @@ package body Anubis_File_Encryption is
 
             -- Step 5: Decrypt and verify data
             declare
-               Plaintext_Bytes : Byte_Array (1 .. Ciphertext_Size);
+               type Plaintext_Array_Access is access Byte_Array;
+               Plaintext_Bytes : Plaintext_Array_Access;
             begin
+               -- Allocate plaintext buffer on heap
+               Plaintext_Bytes := new Byte_Array (1 .. Ciphertext_Size);
+
                Classical.XChaCha20_Decrypt (
-                  Ciphertext => Ciphertext_Bytes,
+                  Ciphertext => Ciphertext_Bytes.all,
                   Key        => Decryption_Key,
                   Nonce      => Nonce,
                   Auth_Tag   => Auth_Tag,
-                  Plaintext  => Plaintext_Bytes,
+                  Plaintext  => Plaintext_Bytes.all,
                   Success    => Op_Success
                );
 
@@ -689,4 +710,4 @@ package body Anubis_File_Encryption is
       end;
    end Decrypt_File;
 
-end Anubis_File_Encryption;
+end Anubis_Types.File_Encryption;
