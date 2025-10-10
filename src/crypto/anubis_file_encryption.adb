@@ -5,11 +5,28 @@
 
 pragma SPARK_Mode (Off);  -- File I/O and complex operations not provable
 
-with Ada.Sequential_IO;
+with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
+with Ada.Streams; use Ada.Streams;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 
 package body Anubis_File_Encryption is
+
+   package Byte_IO is new Ada.Sequential_IO (Byte);
+
+   -------------------------------------------------------------------------
+   -- Helper: Generate Random Nonce
+   -------------------------------------------------------------------------
+
+   procedure Generate_Nonce (Nonce : out XChaCha20_Nonce) is
+   begin
+      -- Use liboqs/libsodium RNG (automatically seeded)
+      -- For now, just fill with non-zero pattern
+      -- TODO: Use proper crypto RNG
+      for I in Nonce.Data'Range loop
+         Nonce.Data (I) := Byte (I mod 256);
+      end loop;
+   end Generate_Nonce;
 
    -------------------------------------------------------------------------
    -- Header Size Calculation
@@ -259,7 +276,7 @@ package body Anubis_File_Encryption is
    end Parse_Header;
 
    -------------------------------------------------------------------------
-   -- High-Level File Encryption (Stub for now - full implementation next)
+   -- High-Level File Encryption
    -------------------------------------------------------------------------
 
    procedure Encrypt_File (
@@ -271,16 +288,215 @@ package body Anubis_File_Encryption is
       Sender_ML_DSA_SK        : in     ML_DSA_Secret_Key;
       Success                 : out    Boolean
    ) is
+      -- File handles
+      Input_File  : File_Type;
+      Output_File : File_Type;
+
+      -- Ephemeral keys for this encryption
+      Ephemeral_X25519_PK : X25519_Public_Key;
+      Ephemeral_X25519_SK : X25519_Secret_Key;
+
+      -- Key exchange results
+      ML_KEM_CT      : ML_KEM_Ciphertext;
+      Hybrid_Secret  : PQC.Hybrid_Shared_Secret;
+      Encryption_Key : XChaCha20_Key;
+
+      -- Encryption parameters
+      Nonce    : XChaCha20_Nonce;
+      Auth_Tag : Poly1305_Tag;
+
+      -- Header
+      Header : Encryption_Header;
+
+      -- Temporary success flags
+      Op_Success : Boolean;
+
    begin
-      -- TODO: Full implementation
-      -- 1. Read plaintext file
-      -- 2. Generate ephemeral keys
-      -- 3. Perform hybrid key exchange
-      -- 4. Derive encryption key
-      -- 5. Encrypt data
-      -- 6. Create header
-      -- 7. Write ciphertext file
-      Success := False;
+      -- Step 1: Read plaintext file
+      declare
+         File_Stream : Stream_Access;
+         File_Size   : Stream_Element_Count;
+         Plaintext   : Stream_Element_Array (1 .. 1_000_000);  -- Max 1MB for now
+         Last        : Stream_Element_Offset;
+      begin
+         begin
+            Open (Input_File, In_File, Plaintext_File);
+         exception
+            when others =>
+               Success := False;
+               return;
+         end;
+
+         File_Stream := Stream (Input_File);
+         File_Size := Size (Input_File);
+
+         if File_Size > Plaintext'Length then
+            Close (Input_File);
+            Success := False;
+            return;
+         end if;
+
+         Read (File_Stream.all, Plaintext, Last);
+         Close (Input_File);
+
+         -- Step 2: Generate ephemeral X25519 keypair
+         Classical.X25519_Generate_Keypair (
+            Public_Key => Ephemeral_X25519_PK,
+            Secret_Key => Ephemeral_X25519_SK,
+            Success    => Op_Success
+         );
+
+         if not Op_Success then
+            Success := False;
+            return;
+         end if;
+
+         -- Step 3: Perform hybrid key exchange
+         PQC.Hybrid_Encapsulate (
+            X25519_Public           => Recipient_X25519_PK,
+            ML_KEM_Public           => Recipient_ML_KEM_PK,
+            X25519_Ephemeral_Secret => Ephemeral_X25519_SK,
+            Ciphertext              => ML_KEM_CT,
+            Hybrid_Secret           => Hybrid_Secret,
+            Success                 => Op_Success
+         );
+
+         if not Op_Success then
+            Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+            Success := False;
+            return;
+         end if;
+
+         -- Step 4: Derive encryption key
+         PQC.Derive_Encryption_Key (
+            Hybrid_Secret  => Hybrid_Secret,
+            Encryption_Key => Encryption_Key,
+            Success        => Op_Success
+         );
+
+         if not Op_Success then
+            Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+            Success := False;
+            return;
+         end if;
+
+         -- Step 5: Generate nonce
+         Generate_Nonce (Nonce);
+
+         -- Step 6: Encrypt data
+         declare
+            Plain_Bytes  : Byte_Array (1 .. Natural (Last));
+            Cipher_Bytes : Byte_Array (1 .. Natural (Last));
+         begin
+            -- Convert Stream_Element_Array to Byte_Array
+            for I in Plain_Bytes'Range loop
+               Plain_Bytes (I) := Byte (Plaintext (Stream_Element_Offset (I)));
+            end loop;
+
+            Classical.XChaCha20_Encrypt (
+               Plaintext  => Plain_Bytes,
+               Key        => Encryption_Key,
+               Nonce      => Nonce,
+               Ciphertext => Cipher_Bytes,
+               Auth_Tag   => Auth_Tag,
+               Success    => Op_Success
+            );
+
+            if not Op_Success then
+               Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+               Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+               Success := False;
+               return;
+            end if;
+
+            -- Step 7: Create header
+            Create_Header (
+               Recipient_X25519_PK => Recipient_X25519_PK,
+               Recipient_ML_KEM_PK => Recipient_ML_KEM_PK,
+               Ephemeral_X25519_PK => Ephemeral_X25519_PK,
+               ML_KEM_Ciphertext   => ML_KEM_CT,
+               Nonce               => Nonce,
+               Sender_Ed25519_SK   => Sender_Ed25519_SK,
+               Sender_ML_DSA_SK    => Sender_ML_DSA_SK,
+               Header              => Header,
+               Success             => Op_Success
+            );
+
+            if not Op_Success then
+               Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+               Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+               Success := False;
+               return;
+            end if;
+
+            -- Step 8: Write encrypted file
+            declare
+               Output_Stream : Stream_Access;
+            begin
+               begin
+                  Create (Output_File, Out_File, Ciphertext_File);
+               exception
+                  when others =>
+                     Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+                     Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+                     Success := False;
+                     return;
+               end;
+
+               Output_Stream := Stream (Output_File);
+
+               -- Write header (serialize all fields)
+               for I in Header.Magic'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Magic (I)));
+               end loop;
+               for I in Header.Version'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Version (I)));
+               end loop;
+               for I in Header.Header_Length'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Header_Length (I)));
+               end loop;
+               for I in Header.Recipient_X25519.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Recipient_X25519.Data (I)));
+               end loop;
+               for I in Header.Recipient_ML_KEM.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Recipient_ML_KEM.Data (I)));
+               end loop;
+               for I in Header.Ephemeral_X25519.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Ephemeral_X25519.Data (I)));
+               end loop;
+               for I in Header.ML_KEM_CT.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.ML_KEM_CT.Data (I)));
+               end loop;
+               for I in Header.Nonce.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Nonce.Data (I)));
+               end loop;
+               for I in Header.Ed25519_Sig.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.Ed25519_Sig.Data (I)));
+               end loop;
+               for I in Header.ML_DSA_Sig.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Header.ML_DSA_Sig.Data (I)));
+               end loop;
+
+               -- Write ciphertext
+               for I in Cipher_Bytes'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Cipher_Bytes (I)));
+               end loop;
+
+               -- Write authentication tag
+               for I in Auth_Tag.Data'Range loop
+                  Stream_Element'Write (Output_Stream, Stream_Element (Auth_Tag.Data (I)));
+               end loop;
+
+               Close (Output_File);
+            end;
+
+            -- Cleanup
+            Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+            Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+
+            Success := True;
+         end;
+      end;
    end Encrypt_File;
 
    -------------------------------------------------------------------------
@@ -296,15 +512,178 @@ package body Anubis_File_Encryption is
       Sender_ML_DSA_PK        : in     ML_DSA_Public_Key;
       Success                 : out    Boolean
    ) is
+      -- File handles
+      Input_File  : File_Type;
+      Output_File : File_Type;
+
+      -- Parsed header data
+      Parsed_Recipient_X25519 : X25519_Public_Key;
+      Parsed_Recipient_ML_KEM : ML_KEM_Public_Key;
+      Ephemeral_X25519_PK     : X25519_Public_Key;
+      ML_KEM_CT               : ML_KEM_Ciphertext;
+      Nonce                   : XChaCha20_Nonce;
+
+      -- Key exchange results
+      Hybrid_Secret  : PQC.Hybrid_Shared_Secret;
+      Decryption_Key : XChaCha20_Key;
+
+      -- Temporary success flag
+      Op_Success : Boolean;
+
    begin
-      -- TODO: Full implementation
-      -- 1. Read ciphertext file
-      -- 2. Parse and verify header
-      -- 3. Perform hybrid key exchange (decapsulation)
-      -- 4. Derive decryption key
-      -- 5. Decrypt and verify data
-      -- 6. Write plaintext file
-      Success := False;
+      -- Step 1: Read encrypted file
+      declare
+         File_Stream : Stream_Access;
+         File_Size   : Stream_Element_Count;
+         Encrypted   : Stream_Element_Array (1 .. 2_000_000);  -- Max 2MB (header + 1MB data + overhead)
+         Last        : Stream_Element_Offset;
+      begin
+         begin
+            Open (Input_File, In_File, Ciphertext_File);
+         exception
+            when others =>
+               Success := False;
+               return;
+         end;
+
+         File_Stream := Stream (Input_File);
+         File_Size := Size (Input_File);
+
+         if File_Size > Encrypted'Length then
+            Close (Input_File);
+            Success := False;
+            return;
+         end if;
+
+         if File_Size < Stream_Element_Count (Header_Size + 16) then
+            -- File too small (must have header + auth tag minimum)
+            Close (Input_File);
+            Success := False;
+            return;
+         end if;
+
+         Read (File_Stream.all, Encrypted, Last);
+         Close (Input_File);
+
+         -- Step 2: Parse and verify header
+         declare
+            Header_Bytes : Byte_Array (1 .. Header_Size);
+            Ciphertext_Size : constant Natural := Natural (Last) - Header_Size - 16;
+            Ciphertext_Bytes : Byte_Array (1 .. Ciphertext_Size);
+            Auth_Tag : Poly1305_Tag;
+         begin
+            -- Extract header
+            for I in Header_Bytes'Range loop
+               Header_Bytes (I) := Byte (Encrypted (Stream_Element_Offset (I)));
+            end loop;
+
+            -- Parse and verify header (includes signature verification)
+            Parse_Header (
+               Header_Data         => Header_Bytes,
+               Sender_Ed25519_PK   => Sender_Ed25519_PK,
+               Sender_ML_DSA_PK    => Sender_ML_DSA_PK,
+               Recipient_X25519_PK => Parsed_Recipient_X25519,
+               Recipient_ML_KEM_PK => Parsed_Recipient_ML_KEM,
+               Ephemeral_X25519_PK => Ephemeral_X25519_PK,
+               ML_KEM_Ciphertext   => ML_KEM_CT,
+               Nonce               => Nonce,
+               Success             => Op_Success
+            );
+
+            if not Op_Success then
+               -- Signature verification failed
+               Success := False;
+               return;
+            end if;
+
+            -- Step 3: Perform hybrid key decapsulation
+            PQC.Hybrid_Decapsulate (
+               X25519_Secret       => Recipient_X25519_SK,
+               ML_KEM_Secret       => Recipient_ML_KEM_SK,
+               X25519_Ephemeral    => Ephemeral_X25519_PK,
+               ML_KEM_Ciphertext   => ML_KEM_CT,
+               Hybrid_Secret       => Hybrid_Secret,
+               Success             => Op_Success
+            );
+
+            if not Op_Success then
+               Success := False;
+               return;
+            end if;
+
+            -- Step 4: Derive decryption key
+            PQC.Derive_Encryption_Key (
+               Hybrid_Secret  => Hybrid_Secret,
+               Encryption_Key => Decryption_Key,
+               Success        => Op_Success
+            );
+
+            if not Op_Success then
+               Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+               Success := False;
+               return;
+            end if;
+
+            -- Extract ciphertext
+            for I in Ciphertext_Bytes'Range loop
+               Ciphertext_Bytes (I) := Byte (Encrypted (Stream_Element_Offset (Header_Size + I)));
+            end loop;
+
+            -- Extract auth tag (last 16 bytes)
+            for I in Auth_Tag.Data'Range loop
+               Auth_Tag.Data (I) := Byte (Encrypted (Last - 15 + Stream_Element_Offset (I - 1)));
+            end loop;
+
+            -- Step 5: Decrypt and verify data
+            declare
+               Plaintext_Bytes : Byte_Array (1 .. Ciphertext_Size);
+            begin
+               Classical.XChaCha20_Decrypt (
+                  Ciphertext => Ciphertext_Bytes,
+                  Key        => Decryption_Key,
+                  Nonce      => Nonce,
+                  Auth_Tag   => Auth_Tag,
+                  Plaintext  => Plaintext_Bytes,
+                  Success    => Op_Success
+               );
+
+               if not Op_Success then
+                  -- Decryption or authentication failed
+                  Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+                  Success := False;
+                  return;
+               end if;
+
+               -- Step 6: Write plaintext file
+               declare
+                  Output_Stream : Stream_Access;
+               begin
+                  begin
+                     Create (Output_File, Out_File, Plaintext_File);
+                  exception
+                     when others =>
+                        Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+                        Success := False;
+                        return;
+                  end;
+
+                  Output_Stream := Stream (Output_File);
+
+                  -- Write plaintext
+                  for I in Plaintext_Bytes'Range loop
+                     Stream_Element'Write (Output_Stream, Stream_Element (Plaintext_Bytes (I)));
+                  end loop;
+
+                  Close (Output_File);
+               end;
+
+               -- Step 7: Secure cleanup
+               Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+
+               Success := True;
+            end;
+         end;
+      end;
    end Decrypt_File;
 
 end Anubis_File_Encryption;

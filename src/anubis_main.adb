@@ -10,6 +10,7 @@ with Ada.Command_Line; use Ada.Command_Line;
 with Anubis_Types; use Anubis_Types;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
+with Anubis_Types.Storage;
 
 procedure Anubis_Main is
 
@@ -245,8 +246,66 @@ begin
       elsif Command = "test" or Command = "selftest" then
          Run_Self_Test;
       elsif Command = "keygen" then
-         Put_Line ("Keygen command not yet implemented.");
-         Put_Line ("Use: anubis-spark test");
+         -- Parse --output argument
+         declare
+            Output_File : constant String := (if Argument_Count >= 3 and then Argument (2) = "--output"
+                                               then Argument (3)
+                                               else "identity.key");
+            Identity : Storage.Identity_Keypair;
+            Success : Boolean;
+         begin
+            Print_Banner;
+            Put_Line ("Generating Hybrid Post-Quantum Identity...");
+            Put_Line ("═══════════════════════════════════════════════════");
+            New_Line;
+
+            Put ("Generating hybrid keypairs... ");
+            Storage.Generate_Identity (Identity, Success);
+
+            if not Success then
+               Put_Line ("✗ FAILED");
+               Put_Line ("ERROR: Failed to generate identity keypair.");
+               return;
+            end if;
+
+            Put_Line ("✓");
+            Put_Line ("Identity generated successfully!");
+            New_Line;
+
+            Put_Line ("Key Details:");
+            Put_Line ("  X25519 (ECDH):          32-byte public key");
+            Put_Line ("  ML-KEM-1024 (PQ-KEM):   1568-byte public key");
+            Put_Line ("  Ed25519 (Signatures):   32-byte public key");
+            Put_Line ("  ML-DSA-87 (PQ-Sig):     2592-byte public key");
+            New_Line;
+
+            Put ("Saving identity to " & Output_File & "... ");
+            Storage.Save_Identity (Identity, Output_File, Success);
+
+            if not Success then
+               Put_Line ("✗ FAILED");
+               Put_Line ("ERROR: Failed to save identity to file.");
+               Storage.Zeroize_Identity (Identity);
+               return;
+            end if;
+
+            Put_Line ("✓");
+            New_Line;
+            Put_Line ("═══════════════════════════════════════════════════");
+            Put_Line ("Identity saved successfully!");
+            Put_Line ("File: " & Output_File);
+            New_Line;
+            Put_Line ("⚠️  SECURITY NOTICE:");
+            Put_Line ("  This file contains SECRET KEYS. Protect it carefully!");
+            Put_Line ("  - Store in a secure location");
+            Put_Line ("  - Set restrictive file permissions (chmod 600)");
+            Put_Line ("  - Consider encrypting with passphrase (future feature)");
+            Put_Line ("  - Keep backups in secure locations");
+            New_Line;
+
+            -- Cleanup
+            Storage.Zeroize_Identity (Identity);
+         end;
       elsif Command = "encrypt" then
          Put_Line ("Encrypt command not yet implemented.");
          Put_Line ("File encryption infrastructure is ready but needs file I/O.");

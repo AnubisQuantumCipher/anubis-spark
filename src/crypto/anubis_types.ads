@@ -74,7 +74,25 @@ package Anubis_Types is
    -- Key status tracking
    type Key_Status is (Uninitialized, Active, Expired, Revoked, Destroyed);
 
-   -- SPARK contracts: Query functions to check key validity
+   -------------------------------------------------------------------------
+   -- PLATINUM SPARK: Ghost Functions for Verification
+   -------------------------------------------------------------------------
+
+   -- Ghost: Check if a byte array is all zeros
+   function Is_All_Zero (Data : Byte_Array) return Boolean is
+      (for all I in Data'Range => Data (I) = 0)
+   with Ghost;
+
+   -- Ghost: Check if two byte arrays are equal
+   function Arrays_Equal (A, B : Byte_Array) return Boolean is
+      (A'Length = B'Length and then
+       (for all I in A'Range => A (I) = B (I - A'First + B'First)))
+   with Ghost, Pre => A'Length = B'Length;
+
+   -------------------------------------------------------------------------
+   -- SPARK Contracts: Key Validity Predicates
+   -------------------------------------------------------------------------
+
    function Is_Valid (Key : X25519_Secret_Key) return Boolean;
    function Is_Valid (Secret : X25519_Shared_Secret) return Boolean;
    function Is_Valid (Key : Ed25519_Secret_Key) return Boolean;
@@ -85,27 +103,37 @@ package Anubis_Types is
    function Is_Valid (Key : ML_DSA_Secret_Key) return Boolean;
    function Is_Valid (Key : Master_Key) return Boolean;
 
+   -- PLATINUM SPARK: Ghost functions to check if key data is zeroed
+   function Is_Zeroed (Key : X25519_Secret_Key) return Boolean with Ghost;
+   function Is_Zeroed (Key : Ed25519_Secret_Key) return Boolean with Ghost;
+   function Is_Zeroed (Key : ML_KEM_Secret_Key) return Boolean with Ghost;
+   function Is_Zeroed (Key : ML_DSA_Secret_Key) return Boolean with Ghost;
+   function Is_Zeroed (Key : Master_Key) return Boolean with Ghost;
+
+   -------------------------------------------------------------------------
    -- Zeroization: Securely erase keys from memory
-   -- SPARK will verify these are always called when keys go out of scope
+   -- PLATINUM SPARK: Postconditions prove both validity flag AND data zeroed
+   -------------------------------------------------------------------------
+
    procedure Zeroize (Key : in out X25519_Secret_Key) with
-      Post => not Is_Valid (Key);
+      Post => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out Ed25519_Secret_Key) with
-      Post => not Is_Valid (Key);
+      Post => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out ML_KEM_Secret_Key) with
-      Post => not Is_Valid (Key);
+      Post => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out ML_DSA_Secret_Key) with
-      Post => not Is_Valid (Key);
+      Post => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out Master_Key) with
-      Post => not Is_Valid (Key);
+      Post => not Is_Valid (Key) and Is_Zeroed (Key);
 
    -- Zeroize arbitrary byte array (for temporary buffers)
-   -- Platinum SPARK: Postcondition proves all bytes are zero
+   -- PLATINUM SPARK: Postcondition proves all bytes are zero
    procedure Zeroize (Data : in out Byte_Array) with
-      Post => (for all I in Data'Range => Data (I) = 0);
+      Post => Is_All_Zero (Data);
 
 private
 

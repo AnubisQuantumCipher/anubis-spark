@@ -7,7 +7,10 @@ pragma SPARK_Mode (On);
 
 package body Anubis_Types is
 
+   -------------------------------------------------------------------------
    -- Validity checks: Keys are valid if they've been initialized
+   -------------------------------------------------------------------------
+
    function Is_Valid (Key : X25519_Secret_Key) return Boolean is (Key.Valid);
    function Is_Valid (Secret : X25519_Shared_Secret) return Boolean is (Secret.Valid);
    function Is_Valid (Key : Ed25519_Secret_Key) return Boolean is (Key.Valid);
@@ -19,15 +22,34 @@ package body Anubis_Types is
    function Is_Valid (Key : Master_Key) return Boolean is (Key.Valid);
 
    -------------------------------------------------------------------------
+   -- PLATINUM SPARK: Ghost functions for proving zeroization
+   -------------------------------------------------------------------------
+
+   function Is_Zeroed (Key : X25519_Secret_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_Zeroed (Key : Ed25519_Secret_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_Zeroed (Key : ML_KEM_Secret_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_Zeroed (Key : ML_DSA_Secret_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_Zeroed (Key : Master_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   -------------------------------------------------------------------------
    -- Secure Zeroization: Overwrites memory with zeros
-   -- PLATINUM SPARK: Formal postconditions prove zeroization correctness
-   -- SPARK verification ensures keys are properly erased (provably secure)
+   -- PLATINUM SPARK: Loop invariants prove complete zeroization
    -------------------------------------------------------------------------
 
    procedure Zeroize (Key : in out X25519_Secret_Key) is
    begin
       for I in Key.Data'Range loop
-         pragma Loop_Invariant (Key.Valid = Key.Valid'Loop_Entry);
+         pragma Loop_Invariant (for all J in Key.Data'First .. I - 1 => Key.Data (J) = 0);
+         pragma Loop_Variant (Increases => I);
          Key.Data (I) := 0;
       end loop;
       Key.Valid := False;
@@ -36,7 +58,8 @@ package body Anubis_Types is
    procedure Zeroize (Key : in out Ed25519_Secret_Key) is
    begin
       for I in Key.Data'Range loop
-         pragma Loop_Invariant (Key.Valid = Key.Valid'Loop_Entry);
+         pragma Loop_Invariant (for all J in Key.Data'First .. I - 1 => Key.Data (J) = 0);
+         pragma Loop_Variant (Increases => I);
          Key.Data (I) := 0;
       end loop;
       Key.Valid := False;
@@ -45,7 +68,8 @@ package body Anubis_Types is
    procedure Zeroize (Key : in out ML_KEM_Secret_Key) is
    begin
       for I in Key.Data'Range loop
-         pragma Loop_Invariant (Key.Valid = Key.Valid'Loop_Entry);
+         pragma Loop_Invariant (for all J in Key.Data'First .. I - 1 => Key.Data (J) = 0);
+         pragma Loop_Variant (Increases => I);
          Key.Data (I) := 0;
       end loop;
       Key.Valid := False;
@@ -54,7 +78,8 @@ package body Anubis_Types is
    procedure Zeroize (Key : in out ML_DSA_Secret_Key) is
    begin
       for I in Key.Data'Range loop
-         pragma Loop_Invariant (Key.Valid = Key.Valid'Loop_Entry);
+         pragma Loop_Invariant (for all J in Key.Data'First .. I - 1 => Key.Data (J) = 0);
+         pragma Loop_Variant (Increases => I);
          Key.Data (I) := 0;
       end loop;
       Key.Valid := False;
@@ -63,7 +88,8 @@ package body Anubis_Types is
    procedure Zeroize (Key : in out Master_Key) is
    begin
       for I in Key.Data'Range loop
-         pragma Loop_Invariant (Key.Valid = Key.Valid'Loop_Entry);
+         pragma Loop_Invariant (for all J in Key.Data'First .. I - 1 => Key.Data (J) = 0);
+         pragma Loop_Variant (Increases => I);
          Key.Data (I) := 0;
       end loop;
       Key.Valid := False;
