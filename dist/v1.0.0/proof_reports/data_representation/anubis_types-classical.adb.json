@@ -1,0 +1,169 @@
+[
+{
+  "name": "Anubis_Types.Classical.B_13.Init_Result",
+  "location": "anubis_types-classical.adb:486:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.X25519_Generate_Keypair.Status",
+  "location": "anubis_types-classical.adb:28:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.X25519_Compute_Shared.Status",
+  "location": "anubis_types-classical.adb:58:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Zeroize_X25519_Secret.Key_Addr",
+  "location": "anubis_types-classical.adb:86:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Zeroize_X25519_Shared.Secret_Addr",
+  "location": "anubis_types-classical.adb:95:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Generate_Keypair.Status",
+  "location": "anubis_types-classical.adb:110:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Generate_Keypair.Full_Secret",
+  "location": "anubis_types-classical.adb:113:7",
+  "Size": 512,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Sign.Status",
+  "location": "anubis_types-classical.adb:157:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Sign.Signature_Len",
+  "location": "anubis_types-classical.adb:158:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Sign.Full_Secret",
+  "location": "anubis_types-classical.adb:160:7",
+  "Size": 512,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Sign.Temp_Public",
+  "location": "anubis_types-classical.adb:161:7",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Ed25519_Verify.Status",
+  "location": "anubis_types-classical.adb:197:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Zeroize_Ed25519_Secret.Key_Addr",
+  "location": "anubis_types-classical.adb:213:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Xchacha20_Encrypt.Status",
+  "location": "anubis_types-classical.adb:245:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Xchacha20_Encrypt.Ciphertext_Len",
+  "location": "anubis_types-classical.adb:246:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Xchacha20_Encrypt.Temp_Ct",
+  "location": "anubis_types-classical.adb:248:7",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Xchacha20_Decrypt.Status",
+  "location": "anubis_types-classical.adb:297:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Zeroize_Xchacha20_Key.Key_Addr",
+  "location": "anubis_types-classical.adb:329:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Argon2id_Derive_Key.Status",
+  "location": "anubis_types-classical.adb:345:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Argon2id_Derive_Key.Pass_Bytes",
+  "location": "anubis_types-classical.adb:347:7",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Zeroize_Argon2_Key.Key_Addr",
+  "location": "anubis_types-classical.adb:396:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Classical.Hkdf_Derive.Status",
+  "location": "anubis_types-classical.adb:412:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Classical.Hkdf_Derive.Prk",
+  "location": "anubis_types-classical.adb:414:7",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Classical.Hkdf_Derive.Ctx_Bytes",
+  "location": "anubis_types-classical.adb:416:7",
+  "Size": "??",
+  "Alignment": 1
+}
+]

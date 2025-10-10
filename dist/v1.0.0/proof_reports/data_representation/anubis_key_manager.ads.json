@@ -1,0 +1,96 @@
+[
+{
+  "name": "Anubis_Key_Manager.Key_Purpose",
+  "location": "anubis_key_manager.ads:16:9",
+  "Object_Size": 8,
+  "Value_Size": 2,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Key_Manager.Rotation_Policy",
+  "location": "anubis_key_manager.ads:18:9",
+  "Object_Size": 96,
+  "Value_Size": 72,
+  "Alignment": 4,
+  "record": [
+    {
+      "name": "Time_Based_Days",
+      "Position": 0,
+      "First_Bit": 0,
+      "Size": 32
+    },
+    {
+      "name": "Usage_Based_Count",
+      "Position": 4,
+      "First_Bit": 0,
+      "Size": 32
+    },
+    {
+      "name": "Enabled",
+      "Position": 8,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+,
+{
+  "name": "Anubis_Key_Manager.Default_Rotation",
+  "location": "anubis_key_manager.ads:24:4",
+  "Size": 96,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Key_Manager.Managed_Key",
+  "location": "anubis_key_manager.ads:68:9",
+  "Object_Size": 65760,
+  "Value_Size": 65736,
+  "Alignment": 4,
+  "record": [
+    {
+      "name": "Key_Material",
+      "Position":    0,
+      "First_Bit": 0,
+      "Size": 65536
+    },
+    {
+      "name": "Length",
+      "Position": 8192,
+      "First_Bit": 0,
+      "Size": 32
+    },
+    {
+      "name": "Purpose",
+      "Position": 8196,
+      "First_Bit": 0,
+      "Size": 8
+    },
+    {
+      "name": "Status",
+      "Position": 8197,
+      "First_Bit": 0,
+      "Size": 8
+    },
+    {
+      "name": "Usage_Count",
+      "Position": 8200,
+      "First_Bit": 0,
+      "Size": 32
+    },
+    {
+      "name": "Policy",
+      "Position": 8204,
+      "First_Bit": 0,
+      "Size": 96
+    },
+    {
+      "name": "Valid",
+      "Position": 8216,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+]

@@ -1,0 +1,92 @@
+[
+{
+  "name": "Test_Pqc.Success",
+  "location": "test_pqc.adb:13:4",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.Alice_Public",
+  "location": "test_pqc.adb:20:7",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.Alice_Secret",
+  "location": "test_pqc.adb:21:7",
+  "Size": 25352,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.Ciphertext",
+  "location": "test_pqc.adb:24:7",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.Bob_Shared",
+  "location": "test_pqc.adb:25:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.Alice_Shared",
+  "location": "test_pqc.adb:28:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Kem.B_1.Match",
+  "location": "test_pqc.adb:82:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.Alice_Public",
+  "location": "test_pqc.adb:119:7",
+  "Size": 20736,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.Alice_Secret",
+  "location": "test_pqc.adb:120:7",
+  "Size": 39176,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.Message",
+  "location": "test_pqc.adb:123:7",
+  "Size": 88,
+  "Alignment": 8
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.Signature",
+  "location": "test_pqc.adb:137:7",
+  "Size": 37016,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.Is_Valid_Sig",
+  "location": "test_pqc.adb:138:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Pqc.Test_Ml_Dsa.B_2.Tampered_Message",
+  "location": "test_pqc.adb:188:10",
+  "Size": 88,
+  "Alignment": 8
+}
+]

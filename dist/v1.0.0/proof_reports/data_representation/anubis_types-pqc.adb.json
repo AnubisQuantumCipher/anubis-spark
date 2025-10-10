@@ -1,0 +1,183 @@
+[
+{
+  "name": "Anubis_Types.Pqc.Ml_Kem_Generate_Keypair.Status",
+  "location": "anubis_types-pqc.adb:35:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Kem_Encapsulate.Status",
+  "location": "anubis_types-pqc.adb:62:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Kem_Decapsulate.Status",
+  "location": "anubis_types-pqc.adb:90:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Dsa_Generate_Keypair.Status",
+  "location": "anubis_types-pqc.adb:121:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Dsa_Sign.Status",
+  "location": "anubis_types-pqc.adb:148:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Dsa_Sign.Signature_Len",
+  "location": "anubis_types-pqc.adb:149:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Ml_Dsa_Verify.Status",
+  "location": "anubis_types-pqc.adb:169:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Secrets_Match.Addr_A",
+  "location": "anubis_types-pqc.adb:193:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Secrets_Match.Addr_B",
+  "location": "anubis_types-pqc.adb:194:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Secrets_Match.Result",
+  "location": "anubis_types-pqc.adb:195:7",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Zeroize_Shared_Secret.Secret_Addr",
+  "location": "anubis_types-pqc.adb:209:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Zeroize_Ml_Kem_Secret.Key_Addr",
+  "location": "anubis_types-pqc.adb:219:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Zeroize_Ml_Dsa_Secret.Key_Addr",
+  "location": "anubis_types-pqc.adb:228:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.Ml_Kem_Shared",
+  "location": "anubis_types-pqc.adb:246:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.X25519_Shared",
+  "location": "anubis_types-pqc.adb:247:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.X25519_Ephemeral_Pub",
+  "location": "anubis_types-pqc.adb:248:7",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.Pq_Success",
+  "location": "anubis_types-pqc.adb:249:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.Classical_Success",
+  "location": "anubis_types-pqc.adb:250:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.Combined_Input",
+  "location": "anubis_types-pqc.adb:251:7",
+  "Size": 512,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Encapsulate.B_5.Temp_Key",
+  "location": "anubis_types-pqc.adb:304:10",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Derive_Encryption_Key.B_7.Temp_Input",
+  "location": "anubis_types-pqc.adb:343:10",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Derive_Encryption_Key.B_7.Temp_Key",
+  "location": "anubis_types-pqc.adb:344:10",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Sign.Ed25519_Success",
+  "location": "anubis_types-pqc.adb:377:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Sign.Ml_Dsa_Success",
+  "location": "anubis_types-pqc.adb:378:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Verify.Ed25519_Valid",
+  "location": "anubis_types-pqc.adb:432:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.Pqc.Hybrid_Verify.Ml_Dsa_Valid",
+  "location": "anubis_types-pqc.adb:433:7",
+  "Size": 8,
+  "Alignment": 1
+}
+]

@@ -24,9 +24,7 @@
 
 pragma SPARK_Mode (On);
 
-with Anubis_Types; use Anubis_Types;
-
-package Anubis_File_Encryption is
+package Anubis_Types.File_Encryption is
 
    -------------------------------------------------------------------------
    -- File Format Constants
@@ -54,7 +52,7 @@ package Anubis_File_Encryption is
       Recipient_X25519_PK     : in     X25519_Public_Key;
       Recipient_ML_KEM_PK     : in     ML_KEM_Public_Key;
       Ephemeral_X25519_PK     : in     X25519_Public_Key;
-      ML_KEM_Ciphertext       : in     ML_KEM_Ciphertext;
+      ML_KEM_CT               : in     ML_KEM_Ciphertext;
       Nonce                   : in     XChaCha20_Nonce;
       Sender_Ed25519_SK       : in     Ed25519_Secret_Key;
       Sender_ML_DSA_SK        : in     ML_DSA_Secret_Key;
@@ -73,7 +71,7 @@ package Anubis_File_Encryption is
       Recipient_X25519_PK     : out    X25519_Public_Key;
       Recipient_ML_KEM_PK     : out    ML_KEM_Public_Key;
       Ephemeral_X25519_PK     : out    X25519_Public_Key;
-      ML_KEM_Ciphertext       : out    ML_KEM_Ciphertext;
+      ML_KEM_CT               : out    ML_KEM_Ciphertext;
       Nonce                   : out    XChaCha20_Nonce;
       Success                 : out    Boolean
    ) with
@@ -139,4 +137,4 @@ private
 
    -- Total header size: 8 + 2 + 4 + 32 + 1568 + 32 + 1568 + 24 + 64 + 4627 = 7,929 bytes
 
-end Anubis_File_Encryption;
+end Anubis_Types.File_Encryption;

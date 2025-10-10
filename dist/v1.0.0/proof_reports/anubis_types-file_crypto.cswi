@@ -1,0 +1,13 @@
+20251010155650
+-c
+-x
+ada
+-gnatA
+-g
+-O0
+-gnat2022
+-gnatwa
+-fstack-check
+-fstack-protector-strong
+-gnatc
+-gnates=/Users/sicarii/Desktop/anubis-spark/obj/gnatprove/56f4642d.tmp

@@ -120,11 +120,24 @@ package Anubis_Types.PQC is
    procedure Hybrid_Encapsulate (
       X25519_Public  : in     X25519_Public_Key;
       ML_KEM_Public  : in     ML_KEM_Public_Key;
+      X25519_Ephemeral_Public : out X25519_Public_Key;
       X25519_Ephemeral_Secret : out X25519_Secret_Key;
       Ciphertext     : out ML_KEM_Ciphertext;
       Hybrid_Secret  : out    Hybrid_Shared_Secret;
       Success        : out    Boolean
    ) with
+      Post => (if Success then Is_Valid (Hybrid_Secret));
+
+   -- Hybrid decapsulation (X25519 + ML-KEM-1024)
+   procedure Hybrid_Decapsulate (
+      X25519_Secret       : in     X25519_Secret_Key;
+      ML_KEM_Secret       : in     ML_KEM_Secret_Key;
+      X25519_Ephemeral    : in     X25519_Public_Key;
+      ML_KEM_CT           : in     ML_KEM_Ciphertext;
+      Hybrid_Secret       : out    Hybrid_Shared_Secret;
+      Success             : out    Boolean
+   ) with
+      Pre  => Is_Valid (X25519_Secret) and Is_Valid (ML_KEM_Secret),
       Post => (if Success then Is_Valid (Hybrid_Secret));
 
    -- Derive final encryption key from hybrid shared secret
@@ -144,17 +157,28 @@ package Anubis_Types.PQC is
    -- Hybrid signature combines both classical and PQ signatures
    type Hybrid_Signature is private;
 
+   -- Accessors for serialization
+   procedure Get_Signature_Components (
+      Sig         : in     Hybrid_Signature;
+      Ed25519_Sig : out    Ed25519_Signature;
+      ML_DSA_Sig  : out    ML_DSA_Signature
+   );
+
+   procedure Set_Signature_Components (
+      Sig         : out    Hybrid_Signature;
+      Ed25519_Sig : in     Ed25519_Signature;
+      ML_DSA_Sig  : in     ML_DSA_Signature
+   );
+
    -------------------------------------------------------------------------
    -- PLATINUM LEVEL: Ghost Functions for Hybrid Signatures
    -------------------------------------------------------------------------
 
    -- Ghost: Check if hybrid signature is properly zeroized
-   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean with
-      Ghost;
+   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean;
 
    -- Ghost: Check if both signatures in hybrid are valid
-   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean with
-      Ghost;
+   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean;
 
    -- Generate hybrid signature (sign with BOTH Ed25519 AND ML-DSA-87)
    -- Both signatures must verify for the hybrid signature to be valid
@@ -194,24 +218,17 @@ private
    end record;
 
    -- Hybrid signature combines both classical and PQ signatures
-   -- PLATINUM SPARK: Both signatures must verify for overall validity
    type Hybrid_Signature is record
-      Ed25519_Sig : Ed25519_Signature;  -- Classical signature (64 bytes)
-      ML_DSA_Sig  : ML_DSA_Signature;   -- Post-quantum signature (4627 bytes)
+      Ed25519_Sig : Ed25519_Signature;
+      ML_DSA_Sig  : ML_DSA_Signature;
    end record;
 
    -------------------------------------------------------------------------
-   -- PLATINUM: Ghost Function Implementations
+   -- PLATINUM: Ghost Function Declarations (implemented in body)
    -------------------------------------------------------------------------
 
-   -- Check if hybrid signature is properly zeroized
-   function Hybrid_Signature_Zeroed (Sig : Hybrid_Signature) return Boolean is
-      ((for all I in Sig.Ed25519_Sig.Data'Range => Sig.Ed25519_Sig.Data (I) = 0) and
-       (for all I in Sig.ML_DSA_Sig.Data'Range => Sig.ML_DSA_Sig.Data (I) = 0));
+   -- Implementation moved to body to avoid elaboration issues
 
-   -- Check if both signatures in hybrid are valid (non-zero)
-   function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean is
-      ((for some I in Sig.Ed25519_Sig.Data'Range => Sig.Ed25519_Sig.Data (I) /= 0) and
-       (for some I in Sig.ML_DSA_Sig.Data'Range => Sig.ML_DSA_Sig.Data (I) /= 0));
+   -- Removed expression function to avoid elaboration issues
 
 end Anubis_Types.PQC;

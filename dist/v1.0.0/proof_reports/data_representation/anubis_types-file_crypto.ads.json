@@ -1,0 +1,64 @@
+[
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Ap",
+  "location": "a-sequio.adb:57:12 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Fp",
+  "location": "a-sequio.adb:58:12 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Read.Siz",
+  "location": "a-sequio.adb:188:7 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Read.Rsiz",
+  "location": "a-sequio.adb:189:7 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Read.B_1.Sa",
+  "location": "a-sequio.adb:219:21 [anubis_types-file_crypto.adb:17:4]",
+  "Alignment": 16,
+  "Component_Size": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Read.B_1.Sap",
+  "location": "a-sequio.adb:226:21 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Read.B_1.Itemp",
+  "location": "a-sequio.adb:227:21 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Write.Siz",
+  "location": "a-sequio.adb:286:7 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Write.Swapped_Siz",
+  "location": "a-sequio.adb:289:7 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+]

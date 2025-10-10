@@ -1,0 +1,64 @@
+[
+{
+  "name": "Anubis_Types.Storage.Identity_Keypair",
+  "location": "anubis_types-storage.ads:66:9",
+  "Size": 98856,
+  "Alignment": 1,
+  "record": [
+    {
+      "name": "X25519_Pk",
+      "Position":     0,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "X25519_Sk",
+      "Position":    32,
+      "First_Bit": 0,
+      "Size": 264
+    },
+    {
+      "name": "Ed25519_Pk",
+      "Position":    65,
+      "First_Bit": 0,
+      "Size": 256
+    },
+    {
+      "name": "Ed25519_Sk",
+      "Position":    97,
+      "First_Bit": 0,
+      "Size": 264
+    },
+    {
+      "name": "Ml_Kem_Pk",
+      "Position":   130,
+      "First_Bit": 0,
+      "Size": 12544
+    },
+    {
+      "name": "Ml_Kem_Sk",
+      "Position":  1698,
+      "First_Bit": 0,
+      "Size": 25352
+    },
+    {
+      "name": "Ml_Dsa_Pk",
+      "Position":  4867,
+      "First_Bit": 0,
+      "Size": 20736
+    },
+    {
+      "name": "Ml_Dsa_Sk",
+      "Position":  7459,
+      "First_Bit": 0,
+      "Size": 39176
+    },
+    {
+      "name": "Valid",
+      "Position": 12356,
+      "First_Bit": 0,
+      "Size": 8
+    }
+  ]
+}
+]

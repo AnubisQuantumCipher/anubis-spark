@@ -29,6 +29,11 @@ package Anubis_Key_Manager is
 
    type Managed_Key is private;
 
+   procedure Initialize (Key : out Managed_Key) with
+      Global => null,
+      Post => Get_Key_Status (Key) = Uninitialized and
+              Key_Material_Zeroed (Key);
+
    procedure Create_Managed_Key (
       Key_Data   : in     Byte_Array;
       Purpose    : in     Key_Purpose;

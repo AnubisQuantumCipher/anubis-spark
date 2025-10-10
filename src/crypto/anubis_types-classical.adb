@@ -244,12 +244,10 @@ package body Anubis_Types.Classical is
    ) is
       Status         : Interfaces.C.int;
       Ciphertext_Len : aliased Interfaces.C.unsigned_long;
-      -- Temporary buffer for ciphertext + MAC
-      Temp_CT        : Byte_Array (1 .. Plaintext'Length + 16);
    begin
-      -- Encrypt with detached authentication tag
+      -- Encrypt with detached authentication tag (writes directly to Ciphertext)
       Status := Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_encrypt_detached (
-         ciphertext          => Temp_CT (Temp_CT'First)'Address,
+         ciphertext          => Ciphertext (Ciphertext'First)'Address,
          mac                 => Auth_Tag.Data (Auth_Tag.Data'First)'Address,
          mac_len             => Ciphertext_Len'Access,
          message             => Plaintext (Plaintext'First)'Address,
@@ -262,8 +260,6 @@ package body Anubis_Types.Classical is
       );
 
       if Status = SODIUM_SUCCESS then
-         -- Copy ciphertext (without MAC)
-         Ciphertext := Temp_CT (1 .. Plaintext'Length);
          Success := True;
       else
          -- Zeroize on failure
@@ -281,9 +277,6 @@ package body Anubis_Types.Classical is
          end loop;
          Success := False;
       end if;
-
-      -- Zeroize temporary buffer
-      sodium_memzero (Temp_CT (Temp_CT'First)'Address, Temp_CT'Length);
    end XChaCha20_Encrypt;
 
    procedure XChaCha20_Decrypt (

@@ -1,0 +1,64 @@
+[
+{
+  "name": "Test_Hybrid_Sign.Test_Message",
+  "location": "test_hybrid_sign.adb:15:4",
+  "Size": 104,
+  "Alignment": 8
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Ed25519_Public",
+  "location": "test_hybrid_sign.adb:20:4",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Ed25519_Secret",
+  "location": "test_hybrid_sign.adb:21:4",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Ml_Dsa_Public",
+  "location": "test_hybrid_sign.adb:24:4",
+  "Size": 20736,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Ml_Dsa_Secret",
+  "location": "test_hybrid_sign.adb:25:4",
+  "Size": 39176,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Signature",
+  "location": "test_hybrid_sign.adb:28:4",
+  "Size": 37528,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Success",
+  "location": "test_hybrid_sign.adb:31:4",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.Verify_Result",
+  "location": "test_hybrid_sign.adb:32:4",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Test_Hybrid_Sign.B_1.Tampered_Message",
+  "location": "test_hybrid_sign.adb:117:7",
+  "Size": 104,
+  "Alignment": 8
+}
+]

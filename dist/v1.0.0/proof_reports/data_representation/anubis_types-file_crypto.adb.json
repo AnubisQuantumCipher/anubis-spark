@@ -1,0 +1,331 @@
+[
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.Element_Type",
+  "location": "a-sequio.ads:41:9 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.File_Mode",
+  "location": "a-sequio.ads:55:9 [anubis_types-file_crypto.adb:17:4]",
+  "Object_Size": 8,
+  "Value_Size": 2,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Byte_Io.File_Type",
+  "location": "a-sequio.ads:143:9 [anubis_types-file_crypto.adb:17:4]",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Magic",
+  "location": "anubis_types-file_crypto.adb:20:4",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Version_Bytes",
+  "location": "anubis_types-file_crypto.adb:21:4",
+  "Size": 16,
+  "Alignment": 2
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Header_Size",
+  "location": "anubis_types-file_crypto.adb:30:4",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Input",
+  "location": "anubis_types-file_crypto.adb:55:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Output",
+  "location": "anubis_types-file_crypto.adb:56:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Input_Size",
+  "location": "anubis_types-file_crypto.adb:57:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Ephemeral_X25519_Pk",
+  "location": "anubis_types-file_crypto.adb:60:7",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Ephemeral_X25519_Sk",
+  "location": "anubis_types-file_crypto.adb:61:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Ml_Kem_Ct",
+  "location": "anubis_types-file_crypto.adb:62:7",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Hybrid_Secret",
+  "location": "anubis_types-file_crypto.adb:63:7",
+  "Size": 520,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Encryption_Key",
+  "location": "anubis_types-file_crypto.adb:66:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Nonce",
+  "location": "anubis_types-file_crypto.adb:67:7",
+  "Size": 192,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.Auth_Tag",
+  "location": "anubis_types-file_crypto.adb:68:7",
+  "Size": 128,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.File_Signature",
+  "location": "anubis_types-file_crypto.adb:71:7",
+  "Size": 37528,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Streaming_Supported",
+  "location": "anubis_types-file_crypto.adb:115:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Use_Streaming",
+  "location": "anubis_types-file_crypto.adb:116:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Small_Plaintext",
+  "location": "anubis_types-file_crypto.adb:121:10",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Small_Ciphertext",
+  "location": "anubis_types-file_crypto.adb:122:10",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Chunk_Buffer_Pt",
+  "location": "anubis_types-file_crypto.adb:125:10",
+  "Size": 8388608,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Chunk_Buffer_Ct",
+  "location": "anubis_types-file_crypto.adb:126:10",
+  "Size": 8388608,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Bytes_Read",
+  "location": "anubis_types-file_crypto.adb:127:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Encrypt_File.B_2.Total_Processed",
+  "location": "anubis_types-file_crypto.adb:128:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Input",
+  "location": "anubis_types-file_crypto.adb:370:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Output",
+  "location": "anubis_types-file_crypto.adb:371:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Input_Size",
+  "location": "anubis_types-file_crypto.adb:372:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Ephemeral_X25519_Pk",
+  "location": "anubis_types-file_crypto.adb:375:7",
+  "Size": 256,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Ml_Kem_Ct",
+  "location": "anubis_types-file_crypto.adb:376:7",
+  "Size": 12544,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Nonce",
+  "location": "anubis_types-file_crypto.adb:377:7",
+  "Size": 192,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.File_Signature",
+  "location": "anubis_types-file_crypto.adb:378:7",
+  "Size": 37528,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Auth_Tag",
+  "location": "anubis_types-file_crypto.adb:379:7",
+  "Size": 128,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Hybrid_Secret",
+  "location": "anubis_types-file_crypto.adb:382:7",
+  "Size": 520,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Encryption_Key",
+  "location": "anubis_types-file_crypto.adb:383:7",
+  "Size": 264,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Magic_Read",
+  "location": "anubis_types-file_crypto.adb:385:7",
+  "Size": 64,
+  "Alignment": 8
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.Dummy",
+  "location": "anubis_types-file_crypto.adb:386:7",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Ciphertext_Size",
+  "location": "anubis_types-file_crypto.adb:478:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Streaming_Supported",
+  "location": "anubis_types-file_crypto.adb:479:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Use_Streaming",
+  "location": "anubis_types-file_crypto.adb:480:10",
+  "Size": 8,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Small_Ciphertext",
+  "location": "anubis_types-file_crypto.adb:485:10",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Small_Plaintext",
+  "location": "anubis_types-file_crypto.adb:486:10",
+  "Size": "??",
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Chunk_Buffer_Ct",
+  "location": "anubis_types-file_crypto.adb:489:10",
+  "Size": 8388608,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Chunk_Buffer_Pt",
+  "location": "anubis_types-file_crypto.adb:490:10",
+  "Size": 8388608,
+  "Alignment": 1
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Bytes_Read",
+  "location": "anubis_types-file_crypto.adb:491:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Total_Processed",
+  "location": "anubis_types-file_crypto.adb:492:10",
+  "Size": 32,
+  "Alignment": 4
+}
+,
+{
+  "name": "Anubis_Types.File_Crypto.Hybrid_Decrypt_File.B_38.Signature_Valid",
+  "location": "anubis_types-file_crypto.adb:493:10",
+  "Size": 8,
+  "Alignment": 1
+}
+]

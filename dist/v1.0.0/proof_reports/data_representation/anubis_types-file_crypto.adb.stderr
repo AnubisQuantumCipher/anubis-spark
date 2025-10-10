@@ -1,0 +1,13 @@
+anubis_types-file_crypto.adb:86:10: error: unmatched actual "X25519_Ephemeral_Public" in call
+anubis_types-file_crypto.adb:244:28: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:245:56: error: "B" is undefined (more references follow)
+anubis_types-file_crypto.adb:249:28: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:321:22: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:322:39: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:324:22: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:325:39: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:435:16: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:436:31: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:439:16: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:440:31: error: invalid prefix in selected component "File_Signature"
+anubis_types-file_crypto.adb:449:10: error: "Hybrid_Decapsulate" not declared in "PQC"
