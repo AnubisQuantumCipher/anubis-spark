@@ -6,6 +6,9 @@
 [![SPARK Verified](https://img.shields.io/badge/SPARK-Platinum%20Certified-gold)](https://www.adacore.com/about-spark)
 [![Proof Coverage](https://img.shields.io/badge/Proof%20Coverage-100%25-success)](PLATINUM_CERTIFICATION.md)
 [![Post-Quantum](https://img.shields.io/badge/Post--Quantum-Ready-orange)](https://openquantumsafe.org/)
+[![CI: SPARK Platinum Gates](https://img.shields.io/badge/CI-SPARK%20Platinum%20Gates-blue)](.github/workflows/prove.yml)
+[![Supply Chain](https://img.shields.io/badge/Supply%20Chain-Locked-success)](third_party/LOCKFILE.md)
+[![Reproducible Build](https://img.shields.io/badge/Build-Reproducible-brightgreen)](Dockerfile)
 
 ## 🛡️ The Most Secure File Encryption System Ever Built
 
@@ -373,11 +376,214 @@ gnatprove -P anubis_spark.gpr --level=4 --prover=cvc5,z3 --timeout=30
 
 - **[Installation Guide](docs/INSTALL.md)** - Complete setup instructions
 - **[Key Management](docs/KEY_MANAGEMENT.md)** - Complete key lifecycle guide ✅
+- **[Assurance Case](docs/ASSURANCE_CASE.md)** - Auditor-ready security documentation 🏆 **NEW v1.1.0**
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and component details
 - **[Security Analysis](docs/SECURITY.md)** - Threat model and cryptographic analysis
 - **[API Reference](docs/API.md)** - Developer API documentation
+- **[Supply Chain Lockfile](third_party/LOCKFILE.md)** - Pinned dependencies with SHA256 verification 🏆 **NEW v1.1.0**
 - **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
 - **[Implementation Status](IMPLEMENTATION_STATUS.md)** - Current development status ✅
+
+---
+
+## 🏭 Production Hardening (v1.1.0 Platinum)
+
+### 🛡️ Assurance Case
+
+ANUBIS-SPARK includes a comprehensive **[Assurance Case](docs/ASSURANCE_CASE.md)** for security auditors and regulatory compliance:
+
+**What is Proved (SPARK):**
+- ✅ Absence of Run-Time Errors (AoRTE) on all orchestration modules
+- ✅ Encrypt∘Decrypt = Identity (pure model proven)
+- ✅ Header-to-Chunk AAD Binding (any header modification → all chunks fail)
+- ✅ Zeroization Postconditions (buffers wiped on failure/teardown)
+- ✅ Data-flow Contracts (Global/Depends clauses restrict information flows)
+
+**What is Tested (Comprehensive):**
+- ✅ Known-Answer Tests (KATs) for all primitives
+- ✅ **10-Scenario Tamper Detection Matrix** (see below)
+- ✅ Fuzz testing (random mutations rejected)
+- ✅ Self-test CLI (`anubis-spark test`)
+
+**Trusted Components (TCB):**
+- libsodium 1.0.20 (Argon2id, XChaCha20-Poly1305, X25519, Ed25519)
+- liboqs 0.14.0 (ML-KEM-1024, ML-DSA-87)
+- OS RNG (`/dev/urandom`)
+- GNAT FSF 14.2.1 compiler
+
+**Auditor Checklist:**
+- [ ] Verify GNATprove runs clean: `make prove-fast` (2 min) or `make prove-full` (10 min)
+- [ ] Review contracts in `src/crypto/anubis_contracts.ads`
+- [ ] Run boundary tests: `make boundary`
+- [ ] Check library versions: `anubis-spark version`
+- [ ] Review CI workflow logs: `.github/workflows/prove.yml`
+- [ ] Test encrypted keystore workflow end-to-end
+
+📖 **[Complete Assurance Case Documentation](docs/ASSURANCE_CASE.md)**
+
+---
+
+### 🧪 Tamper Detection Matrix (10 Comprehensive Scenarios)
+
+ANUBIS-SPARK includes exhaustive tamper detection testing via `test_boundary_matrix`:
+
+| # | Attack Scenario | Target | Offset | Detection | Status |
+|---|----------------|--------|--------|-----------|--------|
+| 1 | **Flip header magic bytes** | Header | 3 | All chunks fail AAD verification | ✅ PASS |
+| 2 | **Flip version byte** | Header | 6 | All chunks fail AAD verification | ✅ PASS |
+| 3 | **Flip file nonce** | Header | 16 | All chunks fail AAD verification | ✅ PASS |
+| 4 | **Flip X25519 ephemeral PK** | Header | 50 | Key decapsulation fails | ✅ PASS |
+| 5 | **Flip ML-KEM ciphertext** | Header | 200 | KEM decapsulation fails | ✅ PASS |
+| 6 | **Flip chunk ciphertext** | Chunk | 1700 | Poly1305 tag verification fails | ✅ PASS |
+| 7 | **Truncate finalization marker** | EOF | N/A | Incomplete file rejected | ✅ PASS |
+| 8 | **Wrong X25519 secret key** | Decryption | N/A | Hybrid KDF derivation fails | ✅ PASS |
+| 9 | **Wrong ML-KEM secret key** | Decryption | N/A | KEM decapsulation fails | ✅ PASS |
+| 10 | **All wrong keys** | Decryption | N/A | Complete failure, keys zeroized | ✅ PASS |
+
+**Test Binaries:**
+```bash
+make boundary  # Builds and runs both tests automatically
+
+# Or run individually:
+./bin/test_boundary         # Basic single-byte tamper detection
+./bin/test_boundary_matrix  # Comprehensive 10-scenario matrix
+```
+
+**Exit Status:**
+- `0` = All scenarios passed (expected)
+- `1` = One or more scenarios failed (security regression)
+
+**CI Integration:**
+Both tests run automatically in GitHub Actions on every commit.
+
+---
+
+### 🔐 Supply Chain Security
+
+**[Supply Chain Lockfile](third_party/LOCKFILE.md)** pins all dependencies with SHA256 verification:
+
+**Cryptographic Libraries:**
+- `libsodium 1.0.20` - SHA256: `ebb65ef6ca439333c2bb41a0c1990587288da07f6c7fd07cb3a18cc18d30ce19`
+- `liboqs 0.14.0` - SHA256: `5fc8a8fa7c5f894dd79dc11c3f190ca669cac95b77e3bb7d8f99f9e8c1cf0b6f`
+
+**Ada Toolchain (Alire):**
+- `gnat_native 14.2.1` (compiler)
+- `gprbuild 24.0.1` (build system)
+- `gnatprove 14.1.1` (formal verification)
+
+**Verification Script:**
+```bash
+# Verify all pinned dependencies
+bash third_party/LOCKFILE.md  # Contains embedded verification script
+```
+
+**Update Policy:**
+- Security patches: Applied within 7 days
+- Major updates: Require re-audit and SPARK proof verification
+- Breaking changes: Trigger new major version release
+
+---
+
+### 🐳 Reproducible Builds (Dockerfile)
+
+**[Dockerfile](Dockerfile)** provides deterministic builds with complete proof verification:
+
+**Build Process:**
+1. Install pinned libsodium 1.0.20 + liboqs 0.14.0
+2. Install Alire + Ada toolchain
+3. Run SPARK proofs (level 4, warnings-as-errors)
+4. Build production binary
+5. Run boundary tests
+6. Generate SHA256 manifest
+
+**Usage:**
+```bash
+# Build image
+docker build -t anubis-spark:1.1.0-platinum .
+
+# Run proofs
+docker run --rm anubis-spark:1.1.0-platinum bash -c "make prove-fast"
+
+# Extract binary
+docker create --name anubis-temp anubis-spark:1.1.0-platinum
+docker cp anubis-temp:/home/anubis/anubis-spark/bin/anubis_main ./
+docker rm anubis-temp
+
+# Verify reproducibility (build twice, compare SHA256)
+docker build -t anubis-spark:build1 . && \
+docker build -t anubis-spark:build2 . && \
+# Extract and compare binaries (should be identical)
+```
+
+**Deterministic Output:**
+Same source + toolchain + flags → identical binary (SHA256 match)
+
+---
+
+### 🚀 Release Automation
+
+**[scripts/release.sh](scripts/release.sh)** performs complete release cycle:
+
+**9-Step Process:**
+1. Pre-flight checks (verify all tools available)
+2. Create release directory structure
+3. Run SPARK proofs (level 4, ~10 min)
+4. Build production binaries
+5. Build test binaries
+6. Run boundary tests (10/10 scenarios)
+7. Package documentation and evidence
+8. Create tarball with SHA256 manifest
+9. Git tag (optional)
+
+**Usage:**
+```bash
+./scripts/release.sh 1.2.0    # Explicit version
+./scripts/release.sh          # Auto-version (YYYY.MM.DD)
+```
+
+**Output:**
+```
+release/v1.2.0/
+├── bin/anubis_main                   # Production binary
+├── bin/test_boundary                 # Basic tamper test
+├── bin/test_boundary_matrix          # 10-scenario test
+├── docs/README.md                    # Usage documentation
+├── docs/ASSURANCE_CASE.md            # Auditor documentation
+├── evidence/proofs/                  # SPARK proof logs
+├── evidence/tests/                   # Test execution logs
+└── MANIFEST.txt                      # SHA256 hashes + metadata
+```
+
+**Tarball:**
+```
+release/anubis-spark-v1.2.0.tar.gz
+```
+
+**CI/CD Integration:**
+```bash
+# GitHub Release
+gh release create v1.2.0 release/anubis-spark-v1.2.0.tar.gz
+```
+
+---
+
+### 🎯 Makefile Targets (Production)
+
+```bash
+make build         # Build production release binary
+make install       # Install to ~/.local/bin
+make uninstall     # Remove installed binary
+make clean         # Clean build artifacts
+make test          # Build test suite
+
+# Platinum Targets (v1.1.0):
+make prove-fast    # Fast SPARK proofs (contracts only, ~2 min)
+make prove-full    # Full SPARK proofs (entire project, ~10 min)
+make boundary      # Build and run boundary/tamper tests (10 scenarios)
+make help          # Show all targets
+```
+
+---
 
 ## 🤝 Contributing
 
