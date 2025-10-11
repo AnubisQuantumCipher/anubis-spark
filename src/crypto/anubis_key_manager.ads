@@ -80,9 +80,8 @@ private
    -------------------------------------------------------------------------
 
    -- Verify key material is fully zeroed
+   -- A key is zeroed when its length is reset and validity flag cleared
    function Key_Material_Zeroed (Key : Managed_Key) return Boolean is
-      ((for all I in 1 .. Key.Length => Key.Key_Material (I) = 0) and
-       Key.Length = 0 and
-       not Key.Valid);
+      (Key.Length = 0 and not Key.Valid);
 
 end Anubis_Key_Manager;
