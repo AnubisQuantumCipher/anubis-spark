@@ -6,8 +6,12 @@ pragma SPARK_Mode (Off);
 
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Ada.Streams; use Ada.Streams;
+with Interfaces; use Interfaces;
+with Interfaces.C;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
+with Sodium_Pwhash;
+with Sodium_Common;
 
 package body Anubis_Types.Storage is
 
@@ -311,6 +315,420 @@ package body Anubis_Types.Storage is
    begin
       return Identity.ML_DSA_SK;
    end Get_ML_DSA_Secret;
+
+   -------------------------------------------------------------------------
+   -- Encrypted Keystore (Argon2id + XChaCha20-Poly1305)
+   -------------------------------------------------------------------------
+
+   procedure Save_Identity_Encrypted (
+      Identity   : in     Identity_Keypair;
+      Filename   : in     String;
+      Passphrase : in     String;
+      Success    : out    Boolean
+   ) is
+      use Interfaces.C;
+      use Sodium_Pwhash;
+      use Sodium_Common;
+      use Classical;
+
+      File_Handle : File_Type;
+      File_Stream : Stream_Access;
+
+      -- Magic and version for encrypted format
+      MAGIC_ENCRYPTED : constant Byte_Array (1 .. 8) := (65, 78, 85, 66, 73, 83, 75, 50);  -- "ANUBISK2"
+      VERSION_ENCRYPTED : constant Byte_Array (1 .. 2) := (0, 2);
+
+      -- KDF parameters (SENSITIVE: 1 GiB RAM, 4 iterations)
+      Opslimit : constant unsigned_long := unsigned_long (crypto_pwhash_OPSLIMIT_SENSITIVE);
+      Memlimit : constant size_t := size_t (crypto_pwhash_MEMLIMIT_SENSITIVE);
+
+      -- Cryptographic materials
+      Salt : Byte_Array (1 .. 16);
+      Nonce : XChaCha20_Nonce;
+      KEK : XChaCha20_Key;  -- Key Encryption Key derived from passphrase
+
+      -- Plaintext identity data (12,352 bytes)
+      Plaintext_Size : constant := 12_352;
+      Plaintext : Byte_Array (1 .. Plaintext_Size);
+      Ciphertext : Byte_Array (1 .. Plaintext_Size);
+      Auth_Tag : Poly1305_Tag;
+
+      Idx : Natural := 1;
+      Rc : int;
+      Op_Success : Boolean;
+
+   begin
+      if not Identity.Valid then
+         Success := False;
+         return;
+      end if;
+
+      -- Step 1: Serialize identity to plaintext buffer
+      -- X25519 keys
+      Plaintext (Idx .. Idx + 31) := Identity.X25519_PK.Data;
+      Idx := Idx + 32;
+      Plaintext (Idx .. Idx + 31) := Identity.X25519_SK.Data;
+      Idx := Idx + 32;
+
+      -- ML-KEM keys
+      Plaintext (Idx .. Idx + 1567) := Identity.ML_KEM_PK.Data;
+      Idx := Idx + 1568;
+      Plaintext (Idx .. Idx + 3167) := Identity.ML_KEM_SK.Data;
+      Idx := Idx + 3168;
+
+      -- Ed25519 keys
+      Plaintext (Idx .. Idx + 31) := Identity.Ed25519_PK.Data;
+      Idx := Idx + 32;
+      Plaintext (Idx .. Idx + 31) := Identity.Ed25519_SK.Data;
+      Idx := Idx + 32;
+
+      -- ML-DSA keys
+      Plaintext (Idx .. Idx + 2591) := Identity.ML_DSA_PK.Data;
+      Idx := Idx + 2592;
+      Plaintext (Idx .. Idx + 4895) := Identity.ML_DSA_SK.Data;
+
+      -- Step 2: Generate random salt and nonce
+      randombytes_buf (
+         buf  => Salt (Salt'First)'Address,
+         size => size_t (Salt'Length)
+      );
+
+      randombytes_buf (
+         buf  => Nonce.Data (Nonce.Data'First)'Address,
+         size => size_t (Nonce.Data'Length)
+      );
+
+      -- Step 3: Derive KEK from passphrase using Argon2id
+      Rc := crypto_pwhash (
+         out_key    => KEK.Data (KEK.Data'First)'Address,
+         outlen     => unsigned_long (KEK.Data'Length),
+         password   => Passphrase (Passphrase'First)'Address,
+         password_len => unsigned_long (Passphrase'Length),
+         salt       => Salt (Salt'First)'Address,
+         opslimit   => Opslimit,
+         memlimit   => Memlimit,
+         alg        => crypto_pwhash_ALG_DEFAULT
+      );
+
+      if Rc /= 0 then
+         -- Argon2id failed (out of memory or invalid params)
+         Zeroize_XChaCha20_Key (KEK);
+         Success := False;
+         return;
+      end if;
+
+      KEK.Valid := True;
+
+      -- Step 4: Encrypt plaintext with KEK
+      XChaCha20_Encrypt (
+         Plaintext  => Plaintext,
+         Key        => KEK,
+         Nonce      => Nonce,
+         AAD        => Salt,  -- Use salt as AAD for additional binding
+         Ciphertext => Ciphertext,
+         Auth_Tag   => Auth_Tag,
+         Success    => Op_Success
+      );
+
+      Zeroize_XChaCha20_Key (KEK);
+
+      if not Op_Success then
+         Success := False;
+         return;
+      end if;
+
+      -- Step 5: Write encrypted keystore to file
+      begin
+         Create (File_Handle, Out_File, Filename);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+
+      File_Stream := Stream (File_Handle);
+
+      -- Write magic "ANUBISK2"
+      for I in MAGIC_ENCRYPTED'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (MAGIC_ENCRYPTED (I)));
+      end loop;
+
+      -- Write version 0x0002
+      for I in VERSION_ENCRYPTED'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (VERSION_ENCRYPTED (I)));
+      end loop;
+
+      -- Write KDF parameters (16 bytes: opslimit u64, memlimit u64)
+      declare
+         Params : Byte_Array (1 .. 16);
+         OpsU64 : constant Unsigned_64 := Unsigned_64 (Opslimit);
+         MemU64 : constant Unsigned_64 := Unsigned_64 (Memlimit);
+      begin
+         -- Opslimit (8 bytes, big-endian)
+         for I in 0 .. 7 loop
+            Params (I + 1) := Byte (Shift_Right (OpsU64, 56 - I * 8) and 16#FF#);
+         end loop;
+
+         -- Memlimit (8 bytes, big-endian)
+         for I in 0 .. 7 loop
+            Params (I + 9) := Byte (Shift_Right (MemU64, 56 - I * 8) and 16#FF#);
+         end loop;
+
+         for I in Params'Range loop
+            Stream_Element'Write (File_Stream, Stream_Element (Params (I)));
+         end loop;
+      end;
+
+      -- Write salt (16 bytes)
+      for I in Salt'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (Salt (I)));
+      end loop;
+
+      -- Write nonce (24 bytes)
+      for I in Nonce.Data'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (Nonce.Data (I)));
+      end loop;
+
+      -- Write ciphertext length (4 bytes, u32)
+      declare
+         Len : constant Unsigned_32 := Unsigned_32 (Ciphertext'Length);
+      begin
+         Stream_Element'Write (File_Stream, Stream_Element (Shift_Right (Len, 24) and 16#FF#));
+         Stream_Element'Write (File_Stream, Stream_Element (Shift_Right (Len, 16) and 16#FF#));
+         Stream_Element'Write (File_Stream, Stream_Element (Shift_Right (Len, 8) and 16#FF#));
+         Stream_Element'Write (File_Stream, Stream_Element (Len and 16#FF#));
+      end;
+
+      -- Write ciphertext
+      for I in Ciphertext'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (Ciphertext (I)));
+      end loop;
+
+      -- Write authentication tag (16 bytes)
+      for I in Auth_Tag.Data'Range loop
+         Stream_Element'Write (File_Stream, Stream_Element (Auth_Tag.Data (I)));
+      end loop;
+
+      Close (File_Handle);
+      Success := True;
+
+   end Save_Identity_Encrypted;
+
+   procedure Load_Identity_Encrypted (
+      Filename   : in     String;
+      Passphrase : in     String;
+      Identity   : out    Identity_Keypair;
+      Success    : out    Boolean
+   ) is
+      use Interfaces.C;
+      use Sodium_Pwhash;
+      use Classical;
+
+      File_Handle : File_Type;
+      File_Stream : Stream_Access;
+      Stream_Byte : Stream_Element;
+
+      -- Expected magic and version
+      MAGIC_ENCRYPTED : constant Byte_Array (1 .. 8) := (65, 78, 85, 66, 73, 83, 75, 50);  -- "ANUBISK2"
+      VERSION_ENCRYPTED : constant Byte_Array (1 .. 2) := (0, 2);
+
+      -- File header data
+      Magic_Bytes : Byte_Array (1 .. 8);
+      Version_Bytes : Byte_Array (1 .. 2);
+      KDF_Params : Byte_Array (1 .. 16);
+      Salt : Byte_Array (1 .. 16);
+      Nonce : XChaCha20_Nonce;
+      CT_Len_Bytes : Byte_Array (1 .. 4);
+      CT_Len : Unsigned_32;
+
+      -- Cryptographic materials
+      Opslimit : unsigned_long;
+      Memlimit : size_t;
+      KEK : XChaCha20_Key;
+
+      -- Ciphertext and plaintext buffers
+      Plaintext_Size : constant := 12_352;
+      Ciphertext : Byte_Array (1 .. Plaintext_Size);
+      Auth_Tag : Poly1305_Tag;
+      Plaintext : Byte_Array (1 .. Plaintext_Size);
+
+      Idx : Natural := 1;
+      Rc : int;
+      Op_Success : Boolean;
+
+   begin
+      -- Step 1: Open and read file header
+      begin
+         Open (File_Handle, In_File, Filename);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+
+      File_Stream := Stream (File_Handle);
+
+      -- Read and verify magic
+      for I in Magic_Bytes'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Magic_Bytes (I) := Byte (Stream_Byte);
+      end loop;
+
+      if Magic_Bytes /= MAGIC_ENCRYPTED then
+         Close (File_Handle);
+         Success := False;
+         return;
+      end if;
+
+      -- Read and verify version
+      for I in Version_Bytes'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Version_Bytes (I) := Byte (Stream_Byte);
+      end loop;
+
+      if Version_Bytes /= VERSION_ENCRYPTED then
+         Close (File_Handle);
+         Success := False;
+         return;
+      end if;
+
+      -- Read KDF parameters
+      for I in KDF_Params'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         KDF_Params (I) := Byte (Stream_Byte);
+      end loop;
+
+      -- Parse opslimit and memlimit (big-endian u64)
+      declare
+         OpsU64 : Unsigned_64 := 0;
+         MemU64 : Unsigned_64 := 0;
+      begin
+         for I in 0 .. 7 loop
+            OpsU64 := Shift_Left (OpsU64, 8) or Unsigned_64 (KDF_Params (I + 1));
+         end loop;
+
+         for I in 0 .. 7 loop
+            MemU64 := Shift_Left (MemU64, 8) or Unsigned_64 (KDF_Params (I + 9));
+         end loop;
+
+         Opslimit := unsigned_long (OpsU64);
+         Memlimit := size_t (MemU64);
+      end;
+
+      -- Read salt
+      for I in Salt'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Salt (I) := Byte (Stream_Byte);
+      end loop;
+
+      -- Read nonce
+      for I in Nonce.Data'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Nonce.Data (I) := Byte (Stream_Byte);
+      end loop;
+
+      -- Read ciphertext length
+      for I in CT_Len_Bytes'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         CT_Len_Bytes (I) := Byte (Stream_Byte);
+      end loop;
+
+      CT_Len := Shift_Left (Unsigned_32 (CT_Len_Bytes (1)), 24) or
+                Shift_Left (Unsigned_32 (CT_Len_Bytes (2)), 16) or
+                Shift_Left (Unsigned_32 (CT_Len_Bytes (3)), 8) or
+                Unsigned_32 (CT_Len_Bytes (4));
+
+      if CT_Len /= Plaintext_Size then
+         Close (File_Handle);
+         Success := False;
+         return;
+      end if;
+
+      -- Read ciphertext
+      for I in Ciphertext'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Ciphertext (I) := Byte (Stream_Byte);
+      end loop;
+
+      -- Read authentication tag
+      for I in Auth_Tag.Data'Range loop
+         Stream_Element'Read (File_Stream, Stream_Byte);
+         Auth_Tag.Data (I) := Byte (Stream_Byte);
+      end loop;
+
+      Close (File_Handle);
+
+      -- Step 2: Derive KEK from passphrase
+      Rc := crypto_pwhash (
+         out_key    => KEK.Data (KEK.Data'First)'Address,
+         outlen     => unsigned_long (KEK.Data'Length),
+         password   => Passphrase (Passphrase'First)'Address,
+         password_len => unsigned_long (Passphrase'Length),
+         salt       => Salt (Salt'First)'Address,
+         opslimit   => Opslimit,
+         memlimit   => Memlimit,
+         alg        => crypto_pwhash_ALG_DEFAULT
+      );
+
+      if Rc /= 0 then
+         Zeroize_XChaCha20_Key (KEK);
+         Success := False;
+         return;
+      end if;
+
+      KEK.Valid := True;
+
+      -- Step 3: Decrypt and verify
+      XChaCha20_Decrypt (
+         Ciphertext => Ciphertext,
+         Auth_Tag   => Auth_Tag,
+         Key        => KEK,
+         Nonce      => Nonce,
+         AAD        => Salt,
+         Plaintext  => Plaintext,
+         Success    => Op_Success
+      );
+
+      Zeroize_XChaCha20_Key (KEK);
+
+      if not Op_Success then
+         -- Wrong passphrase or corrupted file
+         Success := False;
+         return;
+      end if;
+
+      -- Step 4: Deserialize plaintext into Identity_Keypair
+      -- X25519 keys
+      Identity.X25519_PK.Data := Plaintext (Idx .. Idx + 31);
+      Idx := Idx + 32;
+      Identity.X25519_SK.Data := Plaintext (Idx .. Idx + 31);
+      Idx := Idx + 32;
+      Identity.X25519_SK.Valid := True;
+
+      -- ML-KEM keys
+      Identity.ML_KEM_PK.Data := Plaintext (Idx .. Idx + 1567);
+      Idx := Idx + 1568;
+      Identity.ML_KEM_SK.Data := Plaintext (Idx .. Idx + 3167);
+      Idx := Idx + 3168;
+      Identity.ML_KEM_SK.Valid := True;
+
+      -- Ed25519 keys
+      Identity.Ed25519_PK.Data := Plaintext (Idx .. Idx + 31);
+      Idx := Idx + 32;
+      Identity.Ed25519_SK.Data := Plaintext (Idx .. Idx + 31);
+      Idx := Idx + 32;
+      Identity.Ed25519_SK.Valid := True;
+
+      -- ML-DSA keys
+      Identity.ML_DSA_PK.Data := Plaintext (Idx .. Idx + 2591);
+      Idx := Idx + 2592;
+      Identity.ML_DSA_SK.Data := Plaintext (Idx .. Idx + 4895);
+      Identity.ML_DSA_SK.Valid := True;
+
+      Identity.Valid := True;
+      Success := True;
+
+   end Load_Identity_Encrypted;
 
    -------------------------------------------------------------------------
    -- Secure Cleanup
