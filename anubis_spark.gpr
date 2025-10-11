@@ -38,10 +38,10 @@ project Anubis_Spark is
 
    package Linker is
       for Switches ("Ada") use (
-         "/opt/homebrew/lib/liboqs.a",         -- Link liboqs static library directly
-         "/opt/homebrew/lib/libsodium.a",      -- Link libsodium static library
-         "/opt/homebrew/lib/libssl.dylib",     -- OpenSSL libssl (full path)
-         "/opt/homebrew/lib/libcrypto.dylib"   -- OpenSSL libcrypto (full path)
+         "/usr/local/lib/liboqs.a",         -- Link liboqs static library directly
+         "/usr/local/lib/libsodium.a",      -- Link libsodium static library
+         "-lssl",     -- OpenSSL libssl (full path)
+         "-lcrypto"   -- OpenSSL libcrypto (full path)
       );
    end Linker;
 
