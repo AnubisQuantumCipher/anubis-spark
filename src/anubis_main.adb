@@ -19,7 +19,7 @@ procedure Anubis_Main is
    procedure Print_Banner is
    begin
       Put_Line ("╔═══════════════════════════════════════════════════════════════╗");
-      Put_Line ("║  ANUBIS-SPARK v0.2.0 - Quantum-Resistant File Encryption     ║");
+      Put_Line ("║  ANUBIS-SPARK v1.1.0 - Quantum-Resistant File Encryption     ║");
       Put_Line ("║  PLATINUM-LEVEL SPARK VERIFICATION + NIST POST-QUANTUM       ║");
       Put_Line ("╚═══════════════════════════════════════════════════════════════╝");
       New_Line;
@@ -58,7 +58,7 @@ procedure Anubis_Main is
    begin
       Print_Banner;
       Put_Line ("Version Information:");
-      Put_Line ("  Anubis-SPARK:  0.2.0 (Phase 2 - Hybrid Operations)");
+      Put_Line ("  Anubis-SPARK:  1.1.0 (Encrypted Keystores + Streaming AEAD)");
       Put_Line ("  liboqs:        0.14.0");
       Put_Line ("  libsodium:     1.0.20");
       Put_Line ("  SPARK:         2024");

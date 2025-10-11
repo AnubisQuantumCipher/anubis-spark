@@ -287,4 +287,3 @@ secure random number generation from libsodium.
 
 **Status**: ✅ **PRODUCTION-READY** (with proper libsodium initialization)
 
-🔐 Generated with [Claude Code](https://claude.com/claude-code)

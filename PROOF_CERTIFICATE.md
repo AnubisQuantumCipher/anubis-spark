@@ -600,8 +600,6 @@ This represents **state-of-the-art formal verification** for a cryptographic sys
 
 ---
 
-🔐 **Generated with [Claude Code](https://claude.com/claude-code)**
-**Co-Authored-By**: Claude <noreply@anthropic.com>
 
 ---
 

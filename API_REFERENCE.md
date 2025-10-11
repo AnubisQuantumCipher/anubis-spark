@@ -297,7 +297,7 @@ package Anubis_Types.PQC is
    subtype ML_KEM_Shared_Secret is Byte_Array (1 .. 32);
    
    -- ML-DSA-87 types
-   subtype ML_DSA_Private_Key is Byte_Array (1 .. 4864);
+   subtype ML_DSA_Private_Key is Byte_Array (1 .. 4896);
    subtype ML_DSA_Public_Key is Byte_Array (1 .. 2592);
    subtype ML_DSA_Signature is Byte_Array (1 .. 4627);
    
