@@ -83,9 +83,11 @@ Master Key (from passphrase)
   └─ Authentication Keys (HMAC, signatures)
 ```
 
-### ✅ Encrypted Storage
-- Keys encrypted at rest with XChaCha20-Poly1305
-- Argon2id memory-hard KDF (defeats GPU attacks)
+### ✅ Encrypted Storage (ANUBISK2 Format - v1.1.0)
+- **ANUBISK2**: Passphrase-protected encrypted keystore format
+- **Argon2id SENSITIVE**: 1 GiB RAM, 4 iterations (defeats GPU/ASIC attacks)
+- **XChaCha20-Poly1305 AEAD**: Authenticated encryption for keystores
+- **Salt-as-AAD binding**: Prevents salt substitution attacks
 - Never written to disk unencrypted
 
 ### ✅ Automatic Key Rotation
@@ -142,127 +144,121 @@ Master Key (from passphrase)
 
 ```
 anubis-spark/
-├── src/
-│   ├── anubis_main.adb              # CLI entry point (architecture)
-│   ├── test_pqc.adb                 # ML-KEM/ML-DSA test suite ✅
-│   ├── test_minimal.adb             # liboqs initialization test ✅
+├── src/                             # Production source code only
+│   ├── anubis_main.adb              # CLI entry point ✅
 │   └── crypto/
 │       ├── anubis_types.ads         # Secure type definitions ✅
 │       ├── anubis_types.adb         # Zeroization implementations ✅
-│       ├── anubis_types-pqc.ads     # PQC wrapper interface ✅
-│       ├── anubis_types-pqc.adb     # PQC implementation ✅
-│       ├── anubis_types-header_aad.ads  # AAD header binding ✅ NEW v1.0.4
-│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD computation ✅ NEW v1.0.4
-│       ├── anubis_types-finalize.ads    # Finalization workflow ✅ NEW v1.0.4
-│       ├── anubis_types-finalize.adb    # Crash detection markers ✅ NEW v1.0.4
-│       ├── anubis_key_manager.ads   # Key lifecycle management ✅
-│       ├── anubis_entropy.ads       # Secure RNG (architecture)
-│       └── liboqs/                  # Post-quantum crypto bindings
-│           ├── oqs_common.ads       # Common liboqs functions ✅
-│           ├── oqs_kem_ml_kem.ads   # ML-KEM-1024 FFI ✅
-│           ├── oqs_sig_ml_dsa.ads   # ML-DSA-87 FFI ✅
-│           └── sodium_hash.ads      # BLAKE2b-256 FFI ✅ NEW v1.0.4
-├── docs/
-│   ├── KEY_MANAGEMENT.md            # Complete key management guide ✅
-│   ├── INSTALL.md                   # Installation instructions
-│   ├── ARCHITECTURE.md              # System architecture
-│   ├── SECURITY.md                  # Threat model & security analysis
-│   ├── API.md                       # Developer API reference
-│   └── CONTRIBUTING.md              # Contributing guidelines
+│       ├── anubis_types-classical.ads   # Classical crypto (X25519, Ed25519) ✅
+│       ├── anubis_types-classical.adb   # Classical implementations ✅
+│       ├── anubis_types-pqc.ads         # Post-quantum crypto (ML-KEM, ML-DSA) ✅
+│       ├── anubis_types-pqc.adb         # PQC implementations ✅
+│       ├── anubis_types-storage.ads     # Encrypted keystore (ANUBISK2) ✅ v1.1.0
+│       ├── anubis_types-storage.adb     # Argon2id + XChaCha20 keystore ✅ v1.1.0
+│       ├── anubis_types-streaming.ads   # Streaming file encryption ✅
+│       ├── anubis_types-streaming.adb   # AEAD with DoS guards ✅
+│       ├── anubis_types-header_aad.ads  # AAD header binding ✅
+│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD ✅
+│       ├── anubis_types-finalize.ads    # Finalization workflow ✅
+│       ├── anubis_types-finalize.adb    # Crash detection ✅
+│       ├── anubis_key_manager.ads       # Key lifecycle management ✅
+│       └── anubis_key_manager.adb       # Key rotation & destruction ✅
+├── tests/                           # Test suite (separate from production)
+│   ├── test_pqc.adb                 # ML-KEM/ML-DSA tests ✅
+│   ├── test_comprehensive.adb       # Full crypto suite ✅
+│   ├── test_encrypted_keystore.adb  # ANUBISK2 tests ✅ v1.1.0
+│   ├── test_keystore_simple.adb     # Quick keystore smoke test ✅ v1.1.0
+│   └── test_movie_encryption.adb    # 2GB file test ✅ v1.1.0
 ├── bin/                             # Built executables
-│   ├── anubis_main
-│   ├── test_pqc                     # Comprehensive test suite ✅
-│   └── test_minimal                 # Smoke test ✅
-├── fix-rpath.sh                     # macOS 15.4+ RPATH fix ✅ NEW v1.0.4
-├── alire.toml                       # Alire package manifest ✅
+│   └── anubis_main                  # Production CLI (make build)
+├── Makefile                         # Production build system ✅ v1.1.0
+├── INSTALL.md                       # Installation guide ✅ v1.1.0
+├── CHANGELOG.md                     # Version history ✅
+├── API_REFERENCE.md                 # Developer API docs ✅
 ├── anubis_spark.gpr                 # GNAT project file ✅
-├── CHANGELOG.md                     # Version history and release notes ✅
-├── IMPLEMENTATION_STATUS.md         # Current implementation status ✅
 └── README.md                        # This file
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
+### Installation (Production Users)
+
 ```bash
-# Install Alire (Ada/SPARK package manager)
-curl -L https://github.com/alire-project/alire/releases/latest/download/alr-*.zip -o alire.zip
-unzip alire.zip && mv bin/alr ~/.local/bin/
-
-# Install liboqs (post-quantum crypto library)
-brew install liboqs  # macOS
-# or
-sudo apt install liboqs-dev  # Linux
+cd ~/Desktop/anubis-spark
+make install
 ```
 
-### Building
+This installs `anubis-spark` to `~/.local/bin`. Add to your PATH:
+
 ```bash
-cd anubis-spark
-
-# Build with Alire (recommended)
-alr exec -- gprbuild -P anubis_spark.gpr
-
-# Or build directly with gprbuild
-~/.local/share/alire/toolchains/gprbuild_*/bin/gprbuild -P anubis_spark.gpr
-
-# Build in release mode
-~/.local/share/alire/toolchains/gprbuild_*/bin/gprbuild -P anubis_spark.gpr \
-  -XBUILD_MODE=release
-
-# macOS 15.4+ (Sequoia): Fix duplicate LC_RPATH after build
-./fix-rpath.sh
-
-# Run tests
-./bin/test_minimal    # Smoke test (liboqs initialization)
-./bin/test_pqc        # Full ML-KEM-1024 and ML-DSA-87 test suite
+# Add to ~/.zshrc or ~/.bashrc
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
-**Build Requirements:**
-- liboqs 0.14.0 (installed at `/opt/homebrew` on macOS)
-- GNAT 14.2.1 or later
-- GPRbuild
-- Alire (optional, for dependency management)
-
-**macOS 15.4+ Note:** macOS Sequoia introduced strict enforcement of duplicate LC_RPATH entries. Run `./fix-rpath.sh` after building to remove duplicate RPATH entries from binaries. This fixes crashes with exit code 134 (SIGABRT).
+Verify installation:
+```bash
+anubis-spark version
+```
 
 ### Usage
 
 #### Generate Identity Keypair
 ```bash
-./bin/anubis_main keygen --output identity.key
+anubis-spark keygen --output my_identity.key
 # Generates hybrid post-quantum identity (X25519+ML-KEM-1024, Ed25519+ML-DSA-87)
 ```
 
 #### Encrypt File (Any Size)
 ```bash
-./bin/anubis_main encrypt \
-  --key identity.key \
-  --input document.pdf \
-  --output document.pdf.anubis
+anubis-spark encrypt --key my_identity.key --input document.pdf
+# Creates: document.pdf.anubis
 # Encrypts with streaming AEAD (64 MB chunks)
 # Works for files from KB to multi-GB
 ```
 
 #### Decrypt File
 ```bash
-./bin/anubis_main decrypt \
-  --key identity.key \
-  --input document.pdf.anubis \
-  --output document.pdf
+anubis-spark decrypt --key my_identity.key --input document.pdf.anubis
+# Creates: document.pdf.anubis.decrypted
 # Decrypts and verifies all chunk authentication tags
 ```
 
 #### Run Cryptographic Self-Tests
 ```bash
-./bin/anubis_main test
+anubis-spark test
 # Tests: ML-KEM-1024, ML-DSA-87, Hybrid operations
 ```
 
 #### Show Version and Security Info
 ```bash
-./bin/anubis_main version
-# Displays: algorithms, SPARK verification status, library versions
+anubis-spark version
+# Displays: v1.1.0, algorithms, SPARK verification status, library versions
 ```
+
+### Building from Source (Developers)
+
+**Prerequisites:**
+```bash
+# Install liboqs (post-quantum crypto library)
+brew install liboqs libsodium  # macOS
+# or
+sudo apt install liboqs-dev libsodium-dev  # Linux
+```
+
+**Build:**
+```bash
+cd anubis-spark
+make build    # Production release build
+make install  # Install to ~/.local/bin
+```
+
+**Development:**
+```bash
+make test     # Build test suite
+make clean    # Clean build artifacts
+```
+
+See [INSTALL.md](INSTALL.md) for complete installation guide.
 
 ## 🔬 Formal Verification
 
@@ -350,13 +346,15 @@ gnatprove -P anubis_spark.gpr --level=4 --prover=cvc5,z3 --timeout=30
 
 ## 📊 Performance
 
-**Streaming File Encryption** (Tested on Apple Silicon):
+**Streaming File Encryption** (Tested on Apple Silicon M-series):
 
 | File Size | Encrypt Time | Decrypt Time | Throughput | Integrity |
 |-----------|--------------|--------------|------------|-----------|
-| 716 KB    | <1s          | <1s          | N/A        | ✅ Perfect SHA256 |
-| 10 MB     | <1s          | <1s          | N/A        | ✅ Perfect SHA256 |
-| 2.0 GB    | 41.7s        | 80.5s        | ~49 MB/s   | ✅ Perfect SHA256 |
+| 2.0 GB    | 61.8s        | 116.6s       | 33.1 MB/s (enc)<br>17.6 MB/s (dec) | ✅ Perfect SHA256 |
+
+**Encrypted Keystore Operations** (v1.1.0):
+- ANUBISK2 keystore creation (Argon2id 1 GiB): ~2.6 seconds
+- ANUBISK2 keystore decryption: ~2.9 seconds
 
 **Key Operations** (M1/M2/M3):
 - ML-KEM-1024 keypair generation: ~300 μs
@@ -369,6 +367,7 @@ gnatprove -P anubis_spark.gpr --level=4 --prover=cvc5,z3 --timeout=30
 - Constant 64 MB chunk buffer (heap allocated)
 - Independent of total file size
 - No stack overflow for any file size
+- **Tested**: 2 GB movie file encrypted/decrypted with <100 MB RAM usage
 
 ## 📚 Documentation
 
@@ -437,7 +436,16 @@ MIT OR Apache-2.0 (dual-licensed)
 - [x] **All functional contracts proven**
 - [x] **Comprehensive proof documentation**
 
-### 📋 Phase 4: Advanced Features (PLANNED)
+### 🔐 Phase 4: Production Readiness (COMPLETED - v1.1.0)
+- [x] **Encrypted keystores (ANUBISK2 format)**
+- [x] **Argon2id SENSITIVE KDF (1 GiB RAM, 4 iterations)**
+- [x] **Production build system (Makefile)**
+- [x] **System-wide installation (make install)**
+- [x] **Clean project structure (tests separated)**
+- [x] **Comprehensive installation guide**
+- [x] **Tested with 2 GB files (perfect integrity)**
+
+### 📋 Phase 5: Advanced Features (PLANNED)
 - [ ] Shamir secret sharing for backup (EXPERIMENTAL)
 - [ ] Zero-knowledge proof system
 - [ ] Hardware security module (HSM) integration
@@ -452,6 +460,7 @@ MIT OR Apache-2.0 (dual-licensed)
 
 ---
 
-**Built with:** Ada/SPARK 2014 • liboqs 0.14.0 • GNAT 14.2.1 • Alire 2.0.2
+**Version:** v1.1.0 (Production Ready)
+**Built with:** Ada/SPARK 2014 • liboqs 0.14.0 • libsodium 1.0.20 • GNAT 14.2.1
 
 **Security Notice:** This is cryptographic software. Review the code and documentation before trusting it with sensitive data. While we use industry-standard algorithms and formal verification, no system is 100% secure.
