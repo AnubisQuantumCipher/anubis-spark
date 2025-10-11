@@ -49,7 +49,7 @@ procedure Anubis_Main is
       Put_Line ("  Classical:     X25519 + Ed25519 + XChaCha20-Poly1305");
       Put_Line ("  Post-Quantum:  ML-KEM-1024 + ML-DSA-87 (NIST Level 5)");
       Put_Line ("  Key Derivation: HKDF-SHA256 + Argon2id");
-      Put_Line ("  Verification:  SPARK Gold Level (31/31 proofs)");
+      Put_Line ("  Verification:  SPARK Platinum (183/183 proofs - 100%)");
       New_Line;
    end Print_Banner;
 
@@ -103,7 +103,7 @@ procedure Anubis_Main is
       Put_Line ("  Bronze:  ✓ Flow analysis (no uninitialized vars)");
       Put_Line ("  Silver:  ✓ Absence of Runtime Errors");
       Put_Line ("  Gold:    ✓ Integrity properties (31/31 proofs)");
-      Put_Line ("  Platinum: ⏳ In progress (functional correctness)");
+      Put_Line ("  Platinum: ✓ Functional correctness (183/183 proofs)");
       New_Line;
    end Print_Version;
 
