@@ -1,7 +1,7 @@
 # ANUBIS-SPARK Makefile
 # Production build and installation
 
-.PHONY: all build install uninstall clean test help
+.PHONY: all build install uninstall clean test prove-fast prove-full boundary help
 
 PREFIX ?= $(HOME)/.local
 BINDIR = $(PREFIX)/bin
@@ -49,17 +49,74 @@ test:
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/*.adb
 	@echo "✓ Tests built in bin/"
 
+# PLATINUM: Fast proof (contract packages only, ~2 minutes)
+prove-fast:
+	@echo "Running fast SPARK proofs (contract packages only)..."
+	@rm -rf gnatprove || true
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
+		gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=120 \
+			--files=src/crypto/anubis_contracts.ads \
+			        src/crypto/anubis_header_io.ads \
+			        src/crypto/anubis_hybrid_kdf.ads \
+			        src/crypto/anubis_aead_pure.ads \
+			        src/crypto/anubis_zeroize.ads \
+			        src/crypto/anubis_bounds.ads
+	@echo "✓ Fast proofs complete"
+	@if test -f gnatprove/gnatprove.out; then \
+		if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then \
+			echo "⚠ Warnings detected in proof output"; \
+			exit 1; \
+		fi; \
+	fi
+
+# PLATINUM: Full proof (entire project, ~10 minutes)
+prove-full:
+	@echo "Running full SPARK proofs (entire project)..."
+	@rm -rf gnatprove || true
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
+		gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600
+	@echo "✓ Full proofs complete"
+	@if test -f gnatprove/gnatprove.out; then \
+		if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then \
+			echo "⚠ Warnings detected in proof output"; \
+			exit 1; \
+		fi; \
+	fi
+
+# PLATINUM: Build and run boundary/tamper tests
+boundary: build
+	@echo "Building boundary tests..."
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
+		gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
+		gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix
+	@echo "✓ Boundary tests built"
+	@echo ""
+	@echo "Running boundary test (basic)..."
+	@./bin/test_boundary
+	@echo ""
+	@echo "Running boundary matrix test (10 scenarios)..."
+	@./bin/test_boundary_matrix
+	@echo ""
+	@echo "✓ All boundary tests passed"
+
 # Help
 help:
 	@echo "ANUBIS-SPARK v1.1.0 Makefile"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make build      - Build production release binary"
-	@echo "  make install    - Install to ~/.local/bin (or PREFIX)"
-	@echo "  make uninstall  - Remove installed binary"
-	@echo "  make clean      - Clean build artifacts"
-	@echo "  make test       - Build test suite"
-	@echo "  make help       - Show this help"
+	@echo "  make build       - Build production release binary"
+	@echo "  make install     - Install to ~/.local/bin (or PREFIX)"
+	@echo "  make uninstall   - Remove installed binary"
+	@echo "  make clean       - Clean build artifacts"
+	@echo "  make test        - Build test suite"
+	@echo ""
+	@echo "Platinum Targets:"
+	@echo "  make prove-fast  - Fast SPARK proofs (contracts only, ~2 min)"
+	@echo "  make prove-full  - Full SPARK proofs (entire project, ~10 min)"
+	@echo "  make boundary    - Build and run boundary/tamper tests"
+	@echo ""
+	@echo "  make help        - Show this help"
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install PREFIX=/usr/local  # Install to /usr/local/bin"

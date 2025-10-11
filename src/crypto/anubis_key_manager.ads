@@ -81,7 +81,9 @@ private
 
    -- Verify key material is fully zeroed
    -- A key is zeroed when its length is reset and validity flag cleared
+   -- PLATINUM: Simplified ghost predicate avoids array indexing in contracts
    function Key_Material_Zeroed (Key : Managed_Key) return Boolean is
-      (Key.Length = 0 and not Key.Valid);
+      (Key.Length = 0 and then not Key.Valid) with
+      Annotate => (GNATprove, Terminating);
 
 end Anubis_Key_Manager;
