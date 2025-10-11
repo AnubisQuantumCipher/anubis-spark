@@ -11,6 +11,8 @@ with Ada.Directories;
 with Interfaces; use Interfaces;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
+with Anubis_Types.Header_AAD;
+with Anubis_Types.Finalize;
 with Sodium_Common;
 with Interfaces.C;
 
@@ -173,9 +175,19 @@ package body Anubis_Types.Streaming is
          size => size_t (File_Nonce16'Length)
       );
 
-      -- Step 5: Create output file and write header
+      -- Step 4.5: Compute header AAD (binds all chunks to header)
+      declare
+         Computed_AAD : constant Byte_Array := Header_AAD.Compute_Header_AAD (
+            File_Nonce16 => File_Nonce16,
+            Chunk_Size   => Chunk_Size,
+            Total_Size   => Natural (Total_Size)
+         );
+         Partial_Path : constant String := Finalize.Partial_Name (Output_Path);
       begin
-         Create (Output_File, Out_File, Output_Path);
+
+      -- Step 5: Create output file with .partial extension (for crash safety)
+      begin
+         Create (Output_File, Out_File, Partial_Path);
       exception
          when others =>
             Close (Input_File);
@@ -253,11 +265,12 @@ package body Anubis_Types.Streaming is
             -- Construct nonce for this chunk
             Make_Chunk_Nonce (File_Nonce16, Chunk_Index, Nonce);
 
-            -- Encrypt chunk
+            -- Encrypt chunk with AAD binding
             Classical.XChaCha20_Encrypt (
                Plaintext  => Plain_Chunk (1 .. Natural (Last)),
                Key        => Encryption_Key,
                Nonce      => Nonce,
+               AAD        => Computed_AAD,
                Ciphertext => Cipher_Chunk (1 .. Natural (Last)),
                Auth_Tag   => Auth_Tag,
                Success    => Op_Success
@@ -296,13 +309,34 @@ package body Anubis_Types.Streaming is
          end;
       end loop;
 
+      -- Step 7: Write finalization marker and atomically rename
+      if not Finalize.Write_Final_Marker (Output_File) then
+         Close (Input_File);
+         Close (Output_File);
+         Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+         Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+         Result := IO_Error;
+         return;
+      end if;
+
       -- Cleanup
       Close (Input_File);
       Close (Output_File);
+
+      -- Atomic rename from .partial to final path
+      if not Finalize.Atomic_Rename (Partial_Path, Output_Path) then
+         Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+         Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+         Result := IO_Error;
+         return;
+      end if;
+
       Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
       Classical.Zeroize_XChaCha20_Key (Encryption_Key);
 
       Result := Success;
+
+      end;  -- Close declare block for Header_AAD
 
    exception
       when others =>
@@ -422,6 +456,15 @@ package body Anubis_Types.Streaming is
          end loop;
       end;
 
+      -- Compute header AAD (must match encryption AAD)
+      declare
+         Computed_AAD : constant Byte_Array := Header_AAD.Compute_Header_AAD (
+            File_Nonce16 => File_Nonce16,
+            Chunk_Size   => Chunk_Size,
+            Total_Size   => Total_Size
+         );
+      begin
+
       -- Allocate buffers
       Cipher_Chunk := new Byte_Array (1 .. Chunk_Size);
       Plain_Chunk := new Byte_Array (1 .. Chunk_Size);
@@ -505,12 +548,13 @@ package body Anubis_Types.Streaming is
             -- Construct nonce
             Make_Chunk_Nonce (File_Nonce16, Chunk_Index, Nonce);
 
-            -- Decrypt and verify
+            -- Decrypt and verify with AAD
             Classical.XChaCha20_Decrypt (
                Ciphertext => Cipher_Chunk (1 .. Chunk_Len),
+               Auth_Tag   => Auth_Tag,
                Key        => Decryption_Key,
                Nonce      => Nonce,
-               Auth_Tag   => Auth_Tag,
+               AAD        => Computed_AAD,
                Plaintext  => Plain_Chunk (1 .. Chunk_Len),
                Success    => Op_Success
             );
@@ -545,22 +589,30 @@ package body Anubis_Types.Streaming is
          return;
       end if;
 
-      -- Additional check: Ensure no extra data remains in input file
-      -- Try to read one more byte - should fail (end of file)
+      -- Verify finalization marker (crash safety check)
       declare
-         Extra_Byte : Stream_Element;
+         Final_Marker : Byte_Array (1 .. 11);  -- "ANUB2:FINAL"
+         Expected_Marker : constant Byte_Array := (65, 78, 85, 66, 50, 58, 70, 73, 78, 65, 76);
       begin
-         Extra_Byte := Stream_Element'Input (File_Stream);
-         -- If we got here, there's extra data = tampering detected
-         Close (Input_File);
-         Close (Output_File);
-         Classical.Zeroize_XChaCha20_Key (Decryption_Key);
-         Result := Invalid_Format;  -- Extra data detected
-         return;
+         for I in Final_Marker'Range loop
+            Final_Marker (I) := Byte (Stream_Element'Input (File_Stream));
+         end loop;
+
+         if Final_Marker /= Expected_Marker then
+            Close (Input_File);
+            Close (Output_File);
+            Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+            Result := Invalid_Format;  -- Missing or corrupt finalization marker
+            return;
+         end if;
       exception
          when others =>
-            -- Expected: End_Error when no more data (file is valid)
-            null;
+            -- No finalization marker = file was not properly finalized
+            Close (Input_File);
+            Close (Output_File);
+            Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+            Result := Invalid_Format;
+            return;
       end;
 
       -- Cleanup
@@ -569,6 +621,8 @@ package body Anubis_Types.Streaming is
       Classical.Zeroize_XChaCha20_Key (Decryption_Key);
 
       Result := Success;
+
+      end;  -- Close declare block for Header_AAD
 
    exception
       when others =>

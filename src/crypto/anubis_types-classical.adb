@@ -254,13 +254,25 @@ package body Anubis_Types.Classical is
       Plaintext  : in     Byte_Array;
       Key        : in     XChaCha20_Key;
       Nonce      : in     XChaCha20_Nonce;
+      AAD        : in     Byte_Array;
       Ciphertext : out    Byte_Array;
       Auth_Tag   : out    XChaCha20_Auth_Tag;
       Success    : out    Boolean
    ) is
       Status         : Interfaces.C.int;
       Ciphertext_Len : aliased Interfaces.C.unsigned_long;
+      AAD_Addr       : System.Address;
+      AAD_Len        : Interfaces.C.unsigned_long;
    begin
+      -- Set AAD address and length (use Null_Address if AAD is empty)
+      if AAD'Length > 0 then
+         AAD_Addr := AAD (AAD'First)'Address;
+         AAD_Len := Interfaces.C.unsigned_long (AAD'Length);
+      else
+         AAD_Addr := System.Null_Address;
+         AAD_Len := 0;
+      end if;
+
       -- Encrypt with detached authentication tag (writes directly to Ciphertext)
       Status := Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_encrypt_detached (
          ciphertext          => Ciphertext (Ciphertext'First)'Address,
@@ -268,8 +280,8 @@ package body Anubis_Types.Classical is
          mac_len             => Ciphertext_Len'Access,
          message             => Plaintext (Plaintext'First)'Address,
          message_len         => Interfaces.C.unsigned_long (Plaintext'Length),
-         additional_data     => System.Null_Address,
-         additional_data_len => 0,
+         additional_data     => AAD_Addr,
+         additional_data_len => AAD_Len,
          nsec                => System.Null_Address,
          nonce               => Nonce.Data (Nonce.Data'First)'Address,
          key                 => Key.Data (Key.Data'First)'Address
@@ -300,11 +312,23 @@ package body Anubis_Types.Classical is
       Auth_Tag   : in     XChaCha20_Auth_Tag;
       Key        : in     XChaCha20_Key;
       Nonce      : in     XChaCha20_Nonce;
+      AAD        : in     Byte_Array;
       Plaintext  : out    Byte_Array;
       Success    : out    Boolean
    ) is
-      Status : Interfaces.C.int;
+      Status   : Interfaces.C.int;
+      AAD_Addr : System.Address;
+      AAD_Len  : Interfaces.C.unsigned_long;
    begin
+      -- Set AAD address and length (use Null_Address if AAD is empty)
+      if AAD'Length > 0 then
+         AAD_Addr := AAD (AAD'First)'Address;
+         AAD_Len := Interfaces.C.unsigned_long (AAD'Length);
+      else
+         AAD_Addr := System.Null_Address;
+         AAD_Len := 0;
+      end if;
+
       -- Decrypt and verify authentication tag
       Status := Sodium_AEAD.crypto_aead_xchacha20poly1305_ietf_decrypt_detached (
          message             => Plaintext (Plaintext'First)'Address,
@@ -312,8 +336,8 @@ package body Anubis_Types.Classical is
          ciphertext          => Ciphertext (Ciphertext'First)'Address,
          ciphertext_len      => Interfaces.C.unsigned_long (Ciphertext'Length),
          mac                 => Auth_Tag.Data (Auth_Tag.Data'First)'Address,
-         additional_data     => System.Null_Address,
-         additional_data_len => 0,
+         additional_data     => AAD_Addr,
+         additional_data_len => AAD_Len,
          nonce               => Nonce.Data (Nonce.Data'First)'Address,
          key                 => Key.Data (Key.Data'First)'Address
       );

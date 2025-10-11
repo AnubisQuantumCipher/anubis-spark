@@ -125,6 +125,7 @@ package Anubis_Types.Classical is
       Plaintext  : in     Byte_Array;
       Key        : in     XChaCha20_Key;
       Nonce      : in     XChaCha20_Nonce;
+      AAD        : in     Byte_Array;
       Ciphertext : out    Byte_Array;
       Auth_Tag   : out    XChaCha20_Auth_Tag;
       Success    : out    Boolean
@@ -142,6 +143,7 @@ package Anubis_Types.Classical is
       Auth_Tag   : in     XChaCha20_Auth_Tag;
       Key        : in     XChaCha20_Key;
       Nonce      : in     XChaCha20_Nonce;
+      AAD        : in     Byte_Array;
       Plaintext  : out    Byte_Array;
       Success    : out    Boolean
    ) with

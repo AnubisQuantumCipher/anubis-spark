@@ -406,14 +406,19 @@ package body Anubis_Types.File_Encryption is
                Plain_Bytes (I) := Byte (Plaintext (Stream_Element_Offset (I)));
             end loop;
 
-            Classical.XChaCha20_Encrypt (
-               Plaintext  => Plain_Bytes.all,
-               Key        => Encryption_Key,
-               Nonce      => Nonce,
-               Ciphertext => Cipher_Bytes.all,
-               Auth_Tag   => Auth_Tag,
-               Success    => Op_Success
-            );
+            declare
+               No_AAD : Byte_Array (1 .. 0);
+            begin
+               Classical.XChaCha20_Encrypt (
+                  Plaintext  => Plain_Bytes.all,
+                  Key        => Encryption_Key,
+                  Nonce      => Nonce,
+                  AAD        => No_AAD,  -- No AAD for legacy format
+                  Ciphertext => Cipher_Bytes.all,
+                  Auth_Tag   => Auth_Tag,
+                  Success    => Op_Success
+               );
+            end;
 
             if not Op_Success then
                Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
@@ -662,14 +667,19 @@ package body Anubis_Types.File_Encryption is
                -- Allocate plaintext buffer on heap
                Plaintext_Bytes := new Byte_Array (1 .. Ciphertext_Size);
 
-               Classical.XChaCha20_Decrypt (
-                  Ciphertext => Ciphertext_Bytes.all,
-                  Key        => Decryption_Key,
-                  Nonce      => Nonce,
-                  Auth_Tag   => Auth_Tag,
-                  Plaintext  => Plaintext_Bytes.all,
-                  Success    => Op_Success
-               );
+               declare
+                  No_AAD : Byte_Array (1 .. 0);
+               begin
+                  Classical.XChaCha20_Decrypt (
+                     Ciphertext => Ciphertext_Bytes.all,
+                     Auth_Tag   => Auth_Tag,
+                     Key        => Decryption_Key,
+                     Nonce      => Nonce,
+                     AAD        => No_AAD,  -- No AAD for legacy format
+                     Plaintext  => Plaintext_Bytes.all,
+                     Success    => Op_Success
+                  );
+               end;
 
                if not Op_Success then
                   -- Decryption or authentication failed

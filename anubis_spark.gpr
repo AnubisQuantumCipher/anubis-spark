@@ -38,6 +38,7 @@ project Anubis_Spark is
 
    package Linker is
       for Switches ("Ada") use (
+         "-Wl,-ld_classic",                    -- Use classic linker (fixes macOS 15.4+ crash)
          "/opt/homebrew/lib/liboqs.a",         -- Link liboqs static library directly
          "/opt/homebrew/lib/libsodium.a",      -- Link libsodium static library
          "/opt/homebrew/lib/libssl.dylib",     -- OpenSSL libssl (full path)
