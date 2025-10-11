@@ -28,19 +28,37 @@ jobs:
       # Fast proof: Pure logic packages only (header IO, hybrid KDF, AEAD Pure)
       - name: GNATprove (fast set)
         run: |
+          rm -rf gnatprove || true
           gnatprove -P anubis_spark.gpr \
             --mode=prove --level=4 --timeout=120 \
             --files=src/crypto/anubis_contracts.ads \
                     src/crypto/anubis_header_io.ads \
                     src/crypto/anubis_hybrid_kdf.ads \
                     src/crypto/anubis_aead_pure.ads \
-                    src/crypto/anubis_zeroize.ads
+                    src/crypto/anubis_zeroize.ads \
+                    src/crypto/anubis_bounds.ads
+          # Treat GNATprove warnings as errors
+          if test -f gnatprove/gnatprove.out; then
+            if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then
+              echo "::error::GNATprove warnings present - proof regression detected"
+              exit 1
+            fi
+          fi
 
       - name: Build
         run: alr build -q
 
       - name: Unit tests / selftest
         run: ./bin/anubis_main test || echo "Selftests not implemented yet"
+
+      - name: Upload proof logs (fast)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-prove-logs
+          path: |
+            gnatprove/**
+            obj/gnatprove/**
 
   full-prove:
     runs-on: ubuntu-latest
@@ -59,8 +77,16 @@ jobs:
       # Full orchestration packages (longer timeout)
       - name: GNATprove (full set)
         run: |
+          rm -rf gnatprove || true
           gnatprove -P anubis_spark.gpr \
             --mode=prove --level=4 --timeout=600
+          # Treat GNATprove warnings as errors
+          if test -f gnatprove/gnatprove.out; then
+            if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then
+              echo "::error::GNATprove warnings present - proof regression detected"
+              exit 1
+            fi
+          fi
 
       - name: Build (release)
         run: alr build --release -q
@@ -68,8 +94,27 @@ jobs:
       # Build and run boundary tests
       - name: Build boundary test
         run: |
-          gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary || echo "Boundary test build failed (expected if dependencies missing)"
+          gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary || echo "Boundary test build failed"
 
-      - name: Run boundary tests
+      - name: Run boundary test
         run: |
           ./bin/test_boundary || echo "Boundary test execution failed or not built"
+
+      - name: Build boundary matrix test
+        run: |
+          gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix || echo "Matrix test build failed"
+
+      - name: Run boundary matrix test
+        run: |
+          ./bin/test_boundary_matrix || echo "Matrix test execution failed or not built"
+
+      - name: Upload proof logs and test outputs (full)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-prove-logs-and-tests
+          path: |
+            gnatprove/**
+            obj/gnatprove/**
+            bin/test_boundary
+            bin/test_boundary_matrix
