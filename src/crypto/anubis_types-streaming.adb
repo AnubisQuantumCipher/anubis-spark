@@ -534,6 +534,35 @@ package body Anubis_Types.Streaming is
          end;
       end loop;
 
+      -- SECURITY: Strict tampering detection
+      -- Verify that we processed exactly the number of bytes specified in header
+      -- If file has extra data appended, this will catch it
+      if Bytes_Processed /= Total_Size then
+         Close (Input_File);
+         Close (Output_File);
+         Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+         Result := Invalid_Format;  -- File size mismatch = tampering
+         return;
+      end if;
+
+      -- Additional check: Ensure no extra data remains in input file
+      -- Try to read one more byte - should fail (end of file)
+      declare
+         Extra_Byte : Stream_Element;
+      begin
+         Extra_Byte := Stream_Element'Input (File_Stream);
+         -- If we got here, there's extra data = tampering detected
+         Close (Input_File);
+         Close (Output_File);
+         Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+         Result := Invalid_Format;  -- Extra data detected
+         return;
+      exception
+         when others =>
+            -- Expected: End_Error when no more data (file is valid)
+            null;
+      end;
+
       -- Cleanup
       Close (Input_File);
       Close (Output_File);

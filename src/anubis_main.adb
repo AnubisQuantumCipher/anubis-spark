@@ -40,8 +40,6 @@ procedure Anubis_Main is
       Put_Line ("  keygen           Generate new hybrid keypair");
       Put_Line ("  encrypt          Encrypt file with hybrid PQ protection");
       Put_Line ("  decrypt          Decrypt and verify file");
-      Put_Line ("  sign             Create hybrid signature");
-      Put_Line ("  verify           Verify hybrid signature");
       Put_Line ("  test             Run cryptographic self-tests");
       Put_Line ("  version          Show version and security info");
       Put_Line ("  help             Show this help message");
@@ -441,11 +439,9 @@ begin
 
             Storage.Zeroize_Identity (Identity);
          end;
-      elsif Command = "sign" then
-         Put_Line ("Sign command not yet implemented.");
-         Put_Line ("Use: anubis-spark test (includes hybrid signature test)");
-      elsif Command = "verify" then
-         Put_Line ("Verify command not yet implemented.");
+      -- NOTE: sign/verify commands removed from v1.0.0
+      -- Hybrid signatures are tested in: anubis-spark test
+      -- Full CLI signing implementation planned for v2.0
       else
          Put_Line ("Unknown command: " & Command);
          Put_Line ("Use: anubis-spark help");
