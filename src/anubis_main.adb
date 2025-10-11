@@ -16,6 +16,28 @@ use Anubis_Types.Streaming;  -- Make Result_Code operators visible
 
 procedure Anubis_Main is
 
+   -- Helper function to find argument value by flag name
+   function Get_Arg (Flag : String; Default : String := "") return String is
+   begin
+      for I in 1 .. Argument_Count - 1 loop
+         if Argument (I) = Flag then
+            return Argument (I + 1);
+         end if;
+      end loop;
+      return Default;
+   end Get_Arg;
+
+   -- Check if flag exists
+   function Has_Arg (Flag : String) return Boolean is
+   begin
+      for I in 1 .. Argument_Count loop
+         if Argument (I) = Flag then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Has_Arg;
+
    procedure Print_Banner is
    begin
       Put_Line ("╔═══════════════════════════════════════════════════════════════╗");
@@ -46,7 +68,9 @@ procedure Anubis_Main is
       New_Line;
       Put_Line ("Examples:");
       Put_Line ("  anubis-spark keygen --output my_identity.key");
+      Put_Line ("  anubis-spark keygen --output my.key --passphrase ""SecurePass123""");
       Put_Line ("  anubis-spark encrypt --key alice.key --input secret.txt");
+      Put_Line ("  anubis-spark encrypt --key alice.key --passphrase ""Pass"" --input secret.txt");
       Put_Line ("  anubis-spark decrypt --key bob.key --input secret.txt.anubis");
       New_Line;
       Put_Line ("For detailed help on a command:");
@@ -246,13 +270,13 @@ begin
       elsif Command = "test" or Command = "selftest" then
          Run_Self_Test;
       elsif Command = "keygen" then
-         -- Parse --output argument
+         -- Parse --output and --passphrase arguments
          declare
-            Output_File : constant String := (if Argument_Count >= 3 and then Argument (2) = "--output"
-                                               then Argument (3)
-                                               else "identity.key");
+            Output_File : constant String := Get_Arg ("--output", "identity.key");
+            Passphrase  : constant String := Get_Arg ("--passphrase");
             Identity : Storage.Identity_Keypair;
             Success : Boolean;
+            Use_Encrypted : constant Boolean := (Passphrase /= "");
          begin
             Print_Banner;
             Put_Line ("Generating Hybrid Post-Quantum Identity...");
@@ -279,8 +303,13 @@ begin
             Put_Line ("  ML-DSA-87 (PQ-Sig):     2592-byte public key");
             New_Line;
 
-            Put ("Saving identity to " & Output_File & "... ");
-            Storage.Save_Identity (Identity, Output_File, Success);
+            if Use_Encrypted then
+               Put ("Saving encrypted keystore to " & Output_File & " (Argon2id)... ");
+               Storage.Save_Identity_Encrypted (Identity, Output_File, Passphrase, Success);
+            else
+               Put ("Saving identity to " & Output_File & "... ");
+               Storage.Save_Identity (Identity, Output_File, Success);
+            end if;
 
             if not Success then
                Put_Line ("✗ FAILED");
@@ -294,12 +323,19 @@ begin
             Put_Line ("═══════════════════════════════════════════════════");
             Put_Line ("Identity saved successfully!");
             Put_Line ("File: " & Output_File);
+            if Use_Encrypted then
+               Put_Line ("Format: ANUBISK2 (Encrypted with Argon2id SENSITIVE)");
+            else
+               Put_Line ("Format: ANUBISK (Plaintext - no passphrase protection)");
+            end if;
             New_Line;
             Put_Line ("⚠️  SECURITY NOTICE:");
             Put_Line ("  This file contains SECRET KEYS. Protect it carefully!");
             Put_Line ("  - Store in a secure location");
             Put_Line ("  - Set restrictive file permissions (chmod 600)");
-            Put_Line ("  - Consider encrypting with passphrase (future feature)");
+            if not Use_Encrypted then
+               Put_Line ("  - Consider using --passphrase for encryption");
+            end if;
             Put_Line ("  - Keep backups in secure locations");
             New_Line;
 
@@ -307,23 +343,21 @@ begin
             Storage.Zeroize_Identity (Identity);
          end;
       elsif Command = "encrypt" then
-         -- Parse arguments: --key <identity> --input <file> [--output <file>]
+         -- Parse arguments: --key <identity> --input <file> [--output <file>] [--passphrase <pass>]
          declare
-            Key_File    : constant String := (if Argument_Count >= 3 and then Argument (2) = "--key"
-                                               then Argument (3)
-                                               else "identity.key");
-            Input_File  : constant String := (if Argument_Count >= 5 and then Argument (4) = "--input"
-                                               then Argument (5)
-                                               else "");
-            Output_File : constant String := (if Argument_Count >= 7 and then Argument (6) = "--output"
-                                               then Argument (7)
+            Key_File    : constant String := Get_Arg ("--key", "identity.key");
+            Input_File  : constant String := Get_Arg ("--input");
+            Output_File : constant String := (if Has_Arg ("--output")
+                                               then Get_Arg ("--output")
                                                else Input_File & ".anubis");
+            Passphrase  : constant String := Get_Arg ("--passphrase");
             Identity    : Storage.Identity_Keypair;
             Success     : Boolean;
+            Use_Encrypted : constant Boolean := (Passphrase /= "");
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
-               Put_Line ("Usage: anubis-spark encrypt --key <identity> --input <file> [--output <file>]");
+               Put_Line ("Usage: anubis-spark encrypt --key <identity> --input <file> [--output <file>] [--passphrase <pass>]");
                return;
             end if;
 
@@ -333,10 +367,18 @@ begin
             New_Line;
 
             Put ("Loading identity from " & Key_File & "... ");
-            Storage.Load_Identity (Key_File, Identity, Success);
+            if Use_Encrypted then
+               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
+            else
+               Storage.Load_Identity (Key_File, Identity, Success);
+            end if;
             if not Success then
                Put_Line ("✗ FAILED");
-               Put_Line ("ERROR: Cannot load identity keypair.");
+               if Use_Encrypted then
+                  Put_Line ("ERROR: Cannot load encrypted keystore (wrong passphrase or corrupted).");
+               else
+                  Put_Line ("ERROR: Cannot load identity keypair.");
+               end if;
                return;
             end if;
             Put_Line ("✓");
@@ -374,23 +416,21 @@ begin
             Storage.Zeroize_Identity (Identity);
          end;
       elsif Command = "decrypt" then
-         -- Parse arguments: --key <identity> --input <file> [--output <file>]
+         -- Parse arguments: --key <identity> --input <file> [--output <file>] [--passphrase <pass>]
          declare
-            Key_File    : constant String := (if Argument_Count >= 3 and then Argument (2) = "--key"
-                                               then Argument (3)
-                                               else "identity.key");
-            Input_File  : constant String := (if Argument_Count >= 5 and then Argument (4) = "--input"
-                                               then Argument (5)
-                                               else "");
-            Output_File : constant String := (if Argument_Count >= 7 and then Argument (6) = "--output"
-                                               then Argument (7)
+            Key_File    : constant String := Get_Arg ("--key", "identity.key");
+            Input_File  : constant String := Get_Arg ("--input");
+            Output_File : constant String := (if Has_Arg ("--output")
+                                               then Get_Arg ("--output")
                                                else Input_File & ".decrypted");
+            Passphrase  : constant String := Get_Arg ("--passphrase");
             Identity    : Storage.Identity_Keypair;
             Success     : Boolean;
+            Use_Encrypted : constant Boolean := (Passphrase /= "");
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
-               Put_Line ("Usage: anubis-spark decrypt --key <identity> --input <file> [--output <file>]");
+               Put_Line ("Usage: anubis-spark decrypt --key <identity> --input <file> [--output <file>] [--passphrase <pass>]");
                return;
             end if;
 
@@ -400,10 +440,18 @@ begin
             New_Line;
 
             Put ("Loading identity from " & Key_File & "... ");
-            Storage.Load_Identity (Key_File, Identity, Success);
+            if Use_Encrypted then
+               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
+            else
+               Storage.Load_Identity (Key_File, Identity, Success);
+            end if;
             if not Success then
                Put_Line ("✗ FAILED");
-               Put_Line ("ERROR: Cannot load identity keypair.");
+               if Use_Encrypted then
+                  Put_Line ("ERROR: Cannot load encrypted keystore (wrong passphrase or corrupted).");
+               else
+                  Put_Line ("ERROR: Cannot load identity keypair.");
+               end if;
                return;
             end if;
             Put_Line ("✓");
