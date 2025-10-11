@@ -77,7 +77,19 @@
 - **Tag corruption:** Authentication tags flipped → rejected
 - **Wrong keys:** Decryption with incorrect keys → rejected with zeroized outputs
 
-All tests in `tests/test_boundary.adb`
+**Test binaries**:
+- `tests/test_boundary.adb` - Basic tamper detection (single byte flip)
+- `tests/test_boundary_matrix.adb` - Comprehensive tamper matrix:
+  - Flip header magic bytes (offset 3)
+  - Flip version byte (offset 6)
+  - Flip file nonce (offset 16)
+  - Flip X25519 ephemeral PK (offset 50)
+  - Flip ML-KEM ciphertext (offset 200)
+  - Flip chunk ciphertext (offset 1700)
+  - Truncate finalization marker
+  - Wrong X25519 secret key
+  - Wrong ML-KEM secret key
+  - All wrong keys
 
 ### Fuzz Testing
 
@@ -179,6 +191,7 @@ anubis-spark decrypt --key identity.key --passphrase "YourSecurePassphrase" --in
 
 - KAT logs: `bin/anubis_main test`
 - Boundary test: `bin/test_boundary`
+- Boundary matrix test: `bin/test_boundary_matrix` (10 comprehensive test cases)
 - Fuzz seeds: TBD (future work)
 
 ---
@@ -200,7 +213,7 @@ For external auditors reviewing this system:
 - [ ] Verify GNATprove runs clean (no unproven checks)
 - [ ] Review contracts in `src/crypto/anubis_contracts.ads`
 - [ ] Inspect zeroization postconditions in `anubis_types.ads`
-- [ ] Run boundary tests (`bin/test_boundary`)
+- [ ] Run boundary tests (`bin/test_boundary` and `bin/test_boundary_matrix`)
 - [ ] Check library versions: `anubis-spark version`
 - [ ] Review CI workflow logs
 - [ ] Confirm no compiler warnings: `alr build 2>&1 | grep -i warning`

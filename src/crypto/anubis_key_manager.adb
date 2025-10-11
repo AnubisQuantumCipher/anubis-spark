@@ -33,14 +33,20 @@ package body Anubis_Key_Manager is
       end if;
 
       -- Copy key material
+      -- PLATINUM PROOF: Loop with proven bounds via Dest_Index calculation
       for I in Key_Data'Range loop
          pragma Loop_Invariant
+           (I in Key_Data'Range and then
+            Key_Data'Length <= Managed.Key_Material'Length);
+         pragma Loop_Invariant
            (for all J in Key_Data'First .. I - 1 =>
-              Managed.Key_Material (J - Key_Data'First + 1) = Key_Data (J));
+              Managed.Key_Material (J - Key_Data'First + Managed.Key_Material'First) = Key_Data (J));
          pragma Loop_Variant (Increases => I);
          declare
-            Dest_Index : constant Positive := I - Key_Data'First + 1;
+            Offset : constant Natural := I - Key_Data'First;
+            Dest_Index : constant Positive := Managed.Key_Material'First + Offset;
          begin
+            pragma Assert (Offset < Key_Data'Length);
             pragma Assert (Dest_Index in Managed.Key_Material'Range);
             Managed.Key_Material (Dest_Index) := Key_Data (I);
          end;
