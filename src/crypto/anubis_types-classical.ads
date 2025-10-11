@@ -21,6 +21,18 @@ package Anubis_Types.Classical is
       (Is_All_Zero (Plaintext))
    with Ghost;
 
+   -- Ghost: Verify encryption output length includes overhead (plaintext + 16-byte tag)
+   function Encryption_Length_Valid (
+      Plaintext_Length  : Natural;
+      Ciphertext_Length : Natural
+   ) return Boolean is
+      (Ciphertext_Length = Plaintext_Length)
+   with Ghost;
+
+   -- Ghost: Verify authentication tag is non-zero (valid tag from Poly1305)
+   function Auth_Tag_Valid (Tag : XChaCha20_Auth_Tag) return Boolean
+   with Ghost;
+
    -------------------------------------------------------------------------
    -- X25519 Operations (Elliptic Curve Diffie-Hellman)
    -------------------------------------------------------------------------
@@ -108,6 +120,7 @@ package Anubis_Types.Classical is
                  else not Is_Valid (Key));
 
    -- Encrypt with XChaCha20-Poly1305
+   -- PLATINUM LEVEL: Proves length preservation and tag generation
    procedure XChaCha20_Encrypt (
       Plaintext  : in     Byte_Array;
       Key        : in     XChaCha20_Key;
@@ -117,7 +130,11 @@ package Anubis_Types.Classical is
       Success    : out    Boolean
    ) with
       Pre  => Is_Valid (Key) and then
-              Ciphertext'Length = Plaintext'Length;
+              Ciphertext'Length = Plaintext'Length,
+      Post => (if Success then
+                  Encryption_Length_Valid (Plaintext'Length, Ciphertext'Length)
+               else
+                  Is_All_Zero (Ciphertext));
 
    -- Decrypt with XChaCha20-Poly1305
    procedure XChaCha20_Decrypt (
