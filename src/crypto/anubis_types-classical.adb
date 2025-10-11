@@ -17,6 +17,22 @@ with Sodium_KDF;
 package body Anubis_Types.Classical is
 
    -------------------------------------------------------------------------
+   -- PLATINUM LEVEL: Ghost Function Bodies
+   -------------------------------------------------------------------------
+
+   function Auth_Tag_Valid (Tag : XChaCha20_Auth_Tag) return Boolean is
+      All_Zero : Boolean := True;
+   begin
+      for I in Tag.Data'Range loop
+         if Tag.Data (I) /= 0 then
+            All_Zero := False;
+            exit;
+         end if;
+      end loop;
+      return not All_Zero;
+   end Auth_Tag_Valid;
+
+   -------------------------------------------------------------------------
    -- X25519 Operations (Elliptic Curve Diffie-Hellman)
    -------------------------------------------------------------------------
 

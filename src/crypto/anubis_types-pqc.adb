@@ -475,6 +475,28 @@ package body Anubis_Types.PQC is
       return Ed_Present and DSA_Present;
    end Both_Signatures_Present;
 
+   function Hybrid_Secret_Well_Formed (Secret : Hybrid_Shared_Secret) return Boolean is
+      Classical_NonZero : Boolean := False;
+      PQ_NonZero : Boolean := False;
+   begin
+      -- Check if classical secret has non-zero bytes
+      for I in Secret.Classical_Secret'Range loop
+         if Secret.Classical_Secret (I) /= 0 then
+            Classical_NonZero := True;
+            exit;
+         end if;
+      end loop;
+      -- Check if PQ secret has non-zero bytes
+      for I in Secret.PQ_Secret'Range loop
+         if Secret.PQ_Secret (I) /= 0 then
+            PQ_NonZero := True;
+            exit;
+         end if;
+      end loop;
+      -- Well-formed if both secrets present and valid flag set
+      return Classical_NonZero and PQ_NonZero and Secret.Valid;
+   end Hybrid_Secret_Well_Formed;
+
    -------------------------------------------------------------------------
    -- Hybrid Signature Accessors
    -------------------------------------------------------------------------

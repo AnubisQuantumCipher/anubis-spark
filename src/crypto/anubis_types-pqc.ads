@@ -194,6 +194,9 @@ package Anubis_Types.PQC is
    -- Ghost: Check if both signatures in hybrid are valid
    function Both_Signatures_Present (Sig : Hybrid_Signature) return Boolean;
 
+   -- Ghost: Verify hybrid secret properly combines classical + PQ
+   function Hybrid_Secret_Well_Formed (Secret : Hybrid_Shared_Secret) return Boolean;
+
    -- Ghost: Verify encryption key derived from hybrid secret is valid
    function Derived_Key_Valid (Key : XChaCha20_Key) return Boolean is
       (Is_Valid (Key))
