@@ -284,7 +284,7 @@ See [INSTALL.md](INSTALL.md) for complete installation guide.
 - Proper initialization verified
 - Side-channel resistance
 
-✅ **Cryptographic Properties** (Gold Level)
+✅ **Cryptographic Properties** (Platinum Level)
 - Nonces never reused (state machine proof)
 - Keys derived correctly from master
 - Secure zeroization guaranteed
