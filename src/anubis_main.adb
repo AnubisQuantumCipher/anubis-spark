@@ -358,7 +358,7 @@ begin
 
                if Rc /= Streaming.Success then
                   Put_Line ("✗ FAILED");
-                  Put_Line ("ERROR: Encryption failed - " & Rc'Image);
+                  Put_Line ("ERROR: Encryption failed - " & "FAILED");
                   Storage.Zeroize_Identity (Identity);
                   return;
                end if;
@@ -424,7 +424,7 @@ begin
 
                if Rc /= Streaming.Success then
                   Put_Line ("✗ FAILED");
-                  Put_Line ("ERROR: Decryption failed - " & Rc'Image);
+                  Put_Line ("ERROR: Decryption failed - " & "FAILED");
                   Storage.Zeroize_Identity (Identity);
                   return;
                end if;

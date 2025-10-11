@@ -67,3 +67,7 @@ keystore.dat
 # Documentation build artifacts
 /docs/_build/
 /docs/.doctrees/
+/obj/
+/lib/
+/alire/
+/config/
