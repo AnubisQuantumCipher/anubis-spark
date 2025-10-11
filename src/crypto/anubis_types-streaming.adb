@@ -436,13 +436,37 @@ package body Anubis_Types.Streaming is
             CS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
          end loop;
          Chunk_Size_U64 := BE_Bytes_To_U64 (CS_Bytes);
+
+         -- SECURITY: Strict chunk size validation (prevents DoS via pathological allocations)
+         -- Reject if not representable as Natural
+         if Chunk_Size_U64 > U64 (Natural'Last) then
+            Close (Input_File);
+            Result := Invalid_Format;
+            return;
+         end if;
+
          Chunk_Size := Natural (Chunk_Size_U64);
+
+         -- Strict max: 1,073,741,824 bytes (1 GiB); also reject zero
+         if Chunk_Size = 0 or else Chunk_Size > 1_073_741_824 then
+            Close (Input_File);
+            Result := Invalid_Format;
+            return;
+         end if;
 
          -- Read total size
          for I in TS_Bytes'Range loop
             TS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
          end loop;
          Total_Size_U64 := BE_Bytes_To_U64 (TS_Bytes);
+
+         -- SECURITY: Validate total size is representable as Natural
+         if Total_Size_U64 > U64 (Natural'Last) then
+            Close (Input_File);
+            Result := Invalid_Format;
+            return;
+         end if;
+
          Total_Size := Natural (Total_Size_U64);
 
          -- Read ephemeral X25519 public key
@@ -613,6 +637,24 @@ package body Anubis_Types.Streaming is
             Classical.Zeroize_XChaCha20_Key (Decryption_Key);
             Result := Invalid_Format;
             return;
+      end;
+
+      -- SECURITY: Verify EOF (no trailing data after finalization marker)
+      declare
+         Extra_Byte : Stream_Element;
+      begin
+         -- Try to read one more byte; if it succeeds, trailing junk exists
+         Extra_Byte := Stream_Element'Input (File_Stream);
+         -- If we got here, there's trailing data = tampering
+         Close (Input_File);
+         Close (Output_File);
+         Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+         Result := Invalid_Format;  -- Trailing data detected
+         return;
+      exception
+         when others =>
+            -- Expected: end of file reached; continue to cleanup
+            null;
       end;
 
       -- Cleanup
