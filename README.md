@@ -1,6 +1,6 @@
 # ANUBIS-SPARK 🔐
 
-**Hybrid Post-Quantum Zero-Knowledge File Encryption System**
+**Hybrid Post-Quantum Encryption System**
 
 [![Security Level](https://img.shields.io/badge/Security-NIST%20Level%205-brightgreen)](https://csrc.nist.gov/projects/post-quantum-cryptography)
 [![SPARK Verified](https://img.shields.io/badge/SPARK-Platinum%20Certified-gold)](https://www.adacore.com/about-spark)
