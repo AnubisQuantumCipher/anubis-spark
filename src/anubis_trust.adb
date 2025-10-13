@@ -527,9 +527,10 @@ package body Anubis_Trust is
             end if;
          end;
       else
-         -- Backward compatibility: Accept old records without HMAC
-         -- (Future versions can enforce HMAC requirement)
-         null;
+         -- v2.0.0+: Reject legacy records without HMAC for security
+         -- Operators must re-approve identities with v2.0.0 tooling
+         Success := False;
+         return;
       end if;
 
       Success := True;
