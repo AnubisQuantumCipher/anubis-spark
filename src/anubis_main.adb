@@ -150,7 +150,7 @@ procedure Anubis_Main is
       Put_Line ("  trust            Manage signer trust records (list|approve|deny|selfcheck)");
       Put_Line ("  test             Run cryptographic self-tests");
       Put_Line ("  version          Show version and security info");
-      Put_Line ("  convert          Migrate legacy ANUBIS/ANUB2 file to ANUB3");
+      Put_Line ("  convert          Re-encrypt plaintext to ANUB3 (use v1.x to decrypt first)");
       Put_Line ("  help             Show this help message");
       New_Line;
       Put_Line ("Examples:");
@@ -726,7 +726,7 @@ begin
             Storage.Zeroize_Identity (Identity);
          end;
       elsif Command = "convert" then
-         -- Convert legacy ANUBIS/ANUB2 file to ANUB3 streaming format
+         -- Re-encrypt plaintext to ANUB3 streaming format (manual migration)
          declare
             Key_File    : constant String := Get_Arg ("--key", "identity.key");
             Input_File  : constant String := Get_Arg ("--input");
@@ -736,12 +736,11 @@ begin
             Identity    : Storage.Identity_Keypair;
             Success     : Boolean;
             Use_Encrypted : constant Boolean := (Passphrase /= "");
-            Tmp_Path    : constant String := Output_File & ".tmp.dec";
             Force_Overwrite : constant Boolean := Has_Arg ("--force");
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
-               Put_Line ("Usage: anubis-spark convert --key <identity> --input <old> [--output <new>] [--passphrase <pass>] [--label <text>]");
+               Put_Line ("Usage: anubis-spark convert --key <identity> --input <plaintext> [--output <new>] [--passphrase <pass>] [--label <text>] [--force]");
                return;
             end if;
 
@@ -752,7 +751,7 @@ begin
             end if;
 
             Print_Banner;
-            Put_Line ("Converting legacy file to ANUB3...");
+            Put_Line ("Re-encrypting plaintext to ANUB3 (manual migration)...");
             New_Line;
 
             Put ("Loading identity from " & Key_File & "... ");
@@ -768,7 +767,7 @@ begin
             end if;
             Put_Line ("✓");
 
-            -- Detect legacy header type and guide if needed
+            -- Reject ciphertext inputs: convert expects plaintext
             declare
                H : Ada.Streams.Stream_IO.File_Type;
                S : Ada.Streams.Stream_IO.Stream_Access;
@@ -787,36 +786,13 @@ begin
                   when others => null;
                end;
 
-               if Magic5 = "ANUB2" then
-                  Put_Line ("ERROR: This file uses legacy ANUB2 streaming format.");
-                  Put_Line ("Use a v1.x binary to decrypt, then re-encrypt with v2.0.0 (ANUB3).");
+               if Magic5 = "ANUB2" or else Magic5 = "ANUB3" then
+                  Put_Line ("ERROR: Input appears to be ciphertext (" & Magic5 & ").");
+                  Put_Line ("Use v1.x to decrypt legacy ANUB2 ciphertext (or v2.x for ANUB3), then run convert on the plaintext.");
                   Storage.Zeroize_Identity (Identity);
                   return;
                end if;
             end;
-
-            Put ("Decrypting legacy file... ");
-            declare
-               Legacy_OK : Boolean;
-            begin
-               Anubis_Types.File_Encryption.Decrypt_File (
-                  Ciphertext_File     => Input_File,
-                  Plaintext_File      => Tmp_Path,
-                  Recipient_X25519_SK => Storage.Get_X25519_Secret (Identity),
-                  Recipient_ML_KEM_SK => Storage.Get_ML_KEM_Secret (Identity),
-                  Sender_Ed25519_PK   => Storage.Get_Ed25519_Public (Identity),
-                  Sender_ML_DSA_PK    => Storage.Get_ML_DSA_Public (Identity),
-                  Success             => Legacy_OK
-               );
-               if not Legacy_OK then
-                  Put_Line ("✗ FAILED");
-                  Put_Line ("ERROR: Input is not a supported legacy file or verification failed.");
-                  Storage.Zeroize_Identity (Identity);
-                  return;
-               end if;
-               Put_Line ("✓");
-            end;
-
             Put ("Re-encrypting as ANUB3... ");
             declare
                Rc : Streaming.Result_Code;
@@ -834,7 +810,7 @@ begin
                Label_Value := Storage.Make_Label (Label_Arg);
 
                Streaming.Encrypt_File_Streaming (
-                  Input_Path      => Tmp_Path,
+                  Input_Path      => Input_File,
                   Output_Path     => Output_File,
                   X25519_PK       => Storage.Get_X25519_Public (Identity),
                   ML_KEM_PK       => Storage.Get_ML_KEM_Public (Identity),
@@ -846,13 +822,6 @@ begin
                   Result          => Rc,
                   Chunk_Size      => 67_108_864
                );
-
-               -- Cleanup temporary plaintext
-               begin
-                  Ada.Directories.Delete_File (Tmp_Path);
-               exception
-                  when others => null;
-               end;
 
                if Rc /= Streaming.Success then
                   Put_Line ("✗ FAILED");
