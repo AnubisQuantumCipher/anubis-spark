@@ -7,11 +7,23 @@ pragma SPARK_Mode (Off);  -- CLI uses Ada.Command_Line
 
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Calendar; use Ada.Calendar;
+with Ada.Calendar.Formatting;
+with Ada.Directories;
+with Ada.Streams; use Ada.Streams;
+with Ada.Streams.Stream_IO;
+with Ada.Strings; use Ada.Strings;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Interfaces; use Interfaces;
 with Anubis_Types; use Anubis_Types;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 with Anubis_Types.Storage;
 with Anubis_Types.Streaming;
+with Anubis_Types.File_Encryption;
+with Anubis_IO;
+with Anubis_Trust;
+with Anubis_Trust.Logic;
 use Anubis_Types.Streaming;  -- Make Result_Code operators visible
 
 procedure Anubis_Main is
@@ -27,6 +39,79 @@ procedure Anubis_Main is
       return Default;
    end Get_Arg;
 
+   -- Current Unix timestamp (seconds since 1970-01-01).
+   -- Returns 0 and Valid=False if the system clock is before the epoch or
+   -- if conversion to Unsigned_64 fails (graceful degradation).
+   function Unix_Timestamp (Valid : out Boolean) return Unsigned_64 is
+      Epoch : constant Time := Time_Of (1970, 1, 1, 0.0);
+      Now   : Time;
+      Diff  : Duration;
+   begin
+      Valid := False;
+      begin
+         Now := Clock;
+      exception
+         when others =>
+            return 0;
+      end;
+
+      Diff := Now - Epoch;
+      if Diff <= 0.0 then
+         return 0;
+      end if;
+
+      begin
+         declare
+            Seconds : constant Long_Long_Integer := Long_Long_Integer (Diff);
+         begin
+            if Seconds < 0 then
+               return 0;
+            else
+               Valid := True;
+               return Unsigned_64 (Seconds);
+            end if;
+         end;
+      exception
+         when Constraint_Error =>
+            return 0;
+      end;
+   end Unix_Timestamp;
+
+   -- Human-readable ISO 8601 UTC timestamp (fallback to numeric seconds).
+   function Format_Timestamp (Value : Unsigned_64) return String is
+   begin
+      if Value = 0 then
+         return "0";
+      end if;
+
+      declare
+         Epoch : constant Time := Time_Of (1970, 1, 1, 0.0);
+         Seconds_Float : Long_Long_Float;
+         T      : Time;
+      begin
+         begin
+            Seconds_Float := Long_Long_Float (Value);
+         exception
+            when others =>
+               return Trim (Unsigned_64'Image (Value), Both);
+         end;
+
+         begin
+            T := Epoch + Duration (Seconds_Float);
+         exception
+            when others =>
+               return Trim (Unsigned_64'Image (Value), Both);
+         end;
+
+         begin
+            return Trim (Ada.Calendar.Formatting.Image (T), Both);
+         exception
+            when others =>
+               return Trim (Unsigned_64'Image (Value), Both);
+         end;
+      end;
+   end Format_Timestamp;
+
    -- Check if flag exists
    function Has_Arg (Flag : String) return Boolean is
    begin
@@ -41,7 +126,7 @@ procedure Anubis_Main is
    procedure Print_Banner is
    begin
       Put_Line ("╔═══════════════════════════════════════════════════════════════╗");
-      Put_Line ("║  ANUBIS-SPARK v1.1.0 - Quantum-Resistant File Encryption     ║");
+      Put_Line ("║  ANUBIS-SPARK v2.0.0 - Quantum-Resistant File Encryption     ║");
       Put_Line ("║  PLATINUM-LEVEL SPARK VERIFICATION + NIST POST-QUANTUM       ║");
       Put_Line ("╚═══════════════════════════════════════════════════════════════╝");
       New_Line;
@@ -60,10 +145,12 @@ procedure Anubis_Main is
       New_Line;
       Put_Line ("Commands:");
       Put_Line ("  keygen           Generate new hybrid keypair");
-      Put_Line ("  encrypt          Encrypt file with hybrid PQ protection");
-      Put_Line ("  decrypt          Decrypt and verify file");
+      Put_Line ("  encrypt          Encrypt file with hybrid PQ protection (optional --label)");
+      Put_Line ("  decrypt          Decrypt, verify, and enforce signer trust");
+      Put_Line ("  trust            Manage signer trust records (list|approve|deny|selfcheck)");
       Put_Line ("  test             Run cryptographic self-tests");
       Put_Line ("  version          Show version and security info");
+      Put_Line ("  convert          Migrate legacy ANUBIS/ANUB2 file to ANUB3");
       Put_Line ("  help             Show this help message");
       New_Line;
       Put_Line ("Examples:");
@@ -72,6 +159,8 @@ procedure Anubis_Main is
       Put_Line ("  anubis-spark encrypt --key alice.key --input secret.txt");
       Put_Line ("  anubis-spark encrypt --key alice.key --passphrase ""Pass"" --input secret.txt");
       Put_Line ("  anubis-spark decrypt --key bob.key --input secret.txt.anubis");
+      Put_Line ("  anubis-spark trust list");
+      Put_Line ("  anubis-spark trust approve --fingerprint <hex> [--operator <name>]");
       New_Line;
       Put_Line ("For detailed help on a command:");
       Put_Line ("  anubis-spark <command> --help");
@@ -82,7 +171,7 @@ procedure Anubis_Main is
    begin
       Print_Banner;
       Put_Line ("Version Information:");
-      Put_Line ("  Anubis-SPARK:  1.1.0 (Encrypted Keystores + Streaming AEAD)");
+      Put_Line ("  Anubis-SPARK:  2.0.0 (ANUB3 + Dual Signatures + Trust)");
       Put_Line ("  liboqs:        0.14.0");
       Put_Line ("  libsodium:     1.0.20");
       Put_Line ("  SPARK:         2024");
@@ -274,6 +363,8 @@ begin
          declare
             Output_File : constant String := Get_Arg ("--output", "identity.key");
             Passphrase  : constant String := Get_Arg ("--passphrase");
+            Label_Default : constant String := Ada.Directories.Base_Name (Output_File);
+            Label_Arg   : constant String := Get_Arg ("--label", Label_Default);
             Identity : Storage.Identity_Keypair;
             Success : Boolean;
             Use_Encrypted : constant Boolean := (Passphrase /= "");
@@ -351,15 +442,55 @@ begin
                                                then Get_Arg ("--output")
                                                else Input_File & ".anubis");
             Passphrase  : constant String := Get_Arg ("--passphrase");
+            Label_Default : constant String := Ada.Directories.Base_Name (Key_File);
+            Label_Arg   : constant String := Get_Arg ("--label", Label_Default);
             Identity    : Storage.Identity_Keypair;
             Success     : Boolean;
             Use_Encrypted : constant Boolean := (Passphrase /= "");
+            Signer_Label_Value      : Signer_Label;
+            Signer_Fingerprint_Value : Signer_Fingerprint;
+            Signer_Timestamp_Value  : Unsigned_64;
+            Force_Overwrite : constant Boolean := Has_Arg ("--force");
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
                Put_Line ("Usage: anubis-spark encrypt --key <identity> --input <file> [--output <file>] [--passphrase <pass>]");
                return;
             end if;
+
+            -- Preflight: Input must be readable
+            declare
+               OK : Boolean := True;
+            begin
+               begin
+                  Anubis_IO.Require_Readable (Input_File);
+               exception
+                  when others =>
+                     Put_Line ("ERROR: Input not readable: " & Input_File);
+                     OK := False;
+               end;
+               if not OK then return; end if;
+            end;
+
+            if Ada.Directories.Exists (Output_File) and then not Force_Overwrite then
+               Put_Line ("ERROR: Output file exists: " & Output_File);
+               Put_Line ("Use --force to overwrite.");
+               return;
+            end if;
+
+            -- Preflight: Input must be readable
+            declare
+               OK : Boolean := True;
+            begin
+               begin
+                  Anubis_IO.Require_Readable (Input_File);
+               exception
+                  when others =>
+                     Put_Line ("ERROR: Input not readable: " & Input_File);
+                     OK := False;
+               end;
+               if not OK then return; end if;
+            end;
 
             Print_Banner;
             Put_Line ("Encrypting File with Hybrid Post-Quantum Protection...");
@@ -383,6 +514,31 @@ begin
             end if;
             Put_Line ("✓");
 
+            if not Anubis_Trust.Logic.Label_Input_Is_Valid (Label_Arg) then
+               Put_Line ("ERROR: Signer label must be ASCII printable (0x20-0x7E) and at most 64 characters.");
+               Storage.Zeroize_Identity (Identity);
+               return;
+            end if;
+
+            Signer_Label_Value := Storage.Make_Label (Label_Arg);
+            Signer_Fingerprint_Value := Storage.Compute_Fingerprint (Identity);
+            declare
+               Timestamp_OK : Boolean;
+            begin
+               Signer_Timestamp_Value := Unix_Timestamp (Timestamp_OK);
+               if not Timestamp_OK then
+                  Put_Line ("WARNING: System clock appears to be before 1970; signer timestamp recorded as 0.");
+               end if;
+            end;
+
+            Put_Line ("Signer Metadata:");
+            Put_Line ("  Label: " & (if Label_Arg'Length = 0 then "(unnamed)" else Label_Arg));
+            Put_Line ("  Fingerprint: " & Anubis_Trust.Hex_Fingerprint (Signer_Fingerprint_Value));
+            Put_Line ("  Timestamp: " &
+              Trim (Unsigned_64'Image (Signer_Timestamp_Value), Both) & " (" &
+              Format_Timestamp (Signer_Timestamp_Value) & ")");
+            New_Line;
+
             Put ("Encrypting " & Input_File & " (streaming mode)... ");
             declare
                Rc : Streaming.Result_Code;
@@ -394,13 +550,23 @@ begin
                   ML_KEM_PK       => Storage.Get_ML_KEM_Public (Identity),
                   Ed25519_SK      => Storage.Get_Ed25519_Secret (Identity),
                   ML_DSA_SK       => Storage.Get_ML_DSA_Secret (Identity),
+                  Signer_Label_Data    => Signer_Label_Value,
+                  Signer_Timestamp     => Signer_Timestamp_Value,
+                  Signer_Fingerprint_Data => Signer_Fingerprint_Value,
                   Result          => Rc,
                   Chunk_Size      => 67_108_864  -- 64 MB chunks
                );
 
                if Rc /= Streaming.Success then
                   Put_Line ("✗ FAILED");
-                  Put_Line ("ERROR: Encryption failed - " & "FAILED");
+                  case Rc is
+                     when Streaming.IO_Error =>
+                        Put_Line ("ERROR: File I/O error - check file permissions and disk space");
+                     when Streaming.Crypto_Error =>
+                        Put_Line ("ERROR: Cryptographic operation failed - check key validity");
+                     when others =>
+                        Put_Line ("ERROR: Encryption failed with unexpected error code");
+                  end case;
                   Storage.Zeroize_Identity (Identity);
                   return;
                end if;
@@ -409,8 +575,10 @@ begin
 
             New_Line;
             Put_Line ("═══════════════════════════════════════════════════");
-            Put_Line ("File encrypted successfully!");
-            Put_Line ("Output: " & Output_File);
+           Put_Line ("File encrypted successfully!");
+           Put_Line ("Output: " & Output_File);
+            Put_Line ("Signer: " & Storage.Label_To_String (Signer_Label_Value));
+            Put_Line ("Fingerprint: " & Anubis_Trust.Hex_Fingerprint (Signer_Fingerprint_Value));
             New_Line;
 
             Storage.Zeroize_Identity (Identity);
@@ -427,10 +595,17 @@ begin
             Identity    : Storage.Identity_Keypair;
             Success     : Boolean;
             Use_Encrypted : constant Boolean := (Passphrase /= "");
+            Force_Overwrite : constant Boolean := Has_Arg ("--force");
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
                Put_Line ("Usage: anubis-spark decrypt --key <identity> --input <file> [--output <file>] [--passphrase <pass>]");
+               return;
+            end if;
+
+            if Ada.Directories.Exists (Output_File) and then not Force_Overwrite then
+               Put_Line ("ERROR: Output file exists: " & Output_File);
+               Put_Line ("Use --force to overwrite.");
                return;
             end if;
 
@@ -459,6 +634,9 @@ begin
             Put ("Decrypting " & Input_File & " (streaming mode)... ");
             declare
                Rc : Streaming.Result_Code;
+               Signer_Label_Raw : Signer_Label;
+               Signer_Timestamp_Raw : Unsigned_64;
+               Signer_Fingerprint_Raw : Signer_Fingerprint;
             begin
                Streaming.Decrypt_File_Streaming (
                   Input_Path      => Input_File,
@@ -467,16 +645,76 @@ begin
                   ML_KEM_SK       => Storage.Get_ML_KEM_Secret (Identity),
                   Ed25519_PK      => Storage.Get_Ed25519_Public (Identity),
                   ML_DSA_PK       => Storage.Get_ML_DSA_Public (Identity),
+                  Signer_Label_Data    => Signer_Label_Raw,
+                  Signer_Timestamp     => Signer_Timestamp_Raw,
+                  Signer_Fingerprint_Data => Signer_Fingerprint_Raw,
                   Result          => Rc
                );
 
-               if Rc /= Streaming.Success then
-                  Put_Line ("✗ FAILED");
-                  Put_Line ("ERROR: Decryption failed - " & "FAILED");
-                  Storage.Zeroize_Identity (Identity);
-                  return;
-               end if;
-               Put_Line ("✓");
+               case Rc is
+                  when Streaming.Success =>
+                     Put_Line ("✓");
+                  when Streaming.Trust_Pending =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line (Anubis_Trust.Status_Message (
+                        Status      => Anubis_Trust.Pending,
+                        Fingerprint => Signer_Fingerprint_Raw,
+                        Label       => Signer_Label_Raw));
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Trust_Denied =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line (Anubis_Trust.Status_Message (
+                        Status      => Anubis_Trust.Denied,
+                        Fingerprint => Signer_Fingerprint_Raw,
+                        Label       => Signer_Label_Raw));
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Trust_Error =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line (Anubis_Trust.Status_Message (
+                        Status      => Anubis_Trust.Error,
+                        Fingerprint => Signer_Fingerprint_Raw,
+                        Label       => Signer_Label_Raw));
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Legacy_Format =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: Legacy ANUB2 header detected. Re-encrypt this file with the current ANUB3 format.");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Invalid_Format =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: ANUB3 header validation failed (file is tampered or unsupported).");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Crypto_Error =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: Decryption failed - cryptographic operation error");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.IO_Error =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: Decryption failed - file I/O error");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when Streaming.Auth_Failed =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: Authentication failed - file may be tampered or corrupted");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+                  when others =>
+                     Put_Line ("✗ FAILED");
+                     Put_Line ("ERROR: Decryption failed with unexpected error");
+                     Storage.Zeroize_Identity (Identity);
+                     return;
+               end case;
+
+               Put_Line ("Signer: " & Storage.Label_To_String (Signer_Label_Raw));
+               Put_Line ("Fingerprint: " & Anubis_Trust.Hex_Fingerprint (Signer_Fingerprint_Raw));
+               Put_Line ("Signer Timestamp: " &
+                 Trim (Unsigned_64'Image (Signer_Timestamp_Raw), Both) & " (" &
+                 Format_Timestamp (Signer_Timestamp_Raw) & ")");
             end;
 
             New_Line;
@@ -486,6 +724,267 @@ begin
             New_Line;
 
             Storage.Zeroize_Identity (Identity);
+         end;
+      elsif Command = "convert" then
+         -- Convert legacy ANUBIS/ANUB2 file to ANUB3 streaming format
+         declare
+            Key_File    : constant String := Get_Arg ("--key", "identity.key");
+            Input_File  : constant String := Get_Arg ("--input");
+            Output_File : constant String := (if Has_Arg ("--output") then Get_Arg ("--output") else Input_File & ".anub3");
+            Passphrase  : constant String := Get_Arg ("--passphrase");
+            Label_Arg   : constant String := Get_Arg ("--label", Ada.Directories.Base_Name (Key_File));
+            Identity    : Storage.Identity_Keypair;
+            Success     : Boolean;
+            Use_Encrypted : constant Boolean := (Passphrase /= "");
+            Tmp_Path    : constant String := Output_File & ".tmp.dec";
+            Force_Overwrite : constant Boolean := Has_Arg ("--force");
+         begin
+            if Input_File = "" then
+               Put_Line ("ERROR: --input <file> required");
+               Put_Line ("Usage: anubis-spark convert --key <identity> --input <old> [--output <new>] [--passphrase <pass>] [--label <text>]");
+               return;
+            end if;
+
+            if Ada.Directories.Exists (Output_File) and then not Force_Overwrite then
+               Put_Line ("ERROR: Output file exists: " & Output_File);
+               Put_Line ("Use --force to overwrite.");
+               return;
+            end if;
+
+            Print_Banner;
+            Put_Line ("Converting legacy file to ANUB3...");
+            New_Line;
+
+            Put ("Loading identity from " & Key_File & "... ");
+            if Use_Encrypted then
+               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
+            else
+               Storage.Load_Identity (Key_File, Identity, Success);
+            end if;
+            if not Success then
+               Put_Line ("✗ FAILED");
+               Put_Line ("ERROR: Cannot load identity keypair.");
+               return;
+            end if;
+            Put_Line ("✓");
+
+            -- Detect legacy header type and guide if needed
+            declare
+               H : Ada.Streams.Stream_IO.File_Type;
+               S : Ada.Streams.Stream_IO.Stream_Access;
+               Magic5 : String (1 .. 5);
+               B : Ada.Streams.Stream_Element;
+            begin
+               begin
+                  Ada.Streams.Stream_IO.Open (H, Ada.Streams.Stream_IO.In_File, Input_File);
+                  S := Ada.Streams.Stream_IO.Stream (H);
+                  for I in Magic5'Range loop
+                     Ada.Streams.Stream_Element'Read (S, B);
+                     Magic5 (I) := Character'Val (Integer (B));
+                  end loop;
+                  Ada.Streams.Stream_IO.Close (H);
+               exception
+                  when others => null;
+               end;
+
+               if Magic5 = "ANUB2" then
+                  Put_Line ("ERROR: This file uses legacy ANUB2 streaming format.");
+                  Put_Line ("Use a v1.x binary to decrypt, then re-encrypt with v2.0.0 (ANUB3).");
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+            end;
+
+            Put ("Decrypting legacy file... ");
+            declare
+               Legacy_OK : Boolean;
+            begin
+               Anubis_Types.File_Encryption.Decrypt_File (
+                  Ciphertext_File     => Input_File,
+                  Plaintext_File      => Tmp_Path,
+                  Recipient_X25519_SK => Storage.Get_X25519_Secret (Identity),
+                  Recipient_ML_KEM_SK => Storage.Get_ML_KEM_Secret (Identity),
+                  Sender_Ed25519_PK   => Storage.Get_Ed25519_Public (Identity),
+                  Sender_ML_DSA_PK    => Storage.Get_ML_DSA_Public (Identity),
+                  Success             => Legacy_OK
+               );
+               if not Legacy_OK then
+                  Put_Line ("✗ FAILED");
+                  Put_Line ("ERROR: Input is not a supported legacy file or verification failed.");
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+               Put_Line ("✓");
+            end;
+
+            Put ("Re-encrypting as ANUB3... ");
+            declare
+               Rc : Streaming.Result_Code;
+               Valid_Label : constant Boolean := Anubis_Trust.Logic.Label_Input_Is_Valid (Label_Arg);
+               Label_Value : Signer_Label;
+               TS_OK : Boolean;
+               TS    : Unsigned_64 := Unix_Timestamp (TS_OK);
+            begin
+               if not Valid_Label then
+                  Put_Line ("✗ FAILED");
+                  Put_Line ("ERROR: --label must be ASCII printable and ≤ 64 chars.");
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+               Label_Value := Storage.Make_Label (Label_Arg);
+
+               Streaming.Encrypt_File_Streaming (
+                  Input_Path      => Tmp_Path,
+                  Output_Path     => Output_File,
+                  X25519_PK       => Storage.Get_X25519_Public (Identity),
+                  ML_KEM_PK       => Storage.Get_ML_KEM_Public (Identity),
+                  Ed25519_SK      => Storage.Get_Ed25519_Secret (Identity),
+                  ML_DSA_SK       => Storage.Get_ML_DSA_Secret (Identity),
+                  Signer_Label_Data    => Label_Value,
+                  Signer_Timestamp     => TS,
+                  Signer_Fingerprint_Data => Storage.Compute_Fingerprint (Identity),
+                  Result          => Rc,
+                  Chunk_Size      => 67_108_864
+               );
+
+               -- Cleanup temporary plaintext
+               begin
+                  Ada.Directories.Delete_File (Tmp_Path);
+               exception
+                  when others => null;
+               end;
+
+               if Rc /= Streaming.Success then
+                  Put_Line ("✗ FAILED");
+                  case Rc is
+                     when Streaming.IO_Error => Put_Line ("ERROR: IO error while writing ANUB3");
+                     when Streaming.Crypto_Error => Put_Line ("ERROR: Crypto error during re-encryption");
+                     when others => Put_Line ("ERROR: Conversion failed");
+                  end case;
+                  Storage.Zeroize_Identity (Identity);
+                  return;
+               end if;
+
+               Put_Line ("✓");
+               New_Line;
+               Put_Line ("Conversion complete → " & Output_File);
+               Storage.Zeroize_Identity (Identity);
+            end;
+         end;
+      elsif Command = "trust" then
+         if Argument_Count < 2 then
+            Put_Line ("Usage: anubis-spark trust <list|approve|deny|selfcheck|doctor|reseal> [options]");
+            return;
+         end if;
+
+         declare
+            Subcommand : constant String := Argument (2);
+         begin
+            if Subcommand = "list" then
+               Anubis_Trust.Print_List;
+            elsif Subcommand = "approve" then
+               declare
+                  Hex_Fp : constant String := Get_Arg ("--fingerprint");
+                  Operator_Arg : constant String := Get_Arg ("--operator");
+                  Fingerprint : Signer_Fingerprint;
+                  Ok : Boolean;
+               begin
+                  if Hex_Fp = "" then
+                     Put_Line ("ERROR: --fingerprint <hex> required");
+                     Put_Line ("Usage: anubis-spark trust approve --fingerprint <hex> [--operator <name>]");
+                     return;
+                  end if;
+
+                  if not Anubis_Trust.Parse_Fingerprint (Hex_Fp, Fingerprint) then
+                     Put_Line ("ERROR: Invalid fingerprint format");
+                     return;
+                  end if;
+
+                  if Operator_Arg'Length > 0 and then
+                     not Anubis_Trust.Logic.Operator_Input_Is_Valid (Operator_Arg) then
+                     Put_Line ("ERROR: --operator must be ASCII printable (0x20-0x7E) and at most 64 characters.");
+                     return;
+                  end if;
+
+                  Anubis_Trust.Approve (
+                     Fingerprint => Fingerprint,
+                     Operator    => Operator_Arg,
+                     Success     => Ok);
+                  if Ok then
+                     Put_Line ("Fingerprint " & Hex_Fp & " approved.");
+                  else
+                     Put_Line ("ERROR: Unable to approve fingerprint.");
+                  end if;
+               end;
+            elsif Subcommand = "deny" then
+               declare
+                  Hex_Fp : constant String := Get_Arg ("--fingerprint");
+                  Operator_Arg : constant String := Get_Arg ("--operator");
+                  Fingerprint : Signer_Fingerprint;
+                  Ok : Boolean;
+               begin
+                  if Hex_Fp = "" then
+                     Put_Line ("ERROR: --fingerprint <hex> required");
+                     Put_Line ("Usage: anubis-spark trust deny --fingerprint <hex> [--operator <name>]");
+                     return;
+                  end if;
+
+                  if not Anubis_Trust.Parse_Fingerprint (Hex_Fp, Fingerprint) then
+                     Put_Line ("ERROR: Invalid fingerprint format");
+                     return;
+                  end if;
+
+                  if Operator_Arg'Length > 0 and then
+                     not Anubis_Trust.Logic.Operator_Input_Is_Valid (Operator_Arg) then
+                     Put_Line ("ERROR: --operator must be ASCII printable (0x20-0x7E) and at most 64 characters.");
+                     return;
+                  end if;
+
+                  Anubis_Trust.Deny (
+                     Fingerprint => Fingerprint,
+                     Operator    => Operator_Arg,
+                     Success     => Ok);
+                  if Ok then
+                     Put_Line ("Fingerprint " & Hex_Fp & " denied.");
+                  else
+                     Put_Line ("ERROR: Unable to deny fingerprint.");
+                  end if;
+               end;
+            elsif Subcommand = "selfcheck" then
+               declare
+                  Ok : Boolean;
+               begin
+                  Anubis_Trust.Self_Check (Ok);
+                  if not Ok then
+                     Put_Line ("ACTION REQUIRED: resolve the trust-store issues reported above.");
+                  end if;
+               end;
+            elsif Subcommand = "doctor" then
+               declare
+                  Ok : Boolean;
+               begin
+                  Anubis_Trust.Doctor (Ok);
+                  if not Ok then
+                     Put_Line ("Trust doctor: issues found; see messages above.");
+                  else
+                     Put_Line ("Trust doctor: OK");
+                  end if;
+               end;
+            elsif Subcommand = "reseal" then
+               declare
+                  Ok : Boolean;
+               begin
+                  Anubis_Trust.Reseal (Ok);
+                  if Ok then
+                     Put_Line ("Reseal complete.");
+                  else
+                     Put_Line ("ERROR: Reseal encountered failures (see messages).");
+                  end if;
+               end;
+            else
+               Put_Line ("Unknown trust subcommand: " & Subcommand);
+               Put_Line ("Use: anubis-spark trust list|approve|deny|selfcheck|doctor|reseal");
+            end if;
          end;
       -- NOTE: sign/verify commands removed from v1.0.0
       -- Hybrid signatures are tested in: anubis-spark test
