@@ -45,11 +45,11 @@ jobs:
           alr toolchain
           gnatls --version || true
 
-      - name: Install gnatprove
+      - name: Fetch dependencies (including gnatprove)
         run: |
-          # Install the gnatprove crate so gnatprove binary is available
-          alr --non-interactive with gnatprove
-          # Update environment to include gnatprove in PATH
+          # Fetch all dependencies declared in alire.toml (including gnatprove)
+          alr update
+          # Update environment to include all Alire-provided tools in PATH
           eval "$(alr printenv)"
           gnatprove --version
 
@@ -132,11 +132,11 @@ jobs:
           alr --non-interactive toolchain --select
           alr toolchain
 
-      - name: Install gnatprove
+      - name: Fetch dependencies (including gnatprove)
         run: |
-          # Install the gnatprove crate so gnatprove binary is available
-          alr --non-interactive with gnatprove
-          # Update environment to include gnatprove in PATH
+          # Fetch all dependencies declared in alire.toml (including gnatprove)
+          alr update
+          # Update environment to include all Alire-provided tools in PATH
           eval "$(alr printenv)"
           gnatprove --version
 
