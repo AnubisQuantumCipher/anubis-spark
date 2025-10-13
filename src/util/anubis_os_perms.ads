@@ -11,5 +11,7 @@ package Anubis_OS_Perms is
    -- Return True if file mode is 0600 (rw-------). Mode_Out receives numeric mode (octal).
    function Mode_600 (Path : String; Mode_Out : out Natural) return Boolean;
 
-end Anubis_OS_Perms;
+   -- Format numeric mode (e.g., 420 decimal) as octal string (e.g., "644").
+   function Format_Octal_Mode (Mode : Natural) return String;
 
+end Anubis_OS_Perms;

@@ -1,0 +1,54 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+bin/
+obj/
+lib/
+alire/
+gnatprove/
+*.o
+*.ali
+*.bexch
+
+# Distribution files
+dist/
+release/
+
+# Test artifacts
+*.log
+*.out
+*.anubis
+*.partial
+*.key
+*.decrypted
+
+# Documentation (copied in Dockerfile)
+# README.md
+# LICENSE-*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# CI artifacts
+.github/workflows/
+
+# Development scripts
+scripts/check-soft-only.sh
+scripts/migrate_anub2.sh
+scripts/release.sh
+fix-rpath.sh

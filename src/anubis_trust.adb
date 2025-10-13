@@ -922,9 +922,10 @@ package body Anubis_Trust is
       declare
          Mode : Natural := 0;
          Is600 : constant Boolean := Anubis_OS_Perms.Mode_600 (Key_Path, Mode);
+         Oct  : constant String := Anubis_OS_Perms.Format_Octal_Mode (Mode);
       begin
          if not Is600 then
-            Put_Line ("WARNING: HMAC key perms are " & Trim (Natural'Image (Mode), Both) & "; expected 600 (chmod 600 " & Key_Path & ")");
+            Put_Line ("WARNING: HMAC key perms are " & Oct & "; expected 600 (chmod 600 " & Key_Path & ")");
          end if;
       end;
 

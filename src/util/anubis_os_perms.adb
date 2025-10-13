@@ -31,4 +31,28 @@ package body Anubis_OS_Perms is
       return M = 8#600#;  -- octal 0600
    end Mode_600;
 
+   function Format_Octal_Mode (Mode : Natural) return String is
+      -- Convert a Natural (e.g., 420) to octal without leading 0 prefix (e.g., "644").
+      Tmp  : Natural := Mode;
+      Buf  : String (1 .. 12);
+      I    : Natural := Buf'Last;
+   begin
+      if Tmp = 0 then
+         return "0";
+      end if;
+      while Tmp > 0 loop
+         declare
+            D : Natural := Tmp mod 8;
+         begin
+            Buf (I) := Character'Val (Integer (Character'Pos ('0')) + Integer (D));
+         end;
+         if I = Buf'First then
+            exit;
+         end if;
+         I := I - 1;
+         Tmp := Tmp / 8;
+      end loop;
+      return Buf (I .. Buf'Last);
+   end Format_Octal_Mode;
+
 end Anubis_OS_Perms;

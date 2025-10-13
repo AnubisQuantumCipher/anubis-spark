@@ -15,7 +15,7 @@ package Anubis_Types.Finalize is
    -------------------------------------------------------------------------
 
    -- Final marker written at end of complete files
-   Final_Magic : constant String := "ANUB2:FINAL";
+   Final_Magic : constant String := "ANUB3:FINAL";
 
    -------------------------------------------------------------------------
    -- Operations

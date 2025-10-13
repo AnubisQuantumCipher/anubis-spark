@@ -1,6 +1,6 @@
 name = "anubis_spark"
 description = "Hybrid Post-Quantum File Encryption with SPARK Platinum Certification"
-version = "1.0.3"
+version = "2.0.0"
 
 authors = ["Anubis Quantum Cipher"]
 maintainers = ["anubis@quantumcipher.dev"]
@@ -81,5 +81,8 @@ windows = false
 
 
 [environment]
-ANUBIS_SPARK_VERSION.set = "1.0.3"
+ANUBIS_SPARK_VERSION.set = "2.0.0"
 ANUBIS_SPARK_CERTIFICATION.set = "PLATINUM"
+
+[[depends-on]]
+gnatprove = "=14.1.1"
