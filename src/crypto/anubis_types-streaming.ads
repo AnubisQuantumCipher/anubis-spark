@@ -2,12 +2,22 @@
 -- ANUBIS-SPARK: Streaming AEAD File Encryption
 -- Universal engine for all file sizes (small = 1 chunk, large = many chunks)
 -- Construction: XChaCha20-Poly1305 per chunk (encrypt-then-MAC)
+-- Header: ANUB3 format with mandatory hybrid signatures (Ed25519 + ML-DSA-87)
 -- Nonce: nonce24 = file_nonce16 || u64_be(chunk_idx) (fresh by construction)
 -------------------------------------------------------------------------------
 
 pragma SPARK_Mode (On);
 
+with Interfaces; use Interfaces;
+
 package Anubis_Types.Streaming is
+
+   -------------------------------------------------------------------------
+   -- Header constants (ghost expectations)
+   -------------------------------------------------------------------------
+
+   -- Length of the header preamble that is signed (bytes without signatures)
+   HEADER_PREAMBLE_LEN : constant Natural := 1_742;
 
    -------------------------------------------------------------------------
    -- Result Codes
@@ -18,7 +28,11 @@ package Anubis_Types.Streaming is
       IO_Error,          -- File I/O error
       Crypto_Error,      -- Cryptographic operation failed
       Invalid_Format,    -- Invalid file format
-      Auth_Failed        -- Authentication tag verification failed
+      Legacy_Format,     -- Legacy ANUB2 format detected
+      Auth_Failed,       -- Authentication tag verification failed
+      Trust_Pending,     -- Signer trust requires approval
+      Trust_Denied,      -- Signer explicitly denied
+      Trust_Error        -- Trust store error
    );
 
    -------------------------------------------------------------------------
@@ -53,6 +67,18 @@ package Anubis_Types.Streaming is
       (Result /= Success)
    with Ghost;
 
+   -- Ghost: The result belongs to the defined set
+   function Is_Valid_Result (Result : Result_Code) return Boolean is
+      (Result = Success or else Result = IO_Error or else Result = Crypto_Error or else
+       Result = Invalid_Format or else Result = Legacy_Format or else Result = Auth_Failed or else
+       Result = Trust_Pending or else Result = Trust_Denied or else Result = Trust_Error)
+   with Ghost;
+
+   -- Ghost: Verify header preamble length matches specification
+   function Header_Preamble_Length_Valid (Len : Natural) return Boolean is
+      (Len = HEADER_PREAMBLE_LEN)
+   with Ghost;
+
    -------------------------------------------------------------------------
    -- Streaming Encryption (64 MB chunks by default)
    -------------------------------------------------------------------------
@@ -67,6 +93,9 @@ package Anubis_Types.Streaming is
       ML_KEM_PK       : in     ML_KEM_Public_Key;
       Ed25519_SK      : in     Ed25519_Secret_Key;
       ML_DSA_SK       : in     ML_DSA_Secret_Key;
+      Signer_Label_Data    : in     Signer_Label;
+      Signer_Timestamp     : in     Unsigned_64;
+      Signer_Fingerprint_Data : in  Signer_Fingerprint;
       Result          : out    Result_Code;
       Chunk_Size      : in     Natural := 67_108_864  -- 64 MB default
    ) with
@@ -91,6 +120,9 @@ package Anubis_Types.Streaming is
       ML_KEM_SK       : in     ML_KEM_Secret_Key;
       Ed25519_PK      : in     Ed25519_Public_Key;
       ML_DSA_PK       : in     ML_DSA_Public_Key;
+      Signer_Label_Data    : out    Signer_Label;
+      Signer_Timestamp     : out   Unsigned_64;
+      Signer_Fingerprint_Data : out Signer_Fingerprint;
       Result          : out    Result_Code
    ) with
       Pre    => Input_Path'Length > 0 and
@@ -101,7 +133,11 @@ package Anubis_Types.Streaming is
       Post   => (Result = Success or        -- Perfect integrity verified
                  Result = Auth_Failed or    -- Poly1305 tag invalid
                  Result = Invalid_Format or  -- Tampering detected
+                 Result = Legacy_Format or   -- Legacy header detected
                  Result = IO_Error or        -- File I/O failed
-                 Result = Crypto_Error);     -- Decapsulation failed
+                 Result = Crypto_Error or    -- Decapsulation failed
+                 Result = Trust_Pending or   -- Trust approval required
+                 Result = Trust_Denied or    -- Trust explicitly denied
+                 Result = Trust_Error);      -- Trust store error
 
 end Anubis_Types.Streaming;

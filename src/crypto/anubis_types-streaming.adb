@@ -13,6 +13,7 @@ with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 with Anubis_Types.Header_AAD;
 with Anubis_Types.Finalize;
+with Anubis_Trust;
 with Sodium_Common;
 with Interfaces.C;
 
@@ -78,6 +79,9 @@ package body Anubis_Types.Streaming is
       ML_KEM_PK       : in     ML_KEM_Public_Key;
       Ed25519_SK      : in     Ed25519_Secret_Key;
       ML_DSA_SK       : in     ML_DSA_Secret_Key;
+      Signer_Label_Data    : in     Signer_Label;
+      Signer_Timestamp     : in     Unsigned_64;
+      Signer_Fingerprint_Data : in  Signer_Fingerprint;
       Result          : out    Result_Code;
       Chunk_Size      : in     Natural := 67_108_864
    ) is
@@ -112,6 +116,7 @@ package body Anubis_Types.Streaming is
       Op_Success : Boolean;
       File_Stream : Stream_Access;
       Output_Stream : Stream_Access;
+      Computed_AAD : Byte_Array (1 .. 32);
 
    begin
       -- Step 1: Open input file and get size
@@ -177,17 +182,13 @@ package body Anubis_Types.Streaming is
 
       -- Step 4.5: Compute header AAD (binds all chunks to header)
       declare
-         Computed_AAD : constant Byte_Array := Header_AAD.Compute_Header_AAD (
-            File_Nonce16 => File_Nonce16,
-            Chunk_Size   => Chunk_Size,
-            Total_Size   => Natural (Total_Size)
-         );
+         Computed_AAD : Byte_Array (1 .. 32);
          Partial_Path : constant String := Finalize.Partial_Name (Output_Path);
       begin
 
       -- Step 5: Create output file with .partial extension (for crash safety)
       begin
-         Create (Output_File, Out_File, Partial_Path);
+         Create (Output_File, Out_File, Finalize.Partial_Name (Output_Path));
       exception
          when others =>
             Close (Input_File);
@@ -199,41 +200,104 @@ package body Anubis_Types.Streaming is
 
       Output_Stream := Stream (Output_File);
 
-      -- Write header: ANUB2 (5) | version (1) | file_nonce (16) | chunk_size (8) | total_size (8) |
-      --               ephemeral_x25519_pk (32) | ml_kem_ct (1568)
+      -- Write header: ANUB3 (5) | version (1) | file_nonce (16) | chunk_size (8) | total_size (8) |
+      --               ephemeral_x25519_pk (32) | ml_kem_ct (1568) | signer_label (64) | signer_ts (8)
+      --               | signer_fingerprint (32) | ed25519_sig (64) | ml_dsa_sig (4627)
       declare
-         Magic : constant Byte_Array := (65, 78, 85, 66, 50);  -- "ANUB2"
-         Version : constant Byte := 1;
-         CS_Bytes : Byte_Array (1 .. 8);
-         TS_Bytes : Byte_Array (1 .. 8);
+         Magic             : constant Byte_Array := (65, 78, 85, 66, 51);  -- "ANUB3"
+         Version           : constant Byte := 3;
+         CS_Bytes          : Byte_Array (1 .. 8);
+         TS_Bytes          : Byte_Array (1 .. 8);
+         Time_Bytes        : Byte_Array (1 .. 8);
+         Header_To_Sign    : Byte_Array (1 .. 1_742);
+         Offset            : Natural := Header_To_Sign'First;
+         Hybrid_Sig        : PQC.Hybrid_Signature;
+         Ed_Sig            : Ed25519_Signature;
+         ML_Sig            : ML_DSA_Signature;
+         Sign_Success      : Boolean;
+         Zero_Ed_Sig       : Ed25519_Signature := (Data => (others => 0));
+         Zero_ML_Sig       : ML_DSA_Signature  := (Data => (others => 0));
       begin
-         for B of Magic loop
-            Stream_Element'Write (Output_Stream, Stream_Element (B));
-         end loop;
-         Stream_Element'Write (Output_Stream, Stream_Element (Version));
-         for B of File_Nonce16 loop
-            Stream_Element'Write (Output_Stream, Stream_Element (B));
-         end loop;
+         -- Populate header buffer (without signatures)
+         pragma Assert (Header_To_Sign'Length = 1_742);
+         Header_To_Sign (Offset .. Offset + Magic'Length - 1) := Magic;
+         Offset := Offset + Magic'Length;
+
+         Header_To_Sign (Offset) := Version;
+         Offset := Offset + 1;
+
+         Header_To_Sign (Offset .. Offset + File_Nonce16'Length - 1) := File_Nonce16;
+         Offset := Offset + File_Nonce16'Length;
 
          U64_To_BE_Bytes (U64 (Chunk_Size), CS_Bytes);
-         for B of CS_Bytes loop
-            Stream_Element'Write (Output_Stream, Stream_Element (B));
-         end loop;
+         Header_To_Sign (Offset .. Offset + CS_Bytes'Length - 1) := CS_Bytes;
+         Offset := Offset + CS_Bytes'Length;
 
          U64_To_BE_Bytes (U64 (Total_Size), TS_Bytes);
-         for B of TS_Bytes loop
+         Header_To_Sign (Offset .. Offset + TS_Bytes'Length - 1) := TS_Bytes;
+         Offset := Offset + TS_Bytes'Length;
+
+         Header_To_Sign (Offset .. Offset + Ephemeral_X25519_PK.Data'Length - 1) :=
+           Ephemeral_X25519_PK.Data;
+         Offset := Offset + Ephemeral_X25519_PK.Data'Length;
+
+         Header_To_Sign (Offset .. Offset + ML_KEM_CT.Data'Length - 1) := ML_KEM_CT.Data;
+         Offset := Offset + ML_KEM_CT.Data'Length;
+
+         Header_To_Sign (Offset .. Offset + Signer_Label_Data'Length - 1) := Signer_Label_Data;
+         Offset := Offset + Signer_Label_Data'Length;
+
+         U64_To_BE_Bytes (U64 (Signer_Timestamp), Time_Bytes);
+         Header_To_Sign (Offset .. Offset + Time_Bytes'Length - 1) := Time_Bytes;
+         Offset := Offset + Time_Bytes'Length;
+
+         Header_To_Sign (Offset .. Offset + Signer_Fingerprint_Data'Length - 1) :=
+           Signer_Fingerprint_Data;
+
+         -- Produce hybrid signature (mandatory authenticity)
+         PQC.Hybrid_Sign (
+            Message     => Header_To_Sign,
+            Ed25519_SK  => Ed25519_SK,
+            ML_DSA_SK   => ML_DSA_SK,
+            Signature   => Hybrid_Sig,
+            Success     => Sign_Success
+         );
+
+         if not Sign_Success then
+            Close (Input_File);
+            Close (Output_File);
+            Classical.Zeroize_X25519_Secret (Ephemeral_X25519_SK);
+            Classical.Zeroize_XChaCha20_Key (Encryption_Key);
+            PQC.Set_Signature_Components (Hybrid_Sig, Zero_Ed_Sig, Zero_ML_Sig);
+            Result := Crypto_Error;
+            return;
+         end if;
+
+         Computed_AAD := Header_AAD.Compute_Header_AAD (Header_To_Sign);
+
+         PQC.Get_Signature_Components (
+            Sig         => Hybrid_Sig,
+            Ed25519_Sig => Ed_Sig,
+            ML_DSA_Sig  => ML_Sig
+         );
+
+         -- Persist header and signatures
+         for B of Header_To_Sign loop
             Stream_Element'Write (Output_Stream, Stream_Element (B));
          end loop;
 
-         -- Write ephemeral X25519 public key
-         for B of Ephemeral_X25519_PK.Data loop
+         for B of Ed_Sig.Data loop
             Stream_Element'Write (Output_Stream, Stream_Element (B));
          end loop;
 
-         -- Write ML-KEM ciphertext
-         for B of ML_KEM_CT.Data loop
+         for B of ML_Sig.Data loop
             Stream_Element'Write (Output_Stream, Stream_Element (B));
          end loop;
+
+         -- Zeroize temporary signature buffers
+         PQC.Set_Signature_Components (Hybrid_Sig, Zero_Ed_Sig, Zero_ML_Sig);
+         Ed_Sig := Zero_Ed_Sig;
+         ML_Sig := Zero_ML_Sig;
       end;
 
       -- Step 6: Process file in chunks
@@ -362,6 +426,9 @@ package body Anubis_Types.Streaming is
       ML_KEM_SK       : in     ML_KEM_Secret_Key;
       Ed25519_PK      : in     Ed25519_Public_Key;
       ML_DSA_PK       : in     ML_DSA_Public_Key;
+      Signer_Label_Data    : out    Signer_Label;
+      Signer_Timestamp     : out   Unsigned_64;
+      Signer_Fingerprint_Data : out Signer_Fingerprint;
       Result          : out    Result_Code
    ) is
       -- File handles
@@ -369,8 +436,6 @@ package body Anubis_Types.Streaming is
       Output_File : File_Type;
 
       -- Crypto keys
-      Parsed_X25519_PK : X25519_Public_Key;
-      Parsed_ML_KEM_PK : ML_KEM_Public_Key;
       Ephemeral_X25519_PK : X25519_Public_Key;
       ML_KEM_CT           : ML_KEM_Ciphertext;
       Hybrid_Secret       : PQC.Hybrid_Shared_Secret;
@@ -393,8 +458,13 @@ package body Anubis_Types.Streaming is
       Op_Success : Boolean;
       File_Stream : Stream_Access;
       Output_Stream : Stream_Access;
+      Partial_Path  : constant String := Finalize.Partial_Name (Output_Path);
 
    begin
+      Signer_Label_Data := (others => 0);
+      Signer_Fingerprint_Data := (others => 0);
+      Signer_Timestamp := 0;
+
       -- Open input file
       begin
          Open (Input_File, In_File, Input_Path);
@@ -406,98 +476,199 @@ package body Anubis_Types.Streaming is
 
       File_Stream := Stream (Input_File);
 
-      -- Read and verify header
       declare
-         Magic : Byte_Array (1 .. 5);
-         Version : Byte;
-         CS_Bytes : Byte_Array (1 .. 8);
-         TS_Bytes : Byte_Array (1 .. 8);
+         Computed_AAD : Byte_Array (1 .. 32);
       begin
-         -- Read magic
-         for I in Magic'Range loop
-            Magic (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
+         -- Read and verify header
+         declare
+            Magic            : Byte_Array (1 .. 5);
+            Version          : Byte;
+            CS_Bytes         : Byte_Array (1 .. 8);
+            TS_Bytes         : Byte_Array (1 .. 8);
+            Time_Bytes       : Byte_Array (1 .. 8);
+            Header_To_Verify : Byte_Array (1 .. 1_742);
+            Offset           : Natural := Header_To_Verify'First;
+            Ed_Sig           : Ed25519_Signature;
+            ML_Sig           : ML_DSA_Signature;
+            Hybrid_Sig       : PQC.Hybrid_Signature;
+            Zero_Ed_Sig      : Ed25519_Signature := (Data => (others => 0));
+            Zero_ML_Sig      : ML_DSA_Signature  := (Data => (others => 0));
+            Verified         : Boolean;
+         begin
+            -- Read magic
+            for I in Magic'Range loop
+               Magic (I) := Byte (Stream_Element'Input (File_Stream));
+               Header_To_Verify (Offset) := Magic (I);
+               Offset := Offset + 1;
+            end loop;
 
-         if Magic /= (65, 78, 85, 66, 50) then  -- "ANUB2"
-            Close (Input_File);
-            Result := Invalid_Format;
-            return;
-         end if;
+            if Magic = (65, 78, 85, 66, 50) then  -- "ANUB2"
+               Close (Input_File);
+               Result := Legacy_Format;
+               return;
+            elsif Magic /= (65, 78, 85, 66, 51) then  -- "ANUB3"
+               Close (Input_File);
+               Result := Invalid_Format;
+               return;
+            end if;
 
-         -- Read version
-         Version := Byte (Stream_Element'Input (File_Stream));
-         if Version /= 1 then
-            Close (Input_File);
-            Result := Invalid_Format;
-            return;
-         end if;
+            -- Read version
+            Version := Byte (Stream_Element'Input (File_Stream));
+            Header_To_Verify (Offset) := Version;
+            Offset := Offset + 1;
+            if Version /= 3 then
+               Close (Input_File);
+               Result := Invalid_Format;
+               return;
+            end if;
 
-         -- Read file nonce
-         for I in File_Nonce16'Range loop
-            File_Nonce16 (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
+            -- Read file nonce
+            for I in File_Nonce16'Range loop
+               File_Nonce16 (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+            Header_To_Verify (Offset .. Offset + File_Nonce16'Length - 1) := File_Nonce16;
+            Offset := Offset + File_Nonce16'Length;
 
-         -- Read chunk size
-         for I in CS_Bytes'Range loop
-            CS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
-         Chunk_Size_U64 := BE_Bytes_To_U64 (CS_Bytes);
+            -- Read chunk size
+            for I in CS_Bytes'Range loop
+               CS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+            Chunk_Size_U64 := BE_Bytes_To_U64 (CS_Bytes);
+            Header_To_Verify (Offset .. Offset + CS_Bytes'Length - 1) := CS_Bytes;
+            Offset := Offset + CS_Bytes'Length;
 
-         -- SECURITY: Strict chunk size validation (prevents DoS via pathological allocations)
-         -- Reject if not representable as Natural
-         if Chunk_Size_U64 > U64 (Natural'Last) then
-            Close (Input_File);
-            Result := Invalid_Format;
-            return;
-         end if;
+            -- SECURITY: Strict chunk size validation (prevents DoS via pathological allocations)
+            -- Reject if not representable as Natural
+            if Chunk_Size_U64 > U64 (Natural'Last) then
+               Close (Input_File);
+               Result := Invalid_Format;
+               return;
+            end if;
 
-         Chunk_Size := Natural (Chunk_Size_U64);
+            Chunk_Size := Natural (Chunk_Size_U64);
 
-         -- Strict max: 1,073,741,824 bytes (1 GiB); also reject zero
-         if Chunk_Size = 0 or else Chunk_Size > 1_073_741_824 then
-            Close (Input_File);
-            Result := Invalid_Format;
-            return;
-         end if;
+            -- Strict max: 1,073,741,824 bytes (1 GiB); also reject zero
+            if Chunk_Size = 0 or else Chunk_Size > 1_073_741_824 then
+               Close (Input_File);
+               Result := Invalid_Format;
+               return;
+            end if;
 
-         -- Read total size
-         for I in TS_Bytes'Range loop
-            TS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
-         Total_Size_U64 := BE_Bytes_To_U64 (TS_Bytes);
+            -- Read total size
+            for I in TS_Bytes'Range loop
+               TS_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+            Total_Size_U64 := BE_Bytes_To_U64 (TS_Bytes);
+            Header_To_Verify (Offset .. Offset + TS_Bytes'Length - 1) := TS_Bytes;
+            Offset := Offset + TS_Bytes'Length;
 
-         -- SECURITY: Validate total size is representable as Natural
-         if Total_Size_U64 > U64 (Natural'Last) then
-            Close (Input_File);
-            Result := Invalid_Format;
-            return;
-         end if;
+            -- SECURITY: Validate total size is representable as Natural
+            if Total_Size_U64 > U64 (Natural'Last) then
+               Close (Input_File);
+               Result := Invalid_Format;
+               return;
+            end if;
 
-         Total_Size := Natural (Total_Size_U64);
+            Total_Size := Natural (Total_Size_U64);
 
-         -- Read ephemeral X25519 public key
-         for I in Ephemeral_X25519_PK.Data'Range loop
-            Ephemeral_X25519_PK.Data (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
+            -- Read ephemeral X25519 public key
+            for I in Ephemeral_X25519_PK.Data'Range loop
+               Ephemeral_X25519_PK.Data (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+            Header_To_Verify (Offset .. Offset + Ephemeral_X25519_PK.Data'Length - 1) :=
+              Ephemeral_X25519_PK.Data;
+            Offset := Offset + Ephemeral_X25519_PK.Data'Length;
 
-         -- Read ML-KEM ciphertext
-         for I in ML_KEM_CT.Data'Range loop
-            ML_KEM_CT.Data (I) := Byte (Stream_Element'Input (File_Stream));
-         end loop;
-      end;
+            -- Read ML-KEM ciphertext
+            for I in ML_KEM_CT.Data'Range loop
+               ML_KEM_CT.Data (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+            Header_To_Verify (Offset .. Offset + ML_KEM_CT.Data'Length - 1) := ML_KEM_CT.Data;
+            Offset := Offset + ML_KEM_CT.Data'Length;
 
-      -- Compute header AAD (must match encryption AAD)
-      declare
-         Computed_AAD : constant Byte_Array := Header_AAD.Compute_Header_AAD (
-            File_Nonce16 => File_Nonce16,
-            Chunk_Size   => Chunk_Size,
-            Total_Size   => Total_Size
-         );
-      begin
+            for I in Signer_Label_Data'Range loop
+               Signer_Label_Data (I) := Byte (Stream_Element'Input (File_Stream));
+               Header_To_Verify (Offset) := Signer_Label_Data (I);
+               Offset := Offset + 1;
+            end loop;
 
-      -- Allocate buffers
-      Cipher_Chunk := new Byte_Array (1 .. Chunk_Size);
-      Plain_Chunk := new Byte_Array (1 .. Chunk_Size);
+            for I in Time_Bytes'Range loop
+               Time_Bytes (I) := Byte (Stream_Element'Input (File_Stream));
+               Header_To_Verify (Offset) := Time_Bytes (I);
+               Offset := Offset + 1;
+            end loop;
+
+            Signer_Timestamp := Unsigned_64 (BE_Bytes_To_U64 (Time_Bytes));
+
+            for I in Signer_Fingerprint_Data'Range loop
+               Signer_Fingerprint_Data (I) := Byte (Stream_Element'Input (File_Stream));
+               Header_To_Verify (Offset) := Signer_Fingerprint_Data (I);
+               Offset := Offset + 1;
+            end loop;
+
+            -- Read mandatory signatures
+            for I in Ed_Sig.Data'Range loop
+               Ed_Sig.Data (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+
+            for I in ML_Sig.Data'Range loop
+               ML_Sig.Data (I) := Byte (Stream_Element'Input (File_Stream));
+            end loop;
+
+            PQC.Set_Signature_Components (
+               Sig         => Hybrid_Sig,
+               Ed25519_Sig => Ed_Sig,
+               ML_DSA_Sig  => ML_Sig
+            );
+
+            -- Sanity: header preamble size invariant
+            pragma Assert (Header_To_Verify'Length = 1_742);
+            Verified := PQC.Hybrid_Verify (
+               Message     => Header_To_Verify,
+               Signature   => Hybrid_Sig,
+               Ed25519_PK  => Ed25519_PK,
+               ML_DSA_PK   => ML_DSA_PK
+            );
+
+            -- Zeroize hybrid signature container
+            PQC.Set_Signature_Components (Hybrid_Sig, Zero_Ed_Sig, Zero_ML_Sig);
+            Ed_Sig := Zero_Ed_Sig;
+            ML_Sig := Zero_ML_Sig;
+
+            if not Verified then
+               Close (Input_File);
+               Result := Auth_Failed;
+               return;
+            end if;
+
+            Computed_AAD := Header_AAD.Compute_Header_AAD (Header_To_Verify);
+         end;
+
+         declare
+            Status : constant Anubis_Trust.Trust_Status :=
+              Anubis_Trust.Verify (Signer_Fingerprint_Data, Signer_Label_Data, Signer_Timestamp);
+         begin
+            case Status is
+               when Anubis_Trust.Approved =>
+                  null;
+               when Anubis_Trust.Pending =>
+                  Close (Input_File);
+                  Result := Trust_Pending;
+                  return;
+               when Anubis_Trust.Denied =>
+                  Close (Input_File);
+                  Result := Trust_Denied;
+                  return;
+               when Anubis_Trust.Error =>
+                  Close (Input_File);
+                  Result := Trust_Error;
+                  return;
+            end case;
+         end;
+
+         -- Allocate buffers
+         Cipher_Chunk := new Byte_Array (1 .. Chunk_Size);
+         Plain_Chunk := new Byte_Array (1 .. Chunk_Size);
 
       -- Perform hybrid key decapsulation
       PQC.Hybrid_Decapsulate (
@@ -528,9 +699,9 @@ package body Anubis_Types.Streaming is
          return;
       end if;
 
-      -- Create output file
+      -- Create output file as a partial, then atomically rename on success
       begin
-         Create (Output_File, Out_File, Output_Path);
+         Create (Output_File, Out_File, Partial_Path);
       exception
          when others =>
             Close (Input_File);
@@ -568,6 +739,11 @@ package body Anubis_Types.Streaming is
             if Chunk_Len = 0 or Chunk_Len > Chunk_Size then
                Close (Input_File);
                Close (Output_File);
+               begin
+                  Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+               exception
+                  when others => null;
+               end;
                Result := Invalid_Format;
                return;
             end if;
@@ -599,6 +775,11 @@ package body Anubis_Types.Streaming is
             if not Op_Success then
                Close (Input_File);
                Close (Output_File);
+               begin
+                  Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+               exception
+                  when others => null;
+               end;
                Classical.Zeroize_XChaCha20_Key (Decryption_Key);
                Result := Auth_Failed;
                return;
@@ -621,6 +802,11 @@ package body Anubis_Types.Streaming is
       if Bytes_Processed /= Total_Size then
          Close (Input_File);
          Close (Output_File);
+         begin
+            Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+         exception
+            when others => null;
+         end;
          Classical.Zeroize_XChaCha20_Key (Decryption_Key);
          Result := Invalid_Format;  -- File size mismatch = tampering
          return;
@@ -628,8 +814,8 @@ package body Anubis_Types.Streaming is
 
       -- Verify finalization marker (crash safety check)
       declare
-         Final_Marker : Byte_Array (1 .. 11);  -- "ANUB2:FINAL"
-         Expected_Marker : constant Byte_Array := (65, 78, 85, 66, 50, 58, 70, 73, 78, 65, 76);
+         Final_Marker : Byte_Array (1 .. 11);  -- "ANUB3:FINAL"
+         Expected_Marker : constant Byte_Array := (65, 78, 85, 66, 51, 58, 70, 73, 78, 65, 76);
       begin
          for I in Final_Marker'Range loop
             Final_Marker (I) := Byte (Stream_Element'Input (File_Stream));
@@ -638,6 +824,11 @@ package body Anubis_Types.Streaming is
          if Final_Marker /= Expected_Marker then
             Close (Input_File);
             Close (Output_File);
+            begin
+               Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+            exception
+               when others => null;
+            end;
             Classical.Zeroize_XChaCha20_Key (Decryption_Key);
             Result := Invalid_Format;  -- Missing or corrupt finalization marker
             return;
@@ -647,6 +838,11 @@ package body Anubis_Types.Streaming is
             -- No finalization marker = file was not properly finalized
             Close (Input_File);
             Close (Output_File);
+            begin
+               Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+            exception
+               when others => null;
+            end;
             Classical.Zeroize_XChaCha20_Key (Decryption_Key);
             Result := Invalid_Format;
             return;
@@ -661,6 +857,11 @@ package body Anubis_Types.Streaming is
          -- If we got here, there's trailing data = tampering
          Close (Input_File);
          Close (Output_File);
+         begin
+            Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+         exception
+            when others => null;
+         end;
          Classical.Zeroize_XChaCha20_Key (Decryption_Key);
          Result := Invalid_Format;  -- Trailing data detected
          return;
@@ -673,6 +874,22 @@ package body Anubis_Types.Streaming is
       -- Cleanup
       Close (Input_File);
       Close (Output_File);
+      -- Atomically rename partial to final destination
+      declare
+         Renamed : constant Boolean := Finalize.Atomic_Rename (Finalize.Partial_Name (Output_Path), Output_Path);
+      begin
+         if not Renamed then
+            -- Best-effort cleanup if rename fails
+            begin
+               Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+            exception
+               when others => null;
+            end;
+            Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+            Result := IO_Error;
+            return;
+         end if;
+      end;
       Classical.Zeroize_XChaCha20_Key (Decryption_Key);
 
       Result := Success;
@@ -682,7 +899,21 @@ package body Anubis_Types.Streaming is
    exception
       when others =>
          if Is_Open (Input_File) then Close (Input_File); end if;
-         if Is_Open (Output_File) then Close (Output_File); end if;
+         if Is_Open (Output_File) then
+            Close (Output_File);
+            -- Attempt to delete any partial file (best-effort)
+            declare
+               -- This exception handler may run outside the scope of Partial_Path; recompute
+               -- based on Output_Path to avoid leaking partials
+               Fallback_Partial : constant String := Finalize.Partial_Name (Output_Path);
+            begin
+               begin
+                  Ada.Directories.Delete_File (Fallback_Partial);
+               exception
+                  when others => null;
+               end;
+            end;
+         end if;
          Result := IO_Error;
    end Decrypt_File_Streaming;
 

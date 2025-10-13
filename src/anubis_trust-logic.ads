@@ -19,11 +19,16 @@ package Anubis_Trust.Logic is
                 (if not Char_Is_Printable'Result then
                    (Character'Pos (C) < 16#20#) or else (Character'Pos (C) > 16#7E#));
 
+   -- Ghost: all characters in a string are printable ASCII
+   function All_Printable (Source : String) return Boolean is
+      (for all C of Source => Char_Is_Printable (C))
+   with Ghost;
+
    -- Validate an operator string supplied by the user.
    function Operator_Input_Is_Valid (Source : String) return Boolean with
       Global  => null,
       Depends => (Operator_Input_Is_Valid'Result => Source),
-      Post    => (if Operator_Input_Is_Valid'Result then Source'Length <= Operator_Max_Length);
+      Post    => (if Operator_Input_Is_Valid'Result then Source'Length <= Operator_Max_Length and then All_Printable (Source));
 
    -- Normalize an operator string: drop non-printables, trim, enforce max length.
    function Normalize_Operator (Source : String) return String with
@@ -35,13 +40,14 @@ package Anubis_Trust.Logic is
                  and then
                  (Normalize_Operator'Result = ""
                   or else (Normalize_Operator'Result (Normalize_Operator'Result'First) /= ' '
-                           and then Normalize_Operator'Result (Normalize_Operator'Result'Last) /= ' '));
+                           and then Normalize_Operator'Result (Normalize_Operator'Result'Last) /= ' '))
+                 and then All_Printable (Normalize_Operator'Result);
 
    -- Validate a signer label produced from CLI input (printable ASCII, length ≤ 64).
    function Label_Input_Is_Valid (Source : String) return Boolean with
       Global  => null,
       Depends => (Label_Input_Is_Valid'Result => Source),
-      Post    => (if Label_Input_Is_Valid'Result then Source'Length <= SIGNER_LABEL_SIZE);
+      Post    => (if Label_Input_Is_Valid'Result then Source'Length <= SIGNER_LABEL_SIZE and then All_Printable (Source));
 
    -- Convert a stored label byte buffer to its canonical string (strip trailing zeros).
    function Canonical_Label_String (Label : Signer_Label) return String with
@@ -54,6 +60,6 @@ package Anubis_Trust.Logic is
       Global  => null,
       Depends => (Label_Buffer_Is_Valid'Result => Label),
       Post    => (if Label_Buffer_Is_Valid'Result then
-                     Label_Input_Is_Valid (Canonical_Label_String (Label)));
+                     Label_Input_Is_Valid (Canonical_Label_String (Label)) and then All_Printable (Canonical_Label_String (Label)));
 
 end Anubis_Trust.Logic;
