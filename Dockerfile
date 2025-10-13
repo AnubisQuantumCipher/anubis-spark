@@ -1,12 +1,12 @@
-# ANUBIS-SPARK Reproducible Build Container
-# Version: 1.1.0 Platinum
-# Purpose: Deterministic builds with SPARK formal verification
+# ANUBIS-SPARK Multi-Stage Production Container
+# Version: 2.0.0
+# Purpose: Minimal runtime image with statically linked binary
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS builder
 
-LABEL maintainer="ANUBIS-SPARK Team"
-LABEL description="Reproducible build environment for ANUBIS-SPARK with SPARK proofs"
-LABEL version="1.1.0"
+LABEL maintainer="sic.tau@pm.me"
+LABEL description="ANUBIS-SPARK builder stage with SPARK verification"
+LABEL version="2.0.0"
 
 ###############################################################################
 # Build Arguments
@@ -218,13 +218,49 @@ RUN echo "=== Generating build manifest ===" && \
              cat BUILD_MANIFEST.txt'
 
 ###############################################################################
-# Runtime Configuration
+# PRODUCTION STAGE: Minimal Runtime Image
 ###############################################################################
 
-# Default command: Show version and help
-CMD ["bash", "-c", "eval \"$(alr printenv)\" && ./bin/anubis_main version && echo '' && ./bin/anubis_main --help"]
+FROM ubuntu:22.04 AS runtime
 
-# Volumes for input/output files
+LABEL maintainer="sic.tau@pm.me"
+LABEL description="ANUBIS-SPARK post-quantum file encryption (runtime)"
+LABEL version="2.0.0"
+LABEL org.opencontainers.image.source="https://github.com/sicarii-demiurge/anubis-spark"
+LABEL org.opencontainers.image.description="Hybrid post-quantum file encryption with SPARK formal verification"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy binary from builder
+COPY --from=builder /home/anubis/anubis-spark/bin/anubis_main /usr/local/bin/anubis-spark
+
+# Copy documentation
+COPY --from=builder /home/anubis/anubis-spark/README.md /usr/share/doc/anubis-spark/
+COPY --from=builder /home/anubis/anubis-spark/LICENSE-MIT /usr/share/doc/anubis-spark/
+COPY --from=builder /home/anubis/anubis-spark/LICENSE-APACHE /usr/share/doc/anubis-spark/
+COPY --from=builder /home/anubis/anubis-spark/BUILD_MANIFEST.txt /usr/share/doc/anubis-spark/
+
+# Create working directory
+WORKDIR /data
+
+# Create non-root user
+RUN useradd -m -u 1000 anubis && \
+    chown -R anubis:anubis /data
+USER anubis
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD anubis-spark version || exit 1
+
+# Default entrypoint
+ENTRYPOINT ["anubis-spark"]
+CMD ["--help"]
+
+# Volume for data files
 VOLUME ["/data"]
 
 ###############################################################################

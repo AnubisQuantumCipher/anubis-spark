@@ -8,10 +8,12 @@ with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Ada.Streams; use Ada.Streams;
 with Interfaces; use Interfaces;
 with Interfaces.C;
+with Sodium_Hash;
 with Anubis_Types.Classical;
 with Anubis_Types.PQC;
 with Sodium_Pwhash;
 with Sodium_Common;
+with System;
 
 package body Anubis_Types.Storage is
 
@@ -315,6 +317,111 @@ package body Anubis_Types.Storage is
    begin
       return Identity.ML_DSA_SK;
    end Get_ML_DSA_Secret;
+
+   function Is_Valid_Label_Input (Source : String) return Boolean is
+      function Is_Printable (C : Character) return Boolean is
+      begin
+         declare
+            Code : constant Natural := Character'Pos (C);
+         begin
+            return Code >= 16#20# and Code <= 16#7E#;
+         end;
+      end Is_Printable;
+   begin
+      if Source'Length > SIGNER_LABEL_SIZE then
+         return False;
+      end if;
+
+      for C of Source loop
+         if not Is_Printable (C) then
+            return False;
+         end if;
+      end loop;
+
+      return True;
+   end Is_Valid_Label_Input;
+
+   function Make_Label (Source : String) return Signer_Label is
+      Result : Signer_Label := (others => 0);
+      Copy_Length : constant Natural :=
+        (if Source'Length < SIGNER_LABEL_SIZE then Source'Length else SIGNER_LABEL_SIZE);
+   begin
+      for I in 1 .. Copy_Length loop
+         Result (I) := Byte (Character'Pos (Source (Source'First + I - 1)));
+      end loop;
+      return Result;
+   end Make_Label;
+
+   function Default_Label return Signer_Label is
+   begin
+      return Make_Label ("default");
+   end Default_Label;
+
+   function Label_To_String (Label : Signer_Label) return String is
+      use type Byte;
+      Last_Index : Natural := 0;
+   begin
+      for I in Label'Range loop
+         exit when Label (I) = 0;
+         Last_Index := I;
+      end loop;
+
+      if Last_Index = 0 then
+         return "";
+      else
+         declare
+            Result_Str : String (1 .. Last_Index);
+         begin
+            for I in 1 .. Last_Index loop
+               Result_Str (I) := Character'Val (Integer (Label (I)));
+            end loop;
+            return Result_Str;
+         end;
+      end if;
+   end Label_To_String;
+
+   function Compute_Fingerprint (Identity : Identity_Keypair) return Signer_Fingerprint is
+      use type Interfaces.C.int;
+      Buffer_Length : constant Natural :=
+        X25519_KEY_SIZE +
+        ML_KEM_1024_PUBLIC_KEY_SIZE +
+        ED25519_KEY_SIZE +
+        ML_DSA_87_PUBLIC_KEY_SIZE;
+      Buffer : Byte_Array (1 .. Buffer_Length);
+      Offset : Natural := Buffer'First;
+      Fingerprint : Signer_Fingerprint := (others => 0);
+      Rc : Interfaces.C.int;
+   begin
+      if not Identity.Valid then
+         return Fingerprint;
+      end if;
+
+      Buffer (Offset .. Offset + X25519_KEY_SIZE - 1) := Identity.X25519_PK.Data;
+      Offset := Offset + X25519_KEY_SIZE;
+
+      Buffer (Offset .. Offset + ML_KEM_1024_PUBLIC_KEY_SIZE - 1) := Identity.ML_KEM_PK.Data;
+      Offset := Offset + ML_KEM_1024_PUBLIC_KEY_SIZE;
+
+      Buffer (Offset .. Offset + ED25519_KEY_SIZE - 1) := Identity.Ed25519_PK.Data;
+      Offset := Offset + ED25519_KEY_SIZE;
+
+      Buffer (Offset .. Offset + ML_DSA_87_PUBLIC_KEY_SIZE - 1) := Identity.ML_DSA_PK.Data;
+
+      Rc := Sodium_Hash.crypto_generichash (
+         Output     => Fingerprint (Fingerprint'First)'Address,
+         Output_Len => Interfaces.C.size_t (Fingerprint'Length),
+         Input      => Buffer (Buffer'First)'Address,
+         Input_Len  => Interfaces.C.unsigned_long_long (Buffer'Length),
+         Key        => System.Null_Address,
+         Key_Len    => 0
+      );
+
+      if Rc /= 0 then
+         Fingerprint := (others => 0);
+      end if;
+
+      return Fingerprint;
+   end Compute_Fingerprint;
 
    -------------------------------------------------------------------------
    -- Encrypted Keystore (Argon2id + XChaCha20-Poly1305)

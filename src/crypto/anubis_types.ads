@@ -35,6 +35,10 @@ package Anubis_Types is
    ML_DSA_87_SECRET_KEY_SIZE    : constant := 4_896;
    ML_DSA_87_SIGNATURE_SIZE     : constant := 4_627;
 
+   -- Signer metadata sizes
+   SIGNER_LABEL_SIZE       : constant := 64;
+   SIGNER_FINGERPRINT_SIZE : constant := 32;
+
    -- Key derivation
    ARGON2_SALT_SIZE     : constant := 32;   -- 256 bits
    ARGON2_OUTPUT_SIZE   : constant := 32;   -- 256 bits
@@ -66,6 +70,10 @@ package Anubis_Types is
    type ML_DSA_Public_Key is private;
    type ML_DSA_Secret_Key is private;
    type ML_DSA_Signature is private;
+
+   -- Signer metadata subtypes
+   subtype Signer_Label is Byte_Array (1 .. SIGNER_LABEL_SIZE);
+   subtype Signer_Fingerprint is Byte_Array (1 .. SIGNER_FINGERPRINT_SIZE);
 
    -- Master key derived from passphrase
    type Master_Key is private;

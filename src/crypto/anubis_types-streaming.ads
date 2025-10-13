@@ -132,9 +132,8 @@ package Anubis_Types.Streaming is
                   Result = IO_Error or
                   Result = Crypto_Error)),
       Contract_Cases => (
-         Result = Success    => Operation_Succeeded (Result),
-         Result = IO_Error   => Operation_Failed (Result),
-         Result = Crypto_Error => Operation_Failed (Result)
+         Result = Success      => Operation_Succeeded (Result),
+         Result /= Success     => Operation_Failed (Result)
       );
 
    -- Decrypt file using streaming AEAD

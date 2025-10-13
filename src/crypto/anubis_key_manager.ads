@@ -56,7 +56,8 @@ package Anubis_Key_Manager is
 
    -- Ghost: Verify key is properly zeroized when destroyed
    function Key_Material_Zeroed (Key : Managed_Key) return Boolean with
-      Ghost;
+      Ghost,
+      Annotate => (GNATprove, Terminating);
 
    -- PLATINUM LEVEL: Proves key material is zeroed and status is Destroyed
    procedure Destroy_Key (Key : in out Managed_Key) with
@@ -83,7 +84,6 @@ private
    -- A key is zeroed when its length is reset and validity flag cleared
    -- PLATINUM: Simplified ghost predicate avoids array indexing in contracts
    function Key_Material_Zeroed (Key : Managed_Key) return Boolean is
-      (Key.Length = 0 and then not Key.Valid) with
-      Annotate => (GNATprove, Terminating);
+      (Key.Length = 0 and then not Key.Valid);
 
 end Anubis_Key_Manager;

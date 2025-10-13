@@ -103,6 +103,25 @@ package Anubis_Types.Storage is
    function Get_ML_DSA_Public (Identity : Identity_Keypair) return ML_DSA_Public_Key;
    function Get_ML_DSA_Secret (Identity : Identity_Keypair) return ML_DSA_Secret_Key;
 
+   -- Signer metadata helpers
+   function Label_To_String (Label : Signer_Label) return String
+     with
+       Global  => null,
+       Depends => (Label_To_String'Result => Label),
+       Post    => Label_To_String'Result'Length <= SIGNER_LABEL_SIZE;
+   function Is_Valid_Label_Input (Source : String) return Boolean
+     with
+       Global  => null,
+       Depends => (Is_Valid_Label_Input'Result => Source);
+   function Make_Label (Source : String) return Signer_Label
+     with
+       Global => null,
+       Pre  => Is_Valid_Label_Input (Source),
+       Depends => (Make_Label'Result => Source),
+       Post => Label_To_String (Make_Label'Result) = Source;
+    function Default_Label return Signer_Label;
+   function Compute_Fingerprint (Identity : Identity_Keypair) return Signer_Fingerprint;
+
    -- Secure cleanup
    procedure Zeroize_Identity (Identity : in out Identity_Keypair);
 
