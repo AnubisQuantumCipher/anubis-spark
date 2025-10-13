@@ -15,6 +15,7 @@ with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
+with Anubis_OS_Perms;
 with Anubis_Types.Storage;
 with Anubis_Trust.Logic;
 with Sodium_Hash;
@@ -906,6 +907,9 @@ package body Anubis_Trust is
       if not Pre_Existed then
          Put_Line ("Created private HMAC key: " & Key_Path);
          Put_Line ("Tip: restrict permissions (chmod 600 " & Key_Path & ")");
+      else
+         -- Warn about permissions for existing key
+         Put_Line ("Tip: Verify HMAC key permissions are secure (chmod 600 " & Key_Path & ")");
       end if;
 
       if Entropy_OK then
@@ -913,6 +917,16 @@ package body Anubis_Trust is
       else
          Put_Line ("HMAC key: WEAK (distinct bytes=" & Trim (Natural'Image (Distinct), Both) & ")");
       end if;
+
+      -- Permissions check for HMAC key: warn when not 0600
+      declare
+         Mode : Natural := 0;
+         Is600 : constant Boolean := Anubis_OS_Perms.Mode_600 (Key_Path, Mode);
+      begin
+         if not Is600 then
+            Put_Line ("WARNING: HMAC key perms are " & Trim (Natural'Image (Mode), Both) & "; expected 600 (chmod 600 " & Key_Path & ")");
+         end if;
+      end;
 
       Self_Check (Store_OK);
       Success := Entropy_OK and then Store_OK;

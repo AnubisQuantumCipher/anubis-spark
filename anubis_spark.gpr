@@ -1,6 +1,6 @@
 project Anubis_Spark is
 
-   for Languages use ("Ada");
+   for Languages use ("Ada", "C");
    for Source_Dirs use ("src/**", "tests");
    for Object_Dir use "obj";
    for Exec_Dir use "bin";
@@ -52,8 +52,7 @@ project Anubis_Spark is
           "--prover=cvc5,z3",       -- Use CVC5 and Z3 provers
           "--timeout=30",           -- 30 second timeout per proof
           "--steps=0",              -- No step limit
-          "--counterexamples=on",
-          "--no-server"             -- Avoid Why3 server flakiness on macOS
+          "--counterexamples=on"
          );
    end Prove;
 
