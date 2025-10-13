@@ -54,19 +54,24 @@ Encrypt(plaintext_chunk, key, nonce) → (ciphertext_chunk, auth_tag)
 
 ## File Format Specification
 
-### Header (1638 bytes)
+### Header (6,433 bytes)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Magic:            "ANUB2" (5 bytes)                 │
-│ Version:          1 (1 byte)                        │
+│ Magic:            "ANUB3" (5 bytes)                 │
+│ Version:          3 (1 byte)                        │
 │ File Nonce:       16 bytes (random, crypto-secure) │
 │ Chunk Size:       8 bytes (big-endian u64)         │
 │ Total Size:       8 bytes (big-endian u64)         │
 │ Ephemeral X25519: 32 bytes (public key)            │
 │ ML-KEM CT:        1568 bytes (ciphertext)          │
+│ Signer Label:     64 bytes (zero-padded ASCII)     │
+│ Signer Timestamp: 8 bytes (big-endian u64, seconds; 0 if clock invalid)│
+│ Signer Fingerprint: 32 bytes (BLAKE2b)             │
+│ Ed25519 Signature: 64 bytes (classical authenticity) │
+│ ML-DSA-87 Signature: 4627 bytes (post-quantum authenticity) │
 └─────────────────────────────────────────────────────┘
-Total: 5 + 1 + 16 + 8 + 8 + 32 + 1568 = 1638 bytes
+Total: 5 + 1 + 16 + 8 + 8 + 32 + 1568 + 64 + 8 + 32 + 64 + 4627 = 6,433 bytes
 ```
 
 ### Per-Chunk Data
@@ -87,7 +92,7 @@ Total Overhead = Header + (Num_Chunks × 24 bytes)
 
 For 2 GB file with 64 MB chunks:
 - Num_Chunks = ceil(2048 MB / 64 MB) = 32
-- Overhead = 1638 + (32 × 24) = 2406 bytes (~0.0001%)
+- Overhead = 6,433 + (32 × 24) = 7,201 bytes (~0.0003%)
 ```
 
 ## Implementation Details
@@ -143,7 +148,7 @@ Cipher_Chunk  := new Byte_Array (1 .. Chunk_Size);
 4. Perform hybrid key decapsulation
 5. Derive decryption key (same HKDF as encryption)
 6. Allocate chunk buffers
-7. Create output file
+7. Create output file as `target.partial`
 8. For each chunk (index 0..N-1):
    a. Read: length || auth_tag || ciphertext
    b. Construct nonce = file_nonce16 || chunk_index
@@ -151,7 +156,7 @@ Cipher_Chunk  := new Byte_Array (1 .. Chunk_Size);
    d. Verify: Poly1305(ciphertext, key) == auth_tag
    e. If valid: write plaintext
    f. If invalid: abort with Auth_Failed
-9. Close files, zeroize keys
+9. Close files, zeroize keys; atomically rename `target.partial` → `target`. On any failure (invalid header/tag/size/final marker or trailing data), the `.partial` file is deleted.
 ```
 
 ### Error Handling
@@ -162,11 +167,19 @@ type Result_Code is (
    IO_Error,       -- File I/O error
    Crypto_Error,   -- Cryptographic operation failed
    Invalid_Format, -- Invalid file format
-   Auth_Failed     -- Authentication tag verification failed
+   Legacy_Format,  -- Legacy ANUB2 header detected
+   Auth_Failed,    -- Authentication tag verification failed
+   Trust_Pending,  -- Trust approval required
+   Trust_Denied,   -- Trust explicitly denied
+   Trust_Error     -- Trust store error
 );
 ```
 
 **Security Note**: `Auth_Failed` indicates tampering or corruption. Never proceed with decryption if authentication fails.
+
+- `Legacy_Format` cleanly detects ANUB2 headers and prompts operators to re-encrypt with ANUB3 tooling.
+- `Trust_Pending`, `Trust_Denied`, and `Trust_Error` surface the TOFU trust workflow; approve or deny fingerprints (optionally with `--operator <name>`) before the plaintext is released.
+- Trust records now retain `updated_at` timestamps and operator notes so `anubis-spark trust list` provides a complete audit log.
 
 ## Testing and Verification
 
