@@ -47,11 +47,9 @@ jobs:
           make install
 
       - name: Install Alire
-        run: |
-          wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-x86_64-linux.zip
-          unzip alr-2.0.1-bin-x86_64-linux.zip
-          chmod +x bin/alr
-          echo "$PWD/bin" >> $GITHUB_PATH
+        uses: alire-project/setup-alire@v3
+        with:
+          version: '2.0.1'
 
       - name: Build ANUBIS-SPARK
         run: |
@@ -145,16 +143,18 @@ jobs:
           brew install liboqs libsodium
 
       - name: Install Alire
-        run: |
-          wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-x86_64-macos.zip
-          unzip alr-2.0.1-bin-x86_64-macos.zip
-          chmod +x bin/alr
-          echo "$PWD/bin" >> $GITHUB_PATH
+        uses: alire-project/setup-alire@v3
+        with:
+          version: '2.0.1'
 
       - name: Build ANUBIS-SPARK
         run: |
           alr build --release
           strip bin/anubis_main
+
+      - name: Fix RPATH (macOS duplicate RPATH issue)
+        run: |
+          ./scripts/fix-rpath.sh bin/anubis_main
 
       - name: Create release archive
         run: |
@@ -184,16 +184,18 @@ jobs:
           brew install liboqs libsodium
 
       - name: Install Alire
-        run: |
-          wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-aarch64-macos.zip
-          unzip alr-2.0.1-bin-aarch64-macos.zip
-          chmod +x bin/alr
-          echo "$PWD/bin" >> $GITHUB_PATH
+        uses: alire-project/setup-alire@v3
+        with:
+          version: '2.0.1'
 
       - name: Build ANUBIS-SPARK
         run: |
           alr build --release
           strip bin/anubis_main
+
+      - name: Fix RPATH (macOS duplicate RPATH issue)
+        run: |
+          ./scripts/fix-rpath.sh bin/anubis_main
 
       - name: Create release archive
         run: |
