@@ -1,7 +1,8 @@
 # ANUBIS-SPARK Makefile
 # Production build and installation
 
-.PHONY: all build install uninstall clean test prove-fast prove-full boundary help
+.PHONY: all build install uninstall clean test prove-fast prove-full boundary benchmark help
+ .PHONY: prove-now
 
 PREFIX ?= $(HOME)/.local
 BINDIR = $(PREFIX)/bin
@@ -13,9 +14,10 @@ all: build
 
 # Build production release
 build:
-	@echo "Building ANUBIS-SPARK v1.1.0 (release mode)..."
+	@echo "Building ANUBIS-SPARK v2.0.0 (release mode)..."
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release
+	@./fix-rpath.sh
 	@echo "✓ Build complete: bin/$(BINARY)"
 
 # Install to ~/.local/bin
@@ -47,6 +49,7 @@ test:
 	@mkdir -p bin
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/*.adb
+	@./fix-rpath.sh
 	@echo "✓ Tests built in bin/"
 
 # PLATINUM: Fast proof (contract packages only, ~2 minutes)
@@ -83,6 +86,13 @@ prove-full:
 		fi; \
 	fi
 
+# Simple proof run with default settings (no file list)
+prove-now:
+	@echo "Running GNATprove (level 1, 2 min timeout, no-server)..."
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
+		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 --no-server || true
+	@echo "(See obj/gnatprove/gnatprove.out for details)"
+
 # PLATINUM: Build and run boundary/tamper tests
 boundary: build
 	@echo "Building boundary tests..."
@@ -100,9 +110,22 @@ boundary: build
 	@echo ""
 	@echo "✓ All boundary tests passed"
 
+# Performance benchmarks
+benchmark:
+	@echo "Building performance benchmark suite..."
+	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
+		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb
+	@./fix-rpath.sh
+	@echo "✓ Benchmark built"
+	@echo ""
+	@echo "Running performance benchmarks (this may take 5-10 minutes)..."
+	@./bin/test_benchmark
+	@echo ""
+	@echo "✓ Benchmarks complete"
+
 # Help
 help:
-	@echo "ANUBIS-SPARK v1.1.0 Makefile"
+	@echo "ANUBIS-SPARK v2.0.0 Makefile"
 	@echo ""
 	@echo "Targets:"
 	@echo "  make build       - Build production release binary"
@@ -115,6 +138,7 @@ help:
 	@echo "  make prove-fast  - Fast SPARK proofs (contracts only, ~2 min)"
 	@echo "  make prove-full  - Full SPARK proofs (entire project, ~10 min)"
 	@echo "  make boundary    - Build and run boundary/tamper tests"
+	@echo "  make benchmark   - Build and run performance benchmarks (~5-10 min)"
 	@echo ""
 	@echo "  make help        - Show this help"
 	@echo ""
