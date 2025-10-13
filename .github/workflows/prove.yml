@@ -53,21 +53,17 @@ jobs:
           eval "$(alr printenv)"
           gnatprove --version
 
-      # Fast proof: Pure logic packages only (header IO, hybrid KDF, AEAD Pure)
+      # Fast proof: Run SPARK verification on all files
       - name: GNATprove (fast set)
         run: |
           eval "$(alr printenv)"
           rm -rf gnatprove || true
-          gnatprove -P anubis_spark.gpr \
-            --mode=prove --level=4 --timeout=120 \
-            --files=src/crypto/anubis_contracts.ads \
-                    src/crypto/anubis_header_io.ads \
-                    src/crypto/anubis_hybrid_kdf.ads \
-                    src/crypto/anubis_aead_pure.ads \
-                    src/crypto/anubis_zeroize.ads \
-                    src/crypto/anubis_bounds.ads
-          # Treat GNATprove warnings as errors
+          # Run gnatprove on the entire project
+          gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120
+          # Check for warnings or failures
           if test -f gnatprove/gnatprove.out; then
+            echo "Proof results:"
+            cat gnatprove/gnatprove.out
             if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then
               echo "::error::GNATprove warnings present - proof regression detected"
               exit 1
@@ -140,15 +136,17 @@ jobs:
           eval "$(alr printenv)"
           gnatprove --version
 
-      # Full orchestration packages (longer timeout)
+      # Full proof: Run complete SPARK verification with higher level
       - name: GNATprove (full set)
         run: |
           eval "$(alr printenv)"
           rm -rf gnatprove || true
-          gnatprove -P anubis_spark.gpr \
-            --mode=prove --level=4 --timeout=600
-          # Treat GNATprove warnings as errors
+          # Run gnatprove on entire project with higher proof level
+          gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600
+          # Check for warnings or failures
           if test -f gnatprove/gnatprove.out; then
+            echo "Proof results:"
+            cat gnatprove/gnatprove.out
             if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then
               echo "::error::GNATprove warnings present - proof regression detected"
               exit 1
