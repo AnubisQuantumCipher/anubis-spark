@@ -67,7 +67,7 @@ package Anubis_Types.Streaming is
       (Result /= Success)
    with Ghost;
 
-   -- Ghost: The result belongs to the defined set
+   -- Ghost: Result belongs to the declared domain (useful for Contract_Cases)
    function Is_Valid_Result (Result : Result_Code) return Boolean is
       (Result = Success or else Result = IO_Error or else Result = Crypto_Error or else
        Result = Invalid_Format or else Result = Legacy_Format or else Result = Auth_Failed or else
@@ -138,6 +138,17 @@ package Anubis_Types.Streaming is
                  Result = Crypto_Error or    -- Decapsulation failed
                  Result = Trust_Pending or   -- Trust approval required
                  Result = Trust_Denied or    -- Trust explicitly denied
-                 Result = Trust_Error);      -- Trust store error
+                 Result = Trust_Error) and then Is_Valid_Result (Result),
+      Contract_Cases => (
+         Result = Success        => Operation_Succeeded (Result),
+         Result = Auth_Failed    => Operation_Failed (Result),
+         Result = Invalid_Format => Operation_Failed (Result),
+         Result = Legacy_Format  => Operation_Failed (Result),
+         Result = IO_Error       => Operation_Failed (Result),
+         Result = Crypto_Error   => Operation_Failed (Result),
+         Result = Trust_Pending  => Operation_Failed (Result),
+         Result = Trust_Denied   => Operation_Failed (Result),
+         Result = Trust_Error    => Operation_Failed (Result)
+      );
 
 end Anubis_Types.Streaming;
