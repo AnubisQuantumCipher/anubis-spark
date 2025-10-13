@@ -41,7 +41,8 @@ jobs:
 
       - name: Select Toolchain
         run: |
-          alr toolchain --select
+          alr toolchain --select --non-interactive
+          alr toolchain
           gnatls --version || true
 
       - name: Resolve dependencies
@@ -119,7 +120,9 @@ jobs:
           version: '2.0.1'
 
       - name: Select Toolchain
-        run: alr toolchain --select
+        run: |
+          alr toolchain --select --non-interactive
+          alr toolchain
 
       # Full orchestration packages (longer timeout)
       - name: GNATprove (full set)
