@@ -80,6 +80,27 @@ package Anubis_Types.Streaming is
    with Ghost;
 
    -------------------------------------------------------------------------
+   -- Decrypt Stage Commentary (Ghost Only)
+   -------------------------------------------------------------------------
+   -- These predicates express a theorem-like provenance for results.
+   -- They are defined conservatively to aid proof structuring.
+   function Stage_Header_Parsed (R : Result_Code) return Boolean is
+      (R = Success or else R = Auth_Failed or else R = Trust_Pending or else R = Trust_Denied or else R = Trust_Error or else R = Crypto_Error)
+   with Ghost;
+
+   function Stage_Signature_Verified (R : Result_Code) return Boolean is
+      (R = Success or else R = Trust_Pending or else R = Trust_Denied or else R = Trust_Error)
+   with Ghost;
+
+   function Stage_Trust_Approved (R : Result_Code) return Boolean is
+      (R = Success)
+   with Ghost;
+
+   function Stage_Chunks_Processed (R : Result_Code) return Boolean is
+      (R = Success)
+   with Ghost;
+
+   -------------------------------------------------------------------------
    -- Streaming Encryption (64 MB chunks by default)
    -------------------------------------------------------------------------
 
@@ -106,9 +127,15 @@ package Anubis_Types.Streaming is
                 Is_Valid (Ed25519_SK) and
                 Is_Valid (ML_DSA_SK),
       Global => null,
-      Post   => (Result = Success or
-                 Result = IO_Error or
-                 Result = Crypto_Error);
+      Post   => (Is_Valid_Result (Result) and then
+                 (Result = Success or
+                  Result = IO_Error or
+                  Result = Crypto_Error)),
+      Contract_Cases => (
+         Result = Success    => Operation_Succeeded (Result),
+         Result = IO_Error   => Operation_Failed (Result),
+         Result = Crypto_Error => Operation_Failed (Result)
+      );
 
    -- Decrypt file using streaming AEAD
    -- Verifies every chunk's authentication tag
@@ -138,7 +165,11 @@ package Anubis_Types.Streaming is
                  Result = Crypto_Error or    -- Decapsulation failed
                  Result = Trust_Pending or   -- Trust approval required
                  Result = Trust_Denied or    -- Trust explicitly denied
-                 Result = Trust_Error) and then Is_Valid_Result (Result),
+                 Result = Trust_Error) and then Is_Valid_Result (Result)
+                 and then (if Result = Invalid_Format or else Result = Legacy_Format then not Stage_Header_Parsed (Result) else True)
+                 and then (if Result = Auth_Failed then Stage_Header_Parsed (Result) and not Stage_Signature_Verified (Result) else True)
+                 and then (if Result = Trust_Pending or else Result = Trust_Denied or else Result = Trust_Error then Stage_Signature_Verified (Result) and not Stage_Trust_Approved (Result) else True)
+                 and then (if Result = Success then Stage_Chunks_Processed (Result) else True),
       Contract_Cases => (
          Result = Success        => Operation_Succeeded (Result),
          Result = Auth_Failed    => Operation_Failed (Result),

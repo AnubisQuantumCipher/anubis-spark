@@ -301,6 +301,7 @@ package body Anubis_Types.Streaming is
       end;
 
       -- Step 6: Process file in chunks
+      pragma Assert (Computed_AAD'Length = 32);
       -- PLATINUM PROOF: Loop invariants (would be proven in pure model)
       -- Invariant 1: Chunk_Index <= (Total_Size / Chunk_Size) + 1
       -- Invariant 2: Bytes_Processed <= Total_Size
@@ -712,6 +713,7 @@ package body Anubis_Types.Streaming is
       Output_Stream := Stream (Output_File);
 
       -- Process chunks
+      pragma Assert (Computed_AAD'Length = 32);
       -- PLATINUM PROOF: Loop invariants (would be proven in pure model)
       -- Invariant 1: Chunk_Index <= (Total_Size / Chunk_Size) + 1
       -- Invariant 2: Bytes_Processed <= Total_Size

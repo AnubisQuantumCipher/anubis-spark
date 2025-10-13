@@ -88,18 +88,20 @@ prove-full:
 
 # Simple proof run with default settings (no file list)
 prove-now:
-	@echo "Running GNATprove (level 1, 2 min timeout, no-server)..."
+	@echo "Running GNATprove (level 1, 2 min timeout)..."
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
-		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 --no-server || true
+		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 --no-server 2>/dev/null \
+		|| PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
+		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 || true
 	@echo "(See obj/gnatprove/gnatprove.out for details)"
 
 # PLATINUM: Build and run boundary/tamper tests
 boundary: build
 	@echo "Building boundary tests..."
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary
+		gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o test_boundary
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix
+		gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o test_boundary_matrix
 	@echo "✓ Boundary tests built"
 	@echo ""
 	@echo "Running boundary test (basic)..."

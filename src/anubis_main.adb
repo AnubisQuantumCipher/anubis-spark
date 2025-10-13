@@ -451,6 +451,11 @@ begin
             Signer_Fingerprint_Value : Signer_Fingerprint;
             Signer_Timestamp_Value  : Unsigned_64;
             Force_Overwrite : constant Boolean := Has_Arg ("--force");
+            
+            Chunk_Size_Arg : constant String := Get_Arg ("--chunk-size");
+            Chunksz        : Natural := 67_108_864;
+            
+            
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
@@ -496,6 +501,26 @@ begin
             Put_Line ("Encrypting File with Hybrid Post-Quantum Protection...");
             Put_Line ("═══════════════════════════════════════════════════");
             New_Line;
+
+            -- Optional: parse chunk size
+            if Chunk_Size_Arg'Length > 0 then
+               declare
+                  V : Natural := 0;
+               begin
+                  begin
+                     V := Natural'Value (Chunk_Size_Arg);
+                  exception
+                     when others =>
+                        Put_Line ("ERROR: --chunk-size must be a positive integer (bytes)");
+                        return;
+                  end;
+                  if V = 0 or else V > 1_073_741_824 then
+                     Put_Line ("ERROR: --chunk-size must be in (0, 1,073,741,824]");
+                     return;
+                  end if;
+                  Chunksz := V;
+               end;
+            end if;
 
             Put ("Loading identity from " & Key_File & "... ");
             if Use_Encrypted then
@@ -554,7 +579,7 @@ begin
                   Signer_Timestamp     => Signer_Timestamp_Value,
                   Signer_Fingerprint_Data => Signer_Fingerprint_Value,
                   Result          => Rc,
-                  Chunk_Size      => 67_108_864  -- 64 MB chunks
+                  Chunk_Size      => Chunksz
                );
 
                if Rc /= Streaming.Success then
@@ -596,6 +621,8 @@ begin
             Success     : Boolean;
             Use_Encrypted : constant Boolean := (Passphrase /= "");
             Force_Overwrite : constant Boolean := Has_Arg ("--force");
+            Chunk_Size_Arg : constant String := Get_Arg ("--chunk-size");
+            Chunksz        : Natural := 67_108_864;
          begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
@@ -801,6 +828,7 @@ begin
                TS_OK : Boolean;
                TS    : Unsigned_64 := Unix_Timestamp (TS_OK);
             begin
+               -- chunk-size not customizable in convert (use default)
                if not Valid_Label then
                   Put_Line ("✗ FAILED");
                   Put_Line ("ERROR: --label must be ASCII printable and ≤ 64 chars.");
