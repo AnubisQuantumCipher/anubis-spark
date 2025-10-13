@@ -10,12 +10,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Install system dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y liboqs-dev libsodium-dev libssl-dev
+
       # Install Alire toolchain (GNAT, gprbuild, gnatprove)
       - name: Install Alire
-        run: |
-          curl -fsSL https://alire.ada.dev/install.sh | sh -s -- -y
-          echo "$HOME/.alire/bin" >> $GITHUB_PATH
-          alr --version
+        uses: alire-project/setup-alire@v3
+        with:
+          version: '2.0.1'
 
       - name: Select Toolchain
         run: |
@@ -46,6 +51,8 @@ jobs:
           fi
 
       - name: Build
+        env:
+          ANUBIS_LIB_DIR: /usr/lib/x86_64-linux-gnu
         run: alr build -q
 
       - name: Unit tests / selftest
@@ -66,10 +73,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Alire
+      # Install system dependencies
+      - name: Install system dependencies
         run: |
-          curl -fsSL https://alire.ada.dev/install.sh | sh -s -- -y
-          echo "$HOME/.alire/bin" >> $GITHUB_PATH
+          sudo apt-get update
+          sudo apt-get install -y liboqs-dev libsodium-dev libssl-dev
+
+      - name: Install Alire
+        uses: alire-project/setup-alire@v3
+        with:
+          version: '2.0.1'
 
       - name: Select Toolchain
         run: alr toolchain --select
@@ -89,6 +102,8 @@ jobs:
           fi
 
       - name: Build (release)
+        env:
+          ANUBIS_LIB_DIR: /usr/lib/x86_64-linux-gnu
         run: alr build --release -q
 
       # Build and run boundary tests
