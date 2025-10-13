@@ -41,7 +41,7 @@ jobs:
         run: |
           wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz
           tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz
-          cd libsodium-stable
+          cd libsodium-${LIBSODIUM_VERSION}
           ./configure --prefix=$HOME/deps --enable-static --disable-shared
           make -j$(nproc)
           make install
@@ -104,7 +104,7 @@ jobs:
               cd /workspace && \
               wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz && \
               tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz && \
-              cd libsodium-stable && \
+              cd libsodium-${LIBSODIUM_VERSION} && \
               ./configure --prefix=/opt/deps --enable-static --disable-shared && \
               make -j\$(nproc) && make install && \
               cd /workspace && \
