@@ -41,7 +41,7 @@ jobs:
 
       - name: Select Toolchain
         run: |
-          alr toolchain --select --non-interactive
+          alr --non-interactive toolchain --select
           alr toolchain
           gnatls --version || true
 
@@ -121,7 +121,7 @@ jobs:
 
       - name: Select Toolchain
         run: |
-          alr toolchain --select --non-interactive
+          alr --non-interactive toolchain --select
           alr toolchain
 
       # Full orchestration packages (longer timeout)
