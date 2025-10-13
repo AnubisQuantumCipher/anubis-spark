@@ -10,6 +10,9 @@ project Anubis_Spark is
    type Build_Mode_Type is ("dev", "release", "spark");
    Build_Mode : Build_Mode_Type := external ("BUILD_MODE", "release");
 
+   type Static_Link_Type is ("true", "false");
+   Static_Link : Static_Link_Type := external ("STATIC_LINK", "false");
+
    Ada_Switches := ();
    case Build_Mode is
       when "dev" =>
@@ -37,16 +40,28 @@ project Anubis_Spark is
    end Builder;
 
    -- Environment variables for library paths (set by build system)
-   Lib_Dir : String := external ("ANUBIS_LIB_DIR", "/opt/homebrew/lib");
+   Lib_Dir := external ("ANUBIS_LIB_DIR", "/opt/homebrew/lib");
 
    package Linker is
-      for Switches ("Ada") use (
-         "-L" & Lib_Dir,           -- Library search path
-         "-loqs",                  -- Link liboqs (static or shared)
-         "-lsodium",               -- Link libsodium (static or shared)
-         "-lssl",                  -- OpenSSL libssl
-         "-lcrypto"                -- OpenSSL libcrypto
-      );
+      case Static_Link is
+         when "true" =>
+            -- Static linking: use explicit .a files
+            for Switches ("Ada") use (
+               "/opt/homebrew/lib/liboqs.a",
+               "/opt/homebrew/lib/libsodium.a",
+               "/opt/homebrew/opt/openssl@3/lib/libssl.a",
+               "/opt/homebrew/opt/openssl@3/lib/libcrypto.a"
+            );
+         when others =>
+            -- Dynamic linking (default)
+            for Switches ("Ada") use (
+               "-L" & Lib_Dir,           -- Library search path
+               "-loqs",                  -- Link liboqs (static or shared)
+               "-lsodium",               -- Link libsodium (static or shared)
+               "-lssl",                  -- OpenSSL libssl
+               "-lcrypto"                -- OpenSSL libcrypto
+            );
+      end case;
    end Linker;
 
    package Prove is

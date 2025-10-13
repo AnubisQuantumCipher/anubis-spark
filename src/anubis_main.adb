@@ -28,6 +28,16 @@ use Anubis_Types.Streaming;  -- Make Result_Code operators visible
 
 procedure Anubis_Main is
 
+   -- Exit codes for improved scriptability
+   Exit_Success         : constant := 0;
+   Exit_Generic_Error   : constant := 1;
+   Exit_Auth_Failed     : constant := 2;
+   Exit_IO_Error        : constant := 3;
+   Exit_Crypto_Error    : constant := 4;
+   Exit_Trust_Denied    : constant := 5;
+   Exit_Trust_Pending   : constant := 6;
+   Exit_Invalid_Input   : constant := 7;
+
    -- Helper function to find argument value by flag name
    function Get_Arg (Flag : String; Default : String := "") return String is
    begin
@@ -123,6 +133,42 @@ procedure Anubis_Main is
       return False;
    end Has_Arg;
 
+   -- Helper procedure to load identity (eliminating code duplication)
+   procedure Load_Identity_From_File
+     (Key_File    : String;
+      Passphrase  : String;
+      Identity    : out Storage.Identity_Keypair;
+      Success     : out Boolean)
+   is
+      Use_Encrypted : constant Boolean := (Passphrase /= "");
+   begin
+      Put ("Loading identity from " & Key_File & "... ");
+      if Use_Encrypted then
+         Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
+      else
+         Storage.Load_Identity (Key_File, Identity, Success);
+      end if;
+
+      if not Success then
+         Put_Line ("✗ FAILED");
+         if Use_Encrypted then
+            Put_Line ("ERROR: Cannot load encrypted keystore.");
+            Put_Line ("  Possible causes:");
+            Put_Line ("  - Incorrect passphrase");
+            Put_Line ("  - Corrupted or tampered key file");
+            Put_Line ("  - File format mismatch (ANUBISK vs ANUBISK2)");
+         else
+            Put_Line ("ERROR: Cannot load identity keypair.");
+            Put_Line ("  Possible causes:");
+            Put_Line ("  - File not found or not readable");
+            Put_Line ("  - Corrupted key file");
+            Put_Line ("  - File requires passphrase (use --passphrase)");
+         end if;
+      else
+         Put_Line ("✓");
+      end if;
+   end Load_Identity_From_File;
+
    procedure Print_Banner is
    begin
       Put_Line ("╔═══════════════════════════════════════════════════════════════╗");
@@ -134,7 +180,7 @@ procedure Anubis_Main is
       Put_Line ("  Classical:     X25519 + Ed25519 + XChaCha20-Poly1305");
       Put_Line ("  Post-Quantum:  ML-KEM-1024 + ML-DSA-87 (NIST Level 5)");
       Put_Line ("  Key Derivation: HKDF-SHA256 + Argon2id");
-      Put_Line ("  Verification:  SPARK Platinum (183/183 proofs - 100%)");
+      Put_Line ("  Verification:  SPARK Platinum (151/151 proofs - 100%)");
       New_Line;
    end Print_Banner;
 
@@ -192,7 +238,7 @@ procedure Anubis_Main is
       Put_Line ("  Bronze:  ✓ Flow analysis (no uninitialized vars)");
       Put_Line ("  Silver:  ✓ Absence of Runtime Errors");
       Put_Line ("  Gold:    ✓ Integrity properties (31/31 proofs)");
-      Put_Line ("  Platinum: ✓ Functional correctness (183/183 proofs)");
+      Put_Line ("  Platinum: ✓ Functional correctness (151/151 proofs)");
       New_Line;
    end Print_Version;
 
@@ -460,6 +506,7 @@ begin
             if Input_File = "" then
                Put_Line ("ERROR: --input <file> required");
                Put_Line ("Usage: anubis-spark encrypt --key <identity> --input <file> [--output <file>] [--passphrase <pass>]");
+               Set_Exit_Status (Exit_Invalid_Input);
                return;
             end if;
 
@@ -474,28 +521,18 @@ begin
                      Put_Line ("ERROR: Input not readable: " & Input_File);
                      OK := False;
                end;
-               if not OK then return; end if;
+               if not OK then
+                  Set_Exit_Status (Exit_IO_Error);
+                  return;
+               end if;
             end;
 
             if Ada.Directories.Exists (Output_File) and then not Force_Overwrite then
                Put_Line ("ERROR: Output file exists: " & Output_File);
                Put_Line ("Use --force to overwrite.");
+               Set_Exit_Status (Exit_IO_Error);
                return;
             end if;
-
-            -- Preflight: Input must be readable
-            declare
-               OK : Boolean := True;
-            begin
-               begin
-                  Anubis_IO.Require_Readable (Input_File);
-               exception
-                  when others =>
-                     Put_Line ("ERROR: Input not readable: " & Input_File);
-                     OK := False;
-               end;
-               if not OK then return; end if;
-            end;
 
             Print_Banner;
             Put_Line ("Encrypting File with Hybrid Post-Quantum Protection...");
@@ -512,36 +549,28 @@ begin
                   exception
                      when others =>
                         Put_Line ("ERROR: --chunk-size must be a positive integer (bytes)");
+                        Set_Exit_Status (Exit_Invalid_Input);
                         return;
                   end;
                   if V = 0 or else V > 1_073_741_824 then
                      Put_Line ("ERROR: --chunk-size must be in (0, 1,073,741,824]");
+                     Set_Exit_Status (Exit_Invalid_Input);
                      return;
                   end if;
                   Chunksz := V;
                end;
             end if;
 
-            Put ("Loading identity from " & Key_File & "... ");
-            if Use_Encrypted then
-               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
-            else
-               Storage.Load_Identity (Key_File, Identity, Success);
-            end if;
+            Load_Identity_From_File (Key_File, Passphrase, Identity, Success);
             if not Success then
-               Put_Line ("✗ FAILED");
-               if Use_Encrypted then
-                  Put_Line ("ERROR: Cannot load encrypted keystore (wrong passphrase or corrupted).");
-               else
-                  Put_Line ("ERROR: Cannot load identity keypair.");
-               end if;
+               Set_Exit_Status (Exit_Crypto_Error);
                return;
             end if;
-            Put_Line ("✓");
 
             if not Anubis_Trust.Logic.Label_Input_Is_Valid (Label_Arg) then
                Put_Line ("ERROR: Signer label must be ASCII printable (0x20-0x7E) and at most 64 characters.");
                Storage.Zeroize_Identity (Identity);
+               Set_Exit_Status (Exit_Invalid_Input);
                return;
             end if;
 
@@ -587,10 +616,13 @@ begin
                   case Rc is
                      when Streaming.IO_Error =>
                         Put_Line ("ERROR: File I/O error - check file permissions and disk space");
+                        Set_Exit_Status (Exit_IO_Error);
                      when Streaming.Crypto_Error =>
                         Put_Line ("ERROR: Cryptographic operation failed - check key validity");
+                        Set_Exit_Status (Exit_Crypto_Error);
                      when others =>
                         Put_Line ("ERROR: Encryption failed with unexpected error code");
+                        Set_Exit_Status (Exit_Generic_Error);
                   end case;
                   Storage.Zeroize_Identity (Identity);
                   return;
@@ -641,22 +673,11 @@ begin
             Put_Line ("═══════════════════════════════════════════════════");
             New_Line;
 
-            Put ("Loading identity from " & Key_File & "... ");
-            if Use_Encrypted then
-               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
-            else
-               Storage.Load_Identity (Key_File, Identity, Success);
-            end if;
+            Load_Identity_From_File (Key_File, Passphrase, Identity, Success);
             if not Success then
-               Put_Line ("✗ FAILED");
-               if Use_Encrypted then
-                  Put_Line ("ERROR: Cannot load encrypted keystore (wrong passphrase or corrupted).");
-               else
-                  Put_Line ("ERROR: Cannot load identity keypair.");
-               end if;
+               Set_Exit_Status (Exit_Crypto_Error);
                return;
             end if;
-            Put_Line ("✓");
 
             Put ("Decrypting " & Input_File & " (streaming mode)... ");
             declare
@@ -688,6 +709,7 @@ begin
                         Fingerprint => Signer_Fingerprint_Raw,
                         Label       => Signer_Label_Raw));
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Trust_Pending);
                      return;
                   when Streaming.Trust_Denied =>
                      Put_Line ("✗ FAILED");
@@ -696,6 +718,7 @@ begin
                         Fingerprint => Signer_Fingerprint_Raw,
                         Label       => Signer_Label_Raw));
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Trust_Denied);
                      return;
                   when Streaming.Trust_Error =>
                      Put_Line ("✗ FAILED");
@@ -704,36 +727,43 @@ begin
                         Fingerprint => Signer_Fingerprint_Raw,
                         Label       => Signer_Label_Raw));
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Generic_Error);
                      return;
                   when Streaming.Legacy_Format =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: Legacy ANUB2 header detected. Re-encrypt this file with the current ANUB3 format.");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Invalid_Input);
                      return;
                   when Streaming.Invalid_Format =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: ANUB3 header validation failed (file is tampered or unsupported).");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Auth_Failed);
                      return;
                   when Streaming.Crypto_Error =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: Decryption failed - cryptographic operation error");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Crypto_Error);
                      return;
                   when Streaming.IO_Error =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: Decryption failed - file I/O error");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_IO_Error);
                      return;
                   when Streaming.Auth_Failed =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: Authentication failed - file may be tampered or corrupted");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Auth_Failed);
                      return;
                   when others =>
                      Put_Line ("✗ FAILED");
                      Put_Line ("ERROR: Decryption failed with unexpected error");
                      Storage.Zeroize_Identity (Identity);
+                     Set_Exit_Status (Exit_Generic_Error);
                      return;
                end case;
 
@@ -781,18 +811,11 @@ begin
             Put_Line ("Re-encrypting plaintext to ANUB3 (manual migration)...");
             New_Line;
 
-            Put ("Loading identity from " & Key_File & "... ");
-            if Use_Encrypted then
-               Storage.Load_Identity_Encrypted (Key_File, Passphrase, Identity, Success);
-            else
-               Storage.Load_Identity (Key_File, Identity, Success);
-            end if;
+            Load_Identity_From_File (Key_File, Passphrase, Identity, Success);
             if not Success then
-               Put_Line ("✗ FAILED");
-               Put_Line ("ERROR: Cannot load identity keypair.");
+               Set_Exit_Status (Exit_Crypto_Error);
                return;
             end if;
-            Put_Line ("✓");
 
             -- Reject ciphertext inputs: convert expects plaintext
             declare
