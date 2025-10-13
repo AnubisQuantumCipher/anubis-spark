@@ -36,13 +36,16 @@ project Anubis_Spark is
       for Switches ("Ada") use ("-s", "-j0"); -- Recompile if needed, parallel build
    end Builder;
 
+   -- Environment variables for library paths (set by build system)
+   Lib_Dir : String := external ("ANUBIS_LIB_DIR", "/opt/homebrew/lib");
+
    package Linker is
       for Switches ("Ada") use (
-         "-Wl,-ld_classic",                    -- Use classic linker (fixes macOS 15.4+ crash)
-         "/opt/homebrew/lib/liboqs.a",         -- Link liboqs static library directly
-         "/opt/homebrew/lib/libsodium.a",      -- Link libsodium static library
-         "/opt/homebrew/lib/libssl.dylib",     -- OpenSSL libssl (full path)
-         "/opt/homebrew/lib/libcrypto.dylib"   -- OpenSSL libcrypto (full path)
+         "-L" & Lib_Dir,           -- Library search path
+         "-loqs",                  -- Link liboqs (static or shared)
+         "-lsodium",               -- Link libsodium (static or shared)
+         "-lssl",                  -- OpenSSL libssl
+         "-lcrypto"                -- OpenSSL libcrypto
       );
    end Linker;
 
