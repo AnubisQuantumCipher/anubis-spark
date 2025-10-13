@@ -282,9 +282,9 @@ echo "=== ✅ All supply chain checks passed ==="
 
 ## 8. Change Log
 
-| Date       | Version | Change                                      | Author  |
-|------------|---------|---------------------------------------------|---------|
-| 2025-10-11 | 1.1.0   | Initial Platinum release lockfile           | sicarii |
+| Date       | Version | Change                                      |
+|------------|---------|---------------------------------------------|
+| 2025-10-11 | 1.1.0   | Initial Platinum release lockfile           |
 
 ---
 
