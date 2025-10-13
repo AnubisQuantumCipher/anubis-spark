@@ -45,12 +45,13 @@ jobs:
           alr toolchain
           gnatls --version || true
 
-      - name: Resolve dependencies and setup environment
+      - name: Install gnatprove
         run: |
-          alr printenv
+          # Install the gnatprove crate so gnatprove binary is available
+          alr --non-interactive with gnatprove
+          # Update environment to include gnatprove in PATH
           eval "$(alr printenv)"
-          gnatprove --version || echo "gnatprove not found"
-          which gnatprove || echo "gnatprove not in PATH"
+          gnatprove --version
 
       # Fast proof: Pure logic packages only (header IO, hybrid KDF, AEAD Pure)
       - name: GNATprove (fast set)
@@ -130,8 +131,14 @@ jobs:
         run: |
           alr --non-interactive toolchain --select
           alr toolchain
+
+      - name: Install gnatprove
+        run: |
+          # Install the gnatprove crate so gnatprove binary is available
+          alr --non-interactive with gnatprove
+          # Update environment to include gnatprove in PATH
           eval "$(alr printenv)"
-          gnatprove --version || echo "gnatprove not found"
+          gnatprove --version
 
       # Full orchestration packages (longer timeout)
       - name: GNATprove (full set)
