@@ -44,10 +44,14 @@ package body Anubis_Types.PQC is
          Secret_Key.Valid := True;
          Success := True;
       else
-         -- Zeroize on failure
+         -- SECURITY: Zeroize BOTH keys on failure
          Secret_Key.Valid := False;
          for I in Secret_Key.Data'Range loop
             Secret_Key.Data (I) := 0;
+         end loop;
+         -- Also zero public key (defense in depth)
+         for I in Public_Key.Data'Range loop
+            Public_Key.Data (I) := 0;
          end loop;
          Success := False;
       end if;
@@ -130,10 +134,14 @@ package body Anubis_Types.PQC is
          Secret_Key.Valid := True;
          Success := True;
       else
-         -- Zeroize on failure
+         -- SECURITY: Zeroize BOTH keys on failure
          Secret_Key.Valid := False;
          for I in Secret_Key.Data'Range loop
             Secret_Key.Data (I) := 0;
+         end loop;
+         -- Also zero public key (defense in depth)
+         for I in Public_Key.Data'Range loop
+            Public_Key.Data (I) := 0;
          end loop;
          Success := False;
       end if;
@@ -591,6 +599,9 @@ package body Anubis_Types.PQC is
       Ed25519_Valid : Boolean;
       ML_DSA_Valid  : Boolean;
    begin
+      -- SECURITY: Always verify BOTH signatures (constant-time)
+      -- No short-circuit evaluation to prevent timing attacks
+
       -- Step 1: Verify Ed25519 signature (classical)
       Ed25519_Valid := Classical.Ed25519_Verify (
          Message    => Message,
@@ -598,12 +609,8 @@ package body Anubis_Types.PQC is
          Public_Key => Ed25519_PK
       );
 
-      -- Short-circuit: If Ed25519 fails, no need to check ML-DSA
-      if not Ed25519_Valid then
-         return False;
-      end if;
-
       -- Step 2: Verify ML-DSA-87 signature (post-quantum)
+      -- ALWAYS executed regardless of Ed25519 result
       ML_DSA_Valid := ML_DSA_Verify (
          Message    => Message,
          Signature  => Signature.ML_DSA_Sig,
@@ -611,7 +618,8 @@ package body Anubis_Types.PQC is
       );
 
       -- PLATINUM LEVEL: BOTH signatures must verify
-      return Ed25519_Valid and ML_DSA_Valid;
+      -- Return conjunction after checking both (timing-safe)
+      return Ed25519_Valid and then ML_DSA_Valid;
    end Hybrid_Verify;
 
 end Anubis_Types.PQC;

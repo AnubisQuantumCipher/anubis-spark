@@ -82,6 +82,41 @@ package Anubis_Entropy is
    function Has_Hardware_RNG return Boolean;
 
    -------------------------------------------------------------------------
+   -- Entropy Validation (Defensive Security)
+   -------------------------------------------------------------------------
+
+   -- Comprehensive entropy validation
+   -- Checks for: all-zeros, repeating patterns, minimum Hamming weight
+   -- SECURITY: Detects weak RNG output before using in crypto operations
+   function Has_Sufficient_Entropy (Data : Byte_Array) return Boolean with
+      Pre  => Data'Length >= 16,
+      Post => (if Has_Sufficient_Entropy'Result then
+                  not Is_All_Zeros (Data) and
+                  not Is_Repeating_Pattern (Data) and
+                  Hamming_Weight (Data) >= Data'Length * 2 and  -- At least 25% bits set
+                  Unique_Byte_Count (Data) >= 8);  -- At least 8 different bytes
+
+   -- Check if data is all zeros (weak/failed RNG)
+   function Is_All_Zeros (Data : Byte_Array) return Boolean with
+      Post => Is_All_Zeros'Result = (for all B of Data => B = 0);
+
+   -- Check if data has obvious repeating pattern (same byte repeated)
+   function Is_Repeating_Pattern (Data : Byte_Array) return Boolean with
+      Pre  => Data'Length > 0,
+      Post => (if Is_Repeating_Pattern'Result then
+                  (for all B of Data => B = Data (Data'First)));
+
+   -- Count number of set bits (Hamming weight)
+   -- Higher weight = better entropy distribution
+   function Hamming_Weight (Data : Byte_Array) return Natural with
+      Post => Hamming_Weight'Result <= Data'Length * 8;
+
+   -- Count number of unique byte values
+   -- More unique bytes = better entropy
+   function Unique_Byte_Count (Data : Byte_Array) return Natural with
+      Post => Unique_Byte_Count'Result in 0 .. 256;
+
+   -------------------------------------------------------------------------
    -- Entropy Estimation (for compliance/auditing)
    -------------------------------------------------------------------------
 

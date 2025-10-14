@@ -14,6 +14,8 @@ with Anubis_Types.PQC;
 with Anubis_Types.Header_AAD;
 with Anubis_Types.Finalize;
 with Anubis_Trust;
+with Anubis_Constants; use Anubis_Constants;
+with Anubis_Entropy;
 with Sodium_Common;
 with Interfaces.C;
 
@@ -548,8 +550,9 @@ package body Anubis_Types.Streaming is
 
             Chunk_Size := Natural (Chunk_Size_U64);
 
-            -- Strict max: 1,073,741,824 bytes (1 GiB); also reject zero
-            if Chunk_Size = 0 or else Chunk_Size > 1_073_741_824 then
+            -- SECURITY: Enforce sane chunk size range (4 KiB to 1 GiB)
+            -- Prevents DoS via pathological allocations (too large or too small)
+            if Chunk_Size < MIN_CHUNK_SIZE or else Chunk_Size > MAX_CHUNK_SIZE then
                Close (Input_File);
                Result := Invalid_Format;
                return;
@@ -700,6 +703,17 @@ package body Anubis_Types.Streaming is
          return;
       end if;
 
+      -- SECURITY: Verify derived key has sufficient entropy
+      -- Detects key derivation failures before attempting decryption
+      if not Decryption_Key.Valid or else
+         Anubis_Entropy.Is_All_Zeros (Decryption_Key.Data)
+      then
+         Close (Input_File);
+         Classical.Zeroize_XChaCha20_Key (Decryption_Key);
+         Result := Crypto_Error;
+         return;
+      end if;
+
       -- Create output file as a partial, then atomically rename on success
       begin
          Create (Output_File, Out_File, Partial_Path);
@@ -738,7 +752,22 @@ package body Anubis_Types.Streaming is
             Chunk_Len_U64 := BE_Bytes_To_U64 (Len_Bytes);
             Chunk_Len := Natural (Chunk_Len_U64);
 
+            -- SECURITY: Validate chunk length is within bounds
             if Chunk_Len = 0 or Chunk_Len > Chunk_Size then
+               Close (Input_File);
+               Close (Output_File);
+               begin
+                  Ada.Directories.Delete_File (Finalize.Partial_Name (Output_Path));
+               exception
+                  when others => null;
+               end;
+               Result := Invalid_Format;
+               return;
+            end if;
+
+            -- SECURITY: Validate chunk doesn't exceed remaining data
+            -- Detects tampering where chunk metadata is inconsistent with total size
+            if Bytes_Processed + Chunk_Len > Total_Size then
                Close (Input_File);
                Close (Output_File);
                begin

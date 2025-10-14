@@ -53,13 +53,20 @@ package body Anubis_Types.Classical is
          Secret_Key.Valid := True;
          Success := True;
       else
-         -- Zeroize on failure
+         -- SECURITY: Zeroize BOTH keys on failure
          Secret_Key.Valid := False;
          for I in Secret_Key.Data'Range loop
             pragma Loop_Invariant (for all J in Secret_Key.Data'First .. I - 1 =>
                                      Secret_Key.Data (J) = 0);
             pragma Loop_Variant (Increases => I);
             Secret_Key.Data (I) := 0;
+         end loop;
+         -- Also zero public key (defense in depth)
+         for I in Public_Key.Data'Range loop
+            pragma Loop_Invariant (for all J in Public_Key.Data'First .. I - 1 =>
+                                     Public_Key.Data (J) = 0);
+            pragma Loop_Variant (Increases => I);
+            Public_Key.Data (I) := 0;
          end loop;
          Success := False;
       end if;
@@ -152,7 +159,7 @@ package body Anubis_Types.Classical is
          -- Zeroize temporary full secret
          sodium_memzero (Full_Secret (Full_Secret'First)'Address, Full_Secret'Length);
       else
-         -- Zeroize on failure
+         -- SECURITY: Zeroize BOTH keys on failure
          Secret_Key.Valid := False;
          for I in Secret_Key.Data'Range loop
             pragma Loop_Invariant (for all J in Secret_Key.Data'First .. I - 1 =>
@@ -160,6 +167,15 @@ package body Anubis_Types.Classical is
             pragma Loop_Variant (Increases => I);
             Secret_Key.Data (I) := 0;
          end loop;
+         -- Also zero public key (defense in depth)
+         for I in Public_Key.Data'Range loop
+            pragma Loop_Invariant (for all J in Public_Key.Data'First .. I - 1 =>
+                                     Public_Key.Data (J) = 0);
+            pragma Loop_Variant (Increases => I);
+            Public_Key.Data (I) := 0;
+         end loop;
+         -- Zeroize temporary full secret
+         sodium_memzero (Full_Secret (Full_Secret'First)'Address, Full_Secret'Length);
          Success := False;
       end if;
    end Ed25519_Generate_Keypair;

@@ -46,13 +46,22 @@ echo "Found duplicate RPATH entries:"
 echo "$DUPLICATES"
 echo ""
 
-# Remove duplicates (keeps first occurrence)
+# Remove duplicates (keeps only one occurrence)
+# Loop until no duplicates remain
 while IFS= read -r rpath; do
     if [[ -n "$rpath" ]]; then
-        echo "Removing duplicate: $rpath"
-        install_name_tool -delete_rpath "$rpath" "$BINARY" 2>/dev/null || {
-            echo "  (already removed or not found)"
-        }
+        echo "Processing: $rpath"
+        # Count how many times this RPATH appears
+        count=$(otool -l "$BINARY" | grep -A 2 LC_RPATH | grep "path $rpath" | wc -l)
+        # Remove duplicates (keep first, remove rest)
+        removed=0
+        while [[ $count -gt 1 ]]; do
+            install_name_tool -delete_rpath "$rpath" "$BINARY" 2>/dev/null && {
+                ((removed++))
+                ((count--))
+            } || break
+        done
+        echo "  Removed $removed duplicate(s)"
     fi
 done <<< "$DUPLICATES"
 

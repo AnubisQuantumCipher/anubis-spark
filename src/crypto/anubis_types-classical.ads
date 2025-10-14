@@ -38,14 +38,23 @@ package Anubis_Types.Classical is
    -------------------------------------------------------------------------
 
    -- Generate X25519 keypair
+   -- PLATINUM: Elaborate postcondition proves entropy and zeroization
    procedure X25519_Generate_Keypair (
       Public_Key  : out X25519_Public_Key;
       Secret_Key  : out X25519_Secret_Key;
       Success     : out Boolean
    ) with
       Global => null,
-      Post   => (if Success then Is_Valid (Secret_Key)
-                 else not Is_Valid (Secret_Key));
+      Post   => (if Success then
+                    -- On success: keys are valid and have entropy (not all zeros)
+                    (Is_Valid (Secret_Key) and then
+                     not Is_Zeroed (Secret_Key) and then
+                     not Is_PK_Zeroed (Public_Key))
+                 else
+                    -- On failure: both keys zeroized (defense in depth)
+                    (not Is_Valid (Secret_Key) and then
+                     Is_Zeroed (Secret_Key) and then
+                     Is_PK_Zeroed (Public_Key)));
 
    -- Compute shared secret (ECDH)
    procedure X25519_Compute_Shared (
@@ -75,14 +84,23 @@ package Anubis_Types.Classical is
    -------------------------------------------------------------------------
 
    -- Generate Ed25519 keypair
+   -- PLATINUM: Elaborate postcondition proves entropy and zeroization
    procedure Ed25519_Generate_Keypair (
       Public_Key  : out Ed25519_Public_Key;
       Secret_Key  : out Ed25519_Secret_Key;
       Success     : out Boolean
    ) with
       Global => null,
-      Post   => (if Success then Is_Valid (Secret_Key)
-                 else not Is_Valid (Secret_Key));
+      Post   => (if Success then
+                    -- On success: keys are valid and have entropy (not all zeros)
+                    (Is_Valid (Secret_Key) and then
+                     not Is_Zeroed (Secret_Key) and then
+                     not Is_PK_Zeroed (Public_Key))
+                 else
+                    -- On failure: both keys zeroized (defense in depth)
+                    (not Is_Valid (Secret_Key) and then
+                     Is_Zeroed (Secret_Key) and then
+                     Is_PK_Zeroed (Public_Key)));
 
    -- Sign message with Ed25519
    procedure Ed25519_Sign (
