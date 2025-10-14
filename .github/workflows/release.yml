@@ -17,52 +17,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build libssl-dev unzip
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Build liboqs static
+      - name: Build in AMD64 container
         run: |
-          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz
-          tar xzf ${LIBOQS_VERSION}.tar.gz
-          cd liboqs-${LIBOQS_VERSION}
-          mkdir build && cd build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_INSTALL_PREFIX=$HOME/deps \
-            -DOQS_BUILD_ONLY_LIB=ON \
-            ..
-          ninja
-          ninja install
-
-      - name: Build libsodium static
-        run: |
-          wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz
-          tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz
-          cd libsodium-${LIBSODIUM_VERSION}
-          ./configure --prefix=$HOME/deps --enable-static --disable-shared
-          make -j$(nproc)
-          make install
-
-      - name: Install Alire
-        uses: alire-project/setup-alire@v3
-        with:
-          version: '2.0.1'
-
-      - name: Select Toolchain
-        run: |
-          alr --non-interactive toolchain --select
-          alr update
-
-      - name: Build ANUBIS-SPARK
-        run: |
-          eval "$(alr printenv)"
-          export PKG_CONFIG_PATH="$HOME/deps/lib/pkgconfig:$PKG_CONFIG_PATH"
-          export ANUBIS_LIB_DIR="$HOME/deps/lib"
-          alr build --release
-          strip bin/anubis_main
+          docker run --rm --platform linux/amd64 \
+            -v $PWD:/workspace \
+            -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              apt-get update && \
+              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip && \
+              wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz && \
+              tar xzf ${LIBOQS_VERSION}.tar.gz && \
+              cd liboqs-${LIBOQS_VERSION} && \
+              mkdir build && cd build && \
+              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps -DOQS_BUILD_ONLY_LIB=ON .. && \
+              ninja && ninja install && \
+              cd /workspace && \
+              wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz && \
+              tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz && \
+              cd libsodium-${LIBSODIUM_VERSION} && \
+              ./configure --prefix=/opt/deps --enable-static --disable-shared && \
+              make -j\$(nproc) && make install && \
+              cd /workspace && \
+              wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-x86_64-linux.zip && \
+              unzip alr-2.0.1-bin-x86_64-linux.zip && \
+              chmod +x bin/alr && \
+              ./bin/alr --non-interactive toolchain --select && \
+              ./bin/alr update && \
+              eval \"\$(./bin/alr printenv)\" && \
+              export PKG_CONFIG_PATH=/opt/deps/lib/pkgconfig && \
+              export ANUBIS_LIB_DIR=/opt/deps/lib && \
+              ./bin/alr build --release && \
+              strip bin/anubis_main
+            "
 
       - name: Create release archive
         run: |
