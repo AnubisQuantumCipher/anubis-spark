@@ -45,12 +45,19 @@ project Anubis_Spark is
    package Linker is
       case Static_Link is
          when "true" =>
-            -- Static linking: use explicit .a files
+            -- Static linking: use explicit .a files with proper dependency order
+            -- Libraries must be ordered so dependencies come after dependents
             for Switches ("Ada") use (
-               "/opt/homebrew/lib/liboqs.a",
-               "/opt/homebrew/lib/libsodium.a",
-               "/opt/homebrew/opt/openssl@3/lib/libssl.a",
-               "/opt/homebrew/opt/openssl@3/lib/libcrypto.a"
+               "-L" & Lib_Dir,
+               "-Wl,--start-group",
+               Lib_Dir & "/liboqs.a",
+               Lib_Dir & "/libsodium.a",
+               "-lssl",
+               "-lcrypto",
+               "-Wl,--end-group",
+               "-lpthread",
+               "-ldl",
+               "-lm"
             );
          when others =>
             -- Dynamic linking (default)
@@ -59,7 +66,10 @@ project Anubis_Spark is
                "-loqs",                  -- Link liboqs (static or shared)
                "-lsodium",               -- Link libsodium (static or shared)
                "-lssl",                  -- OpenSSL libssl
-               "-lcrypto"                -- OpenSSL libcrypto
+               "-lcrypto",               -- OpenSSL libcrypto
+               "-lpthread",              -- POSIX threads
+               "-ldl",                   -- Dynamic loading
+               "-lm"                     -- Math library
             );
       end case;
    end Linker;
