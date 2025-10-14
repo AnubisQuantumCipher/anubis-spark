@@ -73,14 +73,14 @@ jobs:
           path: release/anubis-spark-linux-x86_64.tar.gz*
 
   build-macos-x86_64:
-    runs-on: macos-13
+    runs-on: macos-13  # Intel runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install dependencies via Homebrew
         run: |
-          brew install liboqs libsodium
+          brew install liboqs libsodium openssl@3
 
       - name: Install Alire
         uses: alire-project/setup-alire@v3
@@ -92,7 +92,23 @@ jobs:
           alr build --release
           strip bin/anubis_main
 
-      - name: Fix RPATH (macOS duplicate RPATH issue)
+      - name: Verify binary architecture
+        run: |
+          echo "Binary architecture:"
+          file bin/anubis_main
+          if file bin/anubis_main | grep -q "x86_64"; then
+            echo "✅ Correct x86_64 binary"
+          else
+            echo "❌ ERROR: Not an x86_64 binary!"
+            exit 1
+          fi
+
+      - name: Make binary portable
+        run: |
+          chmod +x scripts/make-portable-macos.sh
+          ./scripts/make-portable-macos.sh bin/anubis_main
+
+      - name: Fix RPATH duplicates
         run: |
           ./scripts/fix-rpath.sh bin/anubis_main
 
@@ -114,14 +130,14 @@ jobs:
           path: release/anubis-spark-macos-x86_64.tar.gz*
 
   build-macos-arm64:
-    runs-on: macos-13  # Use Intel runner - GNAT toolchain is x86_64 only
+    runs-on: macos-14  # Native Apple Silicon runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install dependencies via Homebrew
         run: |
-          brew install liboqs libsodium
+          brew install liboqs libsodium openssl@3
 
       - name: Install Alire
         uses: alire-project/setup-alire@v3
@@ -133,7 +149,23 @@ jobs:
           alr build --release
           strip bin/anubis_main
 
-      - name: Fix RPATH (macOS duplicate RPATH issue)
+      - name: Verify binary architecture
+        run: |
+          echo "Binary architecture:"
+          file bin/anubis_main
+          if file bin/anubis_main | grep -q "arm64"; then
+            echo "✅ Correct ARM64 binary"
+          else
+            echo "❌ ERROR: Not an ARM64 binary!"
+            exit 1
+          fi
+
+      - name: Make binary portable
+        run: |
+          chmod +x scripts/make-portable-macos.sh
+          ./scripts/make-portable-macos.sh bin/anubis_main
+
+      - name: Fix RPATH duplicates
         run: |
           ./scripts/fix-rpath.sh bin/anubis_main
 
