@@ -156,9 +156,12 @@ package body Anubis_Keystore is
          return;
       end if;
 
-      -- Step 3: Encrypt AF-split data with AES-XTS (TODO: Phase 4)
-      -- For Phase 2: Store plaintext AF_Split_Data
-      -- In full implementation: AES-XTS encrypt AF_Split_Data here
+      -- Step 3: Encrypt AF-split data with AES-XTS (EXPERIMENTAL/TODO)
+      -- Current status: ANUBISK3 is not wired into the CLI, and the
+      -- anubis_aes_xts module is a XChaCha20 wrapper used as a stand-in.
+      -- For now, AF_Split_Data remains plaintext in the keyslot. Planned:
+      -- replace wrapper with real AES-256-XTS (OpenSSL EVP) and enable
+      -- sealed keyslots in the CLI flows.
 
       -- Step 4: Finalize keyslot
       Keyslot.Status := Active;

@@ -1,6 +1,8 @@
 -------------------------------------------------------------------------------
 -- ANUBIS-SPARK: Cross-Platform OS Permissions Helper
--- Supports: POSIX (macOS/Linux) and Windows
+-- Supports: POSIX (macOS/Linux). Windows path is a placeholder that
+-- returns a conservative success (no ACL inspection). Permission
+-- checks are effectively POSIX-only in this release.
 -------------------------------------------------------------------------------
 
 pragma SPARK_Mode (Off);

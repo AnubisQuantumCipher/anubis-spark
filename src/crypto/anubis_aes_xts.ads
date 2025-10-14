@@ -4,6 +4,11 @@
 -- Implementation: XChaCha20-Poly1305 wrapper (libsodium)
 -- Note: For production LUKS2, would use OpenSSL EVP_aes_256_xts
 -------------------------------------------------------------------------------
+-- Experimental: not used by CLI yet. This is a development wrapper
+-- around XChaCha20-Poly1305 acting as an AES-XTS stand-in. Planned
+-- replacement is real AES-256-XTS (OpenSSL EVP), then ANUBISK3 will
+-- seal AF_Split_Data with XTS instead of storing plaintext.
+-------------------------------------------------------------------------------
 
 pragma SPARK_Mode (On);
 

@@ -872,7 +872,8 @@ package body Anubis_Trust is
               Hex_Str & " [--operator <name>]` to approve.";
          when Denied =>
             return "Signer """ & Label_Str & """ (" & Hex_Str &
-              ") is denied in the trust store.";
+              ") is denied in the trust store. To approve, run `anubis-spark trust approve --fingerprint " &
+              Hex_Str & " [--operator <name>]`.";
          when Error =>
             return "Trust store error encountered for signer """ & Label_Str &
               """ (" & Hex_Str & ").";

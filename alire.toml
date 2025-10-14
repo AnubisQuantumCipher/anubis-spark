@@ -38,38 +38,9 @@ tags = ["crypto", "post-quantum", "encryption", "security", "spark", "verificati
 [gpr-externals]
 BUILD_MODE = ["debug", "release"]
 
-[gpr-set-externals]
-BUILD_MODE = "release"
 
 
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "ANUBIS-SPARK: Hybrid Post-Quantum File Encryption System"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "SPARK Platinum Certified - 100% Proof Coverage"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "Quantum-Resistant Security (NIST Level 5)"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "External Dependencies Required:"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "   - libsodium >= 1.0.18 (for classical crypto)"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "   - liboqs >= 0.14.0 (for post-quantum crypto)"]
-
-[[actions]]
-type = "post-fetch"
-command = ["echo", "Documentation: https://github.com/AnubisQuantumCipher/anubis-spark"]
+# Note: crates should not alter alr output; removed echo-style post-fetch actions per review
 
 
 
@@ -86,3 +57,9 @@ ANUBIS_SPARK_CERTIFICATION.set = "PLATINUM"
 
 [[depends-on]]
 gnatprove = "=14.1.1"
+
+[[depends-on]]
+libsodium = "^1"
+
+[[depends-on]]
+liboqs = "^0.14"
