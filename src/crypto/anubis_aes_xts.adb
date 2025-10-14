@@ -2,6 +2,10 @@
 -- ANUBIS-SPARK: AES-256-XTS Implementation
 -- Uses XChaCha20-Poly1305 as AES-XTS substitute (via libsodium)
 -- Note: For production, would use OpenSSL EVP_aes_256_xts
+-- Experimental: not used by CLI yet. This module currently wraps
+-- XChaCha20-Poly1305 as a stand-in; planned replacement is real
+-- AES-256-XTS via OpenSSL EVP (EVP_aes_256_xts), after which ANUBISK3
+-- keyslot sealing will switch from plaintext AF_Split_Data to encrypted.
 -------------------------------------------------------------------------------
 
 pragma SPARK_Mode (Off);  -- Uses libsodium bindings

@@ -1,6 +1,8 @@
 -------------------------------------------------------------------------------
 -- ANUBIS-SPARK: Cross-Platform OS Permissions Helper
--- Supports: POSIX (macOS/Linux) and Windows
+-- Supports: POSIX (macOS/Linux). Windows path is a placeholder that
+-- returns a conservative success (no ACL inspection). Permission
+-- checks are effectively POSIX-only in this release.
 -------------------------------------------------------------------------------
 
 pragma SPARK_Mode (Off);
@@ -12,8 +14,8 @@ with System.Storage_Elements;
 
 package body Anubis_OS_Perms is
 
-   -- Platform detection using conditional compilation
-   -- GNAT defines __MINGW32__ on Windows
+   -- Platform detection (placeholder). For this build, assume POSIX.
+   -- Proper Windows support would require Win32 ACL bindings.
    function Is_Windows return Boolean is
       -- Detect Windows at compile-time via GNAT target name
       -- For simplicity, assume non-Windows (POSIX) by default

@@ -199,6 +199,9 @@ procedure Anubis_Main is
       Put_Line ("  convert          Re-encrypt plaintext to ANUB3 (use v1.x to decrypt first)");
       Put_Line ("  help             Show this help message");
       New_Line;
+      Put_Line ("Common options (encrypt/decrypt):");
+      Put_Line ("  --chunk-size <bytes>   Chunk size in bytes (4 KiB–1 GiB). Default: 67108864");
+      New_Line;
       Put_Line ("ONE KEY PASSPORT Philosophy:");
       Put_Line ("  Your identity = ONE file (your cryptographic passport)");
       Put_Line ("  Your security = ONE strong passphrase (protects the vault)");
@@ -208,6 +211,9 @@ procedure Anubis_Main is
       Put_Line ("  Layer 1: Passphrase → Argon2id (1 GiB) → Identity Vault");
       Put_Line ("  Layer 2: Identity Keys → Quantum Hybrid → File Data");
       Put_Line ("  Attacker must break BOTH layers to compromise your files");
+      New_Line;
+      Put_Line ("IMPORTANT: Two-Kill Defense requires an ENCRYPTED identity (ANUBISK2 or ANUBISK3).");
+      Put_Line ("Plaintext identities disable Layer 1 protection.");
       New_Line;
       Put_Line ("Examples:");
       Put_Line ("  # Create encrypted passport (RECOMMENDED)");
@@ -219,6 +225,8 @@ procedure Anubis_Main is
       Put_Line ("  # Encrypt file (passphrase only needed if keystore is encrypted)");
       Put_Line ("  anubis-spark encrypt --key my.key --passphrase ""Pass"" --input secret.txt");
       Put_Line ("  anubis-spark encrypt --key my.key --input secret.txt  # if plaintext keystore");
+      Put_Line ("  # Tune performance: 32 MiB chunks");
+      Put_Line ("  anubis-spark encrypt --key my.key --input big.bin --chunk-size 33554432");
       New_Line;
       Put_Line ("  # Decrypt file");
       Put_Line ("  anubis-spark decrypt --key my.key --passphrase ""Pass"" --input secret.txt.anubis");

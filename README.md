@@ -483,6 +483,8 @@ cat anubis-spark-linux-x86_64.tar.gz.sha256
 # Compare the two hashes - they should match exactly
 ```
 
+> Note: File permission checks (e.g., 0600) are POSIX-only in this release. On Windows, permission checks are a placeholder and do not inspect ACLs.
+
 ---
 
 #### Upgrading to Latest Version
@@ -580,6 +582,9 @@ anubis-spark encrypt --key my_identity.key --input document.pdf
 # Creates: document.pdf.anubis
 # Encrypts with streaming AEAD (64 MB chunks)
 # Works for files from KB to multi-GB
+
+> IMPORTANT: Two-Kill Defense requires an ENCRYPTED identity (ANUBISK2 or ANUBISK3). Using a plaintext identity disables Layer 1 (passphrase keystore) and weakens defense in depth.
+
 ```
 
 #### Decrypt File
@@ -1052,6 +1057,6 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
 **Version:** v2.0.8 (Two-Kill Defense Edition - ONE KEY PASSPORT)
 **Built with:** Ada/SPARK 2014 • liboqs 0.14.0 • libsodium 1.0.20 • GNAT 14.2.1
-**New Features:** LUKS2-inspired architecture • AES-256-XTS • AF-Splitter • ANUBISK3 multi-keyslot • THREE encryption modes
+**New Features:** LUKS2-inspired architecture • AES-256-XTS (experimental; not used by CLI yet) • AF-Splitter • ANUBISK3 multi-keyslot • THREE encryption modes
 
 **Security Notice:** This is cryptographic software. Review the code and documentation before trusting it with sensitive data. While we use industry-standard algorithms and formal verification, no system is 100% secure.
