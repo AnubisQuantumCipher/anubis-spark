@@ -45,16 +45,15 @@ project Anubis_Spark is
    package Linker is
       case Static_Link is
          when "true" =>
-            -- Static linking: use explicit .a files with proper dependency order
-            -- Libraries must be ordered so dependencies come after dependents
+            -- Static linking: Static liboqs/libsodium, but shared OpenSSL
+            -- On Linux, system OpenSSL is shared; on macOS, can use homebrew
+            -- Order: application objects -> static libs -> shared libs -> system libs
             for Switches ("Ada") use (
                "-L" & Lib_Dir,
-               "-Wl,--start-group",
                Lib_Dir & "/liboqs.a",
                Lib_Dir & "/libsodium.a",
                "-lssl",
                "-lcrypto",
-               "-Wl,--end-group",
                "-lpthread",
                "-ldl",
                "-lm"

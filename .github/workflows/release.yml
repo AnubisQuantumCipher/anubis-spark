@@ -33,7 +33,7 @@ jobs:
               tar xzf ${LIBOQS_VERSION}.tar.gz && \
               cd liboqs-${LIBOQS_VERSION} && \
               mkdir build && cd build && \
-              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps -DOQS_BUILD_ONLY_LIB=ON .. && \
+              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps -DOQS_USE_OPENSSL=ON .. && \
               ninja && ninja install && \
               cd /workspace && \
               wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz && \
@@ -94,7 +94,7 @@ jobs:
               tar xzf ${LIBOQS_VERSION}.tar.gz && \
               cd liboqs-${LIBOQS_VERSION} && \
               mkdir build && cd build && \
-              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps .. && \
+              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps -DOQS_USE_OPENSSL=ON .. && \
               ninja && ninja install && \
               cd /workspace && \
               wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz && \
