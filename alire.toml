@@ -57,9 +57,3 @@ ANUBIS_SPARK_CERTIFICATION.set = "PLATINUM"
 
 [[depends-on]]
 gnatprove = "=14.1.1"
-
-[[depends-on]]
-libsodium = "^1"
-
-[[depends-on]]
-liboqs = "^0.14"
