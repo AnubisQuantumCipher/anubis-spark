@@ -53,8 +53,8 @@ jobs:
 
       - name: Build ANUBIS-SPARK
         run: |
-          export PKG_CONFIG_PATH=$HOME/deps/lib/pkgconfig:$PKG_CONFIG_PATH
-          export ANUBIS_LIB_DIR=$HOME/deps/lib
+          export PKG_CONFIG_PATH="$HOME/deps/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export ANUBIS_LIB_DIR="$HOME/deps/lib"
           alr build --release
           strip bin/anubis_main
 

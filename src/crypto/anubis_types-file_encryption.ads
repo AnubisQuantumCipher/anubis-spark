@@ -75,7 +75,8 @@ package Anubis_Types.File_Encryption is
       Nonce                   : out    XChaCha20_Nonce;
       Success                 : out    Boolean
    ) with
-      Pre    => Header_Data'Length >= Header_Size,
+      Pre    => Header_Data'Length >= Header_Size and then
+                Header_Data'First <= Integer'Last - Header_Size,
       Global => null;
 
    -------------------------------------------------------------------------
