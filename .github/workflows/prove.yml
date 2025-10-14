@@ -18,9 +18,9 @@ jobs:
 
       - name: Build liboqs from source
         run: |
-          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.10.1.tar.gz
-          tar xzf 0.10.1.tar.gz
-          cd liboqs-0.10.1
+          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz
+          tar xzf 0.14.0.tar.gz
+          cd liboqs-0.14.0
           mkdir build && cd build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps -DOQS_USE_OPENSSL=ON ..
           ninja && ninja install
@@ -103,9 +103,9 @@ jobs:
 
       - name: Build liboqs from source
         run: |
-          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.10.1.tar.gz
-          tar xzf 0.10.1.tar.gz
-          cd liboqs-0.10.1
+          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz
+          tar xzf 0.14.0.tar.gz
+          cd liboqs-0.14.0
           mkdir build && cd build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps -DOQS_USE_OPENSSL=ON ..
           ninja && ninja install
