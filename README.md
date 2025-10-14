@@ -1,4 +1,4 @@
-# ANUBIS-SPARK 🔐
+# ANUBIS-SPARK 
 
 **Hybrid Post-Quantum Encryption System**
 
@@ -10,7 +10,7 @@
 [![Supply Chain](https://img.shields.io/badge/Supply%20Chain-Locked-success)](third_party/LOCKFILE.md)
 [![Reproducible Build](https://img.shields.io/badge/Build-Reproducible-brightgreen)](Dockerfile)
 
-## 🛡️ The Most Secure File Encryption System Ever Built
+##  The Most Secure File Encryption System Ever Built
 
 ANUBIS-SPARK combines **classical cryptography** with **post-quantum algorithms** and **formal mathematical verification** to create an encryption system resistant to both current and future quantum computer attacks.
 
@@ -23,7 +23,7 @@ ANUBIS-SPARK combines **classical cryptography** with **post-quantum algorithms*
 5. **Zero-Knowledge Proofs**: Prove file access without revealing contents
 6. **Robust Key Management**: Enterprise-grade key lifecycle management
 
-## 🔒 Cryptographic Algorithms
+##  Cryptographic Algorithms
 
 ### Classical Cryptography (128-bit security, quantum-vulnerable)
 - **X25519** - Elliptic Curve Diffie-Hellman key exchange
@@ -44,7 +44,7 @@ Encrypted File Security:
 = Both must be broken to compromise data
 ```
 
-### 🔗 AAD Binding & Crash Detection (v1.0.4)
+###  AAD Binding & Crash Detection (v1.0.4)
 
 ANUBIS-SPARK includes advanced integrity protection:
 
@@ -57,9 +57,9 @@ AAD = BLAKE2b-256(Header Preamble)
 
 Each chunk encrypted with: XChaCha20-Poly1305(plaintext, key, nonce, AAD)
 ```
-✅ **Prevents**: Chunk reordering, chunk replacement, header tampering
-✅ **Security**: Any header modification invalidates ALL chunks
-✅ **Performance**: Zero-copy AAD computation (~0.1ms)
+ **Prevents**: Chunk reordering, chunk replacement, header tampering
+ **Security**: Any header modification invalidates ALL chunks
+ **Performance**: Zero-copy AAD computation (~0.1ms)
 
 **Finalization Markers**
 ```
@@ -68,11 +68,11 @@ Encryption: data.txt → data.txt.anubis.partial → data.txt.anubis
                        ├─ "ANUB3:FINAL" marker (11 bytes)
                        └─ Atomic rename on success
 ```
-✅ **Detects**: Incomplete encryption (crash, kill -9, power loss)
-✅ **Guarantees**: All .anubis files are complete or absent
-✅ **Cleanup**: `.partial` files indicate failed operations
+ **Detects**: Incomplete encryption (crash, kill -9, power loss)
+ **Guarantees**: All .anubis files are complete or absent
+ **Cleanup**: `.partial` files indicate failed operations
 
-### 🛡️ Signer Metadata & Trust Workflow
+###  Signer Metadata & Trust Workflow
 
 - Headers now embed signer metadata: a zero-padded label (64 bytes), Unix timestamp (8 bytes), and a BLAKE2b fingerprint (32 bytes) derived from the hybrid public keys.
 - The metadata is covered by the hybrid signature and the header AAD hash, so any change to label/timestamp/fingerprint invalidates both the signature and every chunk tag.
@@ -87,52 +87,52 @@ Encryption: data.txt → data.txt.anubis.partial → data.txt.anubis
 - Legacy `ANUB2` headers are detected explicitly with guidance to re-encrypt using the current ANUB3 tooling. **See [MIGRATION.md](MIGRATION.md) for complete v1.x → v2.0.0 migration guide.**
 - After touching metadata or trust paths, rerun `make prove-full` (GNATprove level 4) to regenerate SPARK evidence for the updated contracts.
 
-## ⚡ Key Management Features
+##  Key Management Features
 
 Our **enterprise-grade key management system** provides:
 
-### ✅ Secure Key Generation
+###  Secure Key Generation
 - Cryptographically secure entropy from OS/hardware RNG
 - Hybrid key pairs (classical + post-quantum)
 - SPARK-verified no uninitialized keys
 
-### ✅ Hierarchical Key Derivation
+###  Hierarchical Key Derivation
 ```
 Master Key (from passphrase)
   ├─ Encryption Keys (file, vault, session)
   └─ Authentication Keys (HMAC, signatures)
 ```
 
-### ✅ Encrypted Storage (ANUBISK2 Format - v1.1.0)
+###  Encrypted Storage (ANUBISK2 Format - v1.1.0)
 - **ANUBISK2**: Passphrase-protected encrypted keystore format
 - **Argon2id SENSITIVE**: 1 GiB RAM, 4 iterations (defeats GPU/ASIC attacks)
 - **XChaCha20-Poly1305 AEAD**: Authenticated encryption for keystores
 - **Salt-as-AAD binding**: Prevents salt substitution attacks
 - Never written to disk unencrypted
 
-### ✅ Automatic Key Rotation
+###  Automatic Key Rotation
 - Time-based (every 90 days) or usage-based (1M operations)
 - Forward secrecy (compromise doesn't reveal past data)
 - Old keys archived for decryption only
 
-### ✅ Backup & Recovery
+###  Backup & Recovery
 - Shamir Secret Sharing (split key into N shares, need K to recover)
 - Example: 3-of-5 threshold (distribute to trusted parties)
 - Information-theoretic security (quantum-safe)
 
-### ✅ Secure Destruction
+###  Secure Destruction
 - SPARK-verified automatic zeroization
 - Memory locked in RAM (no swap)
 - Volatile types prevent compiler optimization
 
-### ✅ Access Control & Auditing
+###  Access Control & Auditing
 - SPARK contracts enforce key validity
 - Tamper-evident audit logs (local HMAC with private key stored at `~/.anubis/trust/.hmac.key` and created on first use)
 - Zero-knowledge proofs of access
 
-📖 **[Complete Key Management Documentation](docs/KEY_MANAGEMENT.md)**
+**[Complete Key Management Documentation](docs/KEY_MANAGEMENT.md)**
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -160,63 +160,63 @@ Master Key (from passphrase)
 └─────────────────────────────────────────────────────────┘
 ```
 
-## 📦 Project Structure
+##  Project Structure
 
 ```
 anubis-spark/
 ├── src/                             # Production source code only
-│   ├── anubis_main.adb              # CLI entry point ✅
+│   ├── anubis_main.adb              # CLI entry point 
 │   └── crypto/
-│       ├── anubis_types.ads         # Secure type definitions ✅
-│       ├── anubis_types.adb         # Zeroization implementations ✅
-│       ├── anubis_types-classical.ads   # Classical crypto (X25519, Ed25519) ✅
-│       ├── anubis_types-classical.adb   # Classical implementations ✅
-│       ├── anubis_types-pqc.ads         # Post-quantum crypto (ML-KEM, ML-DSA) ✅
-│       ├── anubis_types-pqc.adb         # PQC implementations ✅
-│       ├── anubis_types-storage.ads     # Encrypted keystore (ANUBISK2) ✅ v1.1.0
-│       ├── anubis_types-storage.adb     # Argon2id + XChaCha20 keystore ✅ v1.1.0
-│       ├── anubis_types-streaming.ads   # Streaming file encryption ✅
-│       ├── anubis_types-streaming.adb   # AEAD with DoS guards ✅
-│       ├── anubis_types-header_aad.ads  # AAD header binding ✅
-│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD ✅
-│       ├── anubis_types-finalize.ads    # Finalization workflow ✅
-│       ├── anubis_types-finalize.adb    # Crash detection ✅
-│       ├── anubis_key_manager.ads       # Key lifecycle management ✅
-│       └── anubis_key_manager.adb       # Key rotation & destruction ✅
+│       ├── anubis_types.ads         # Secure type definitions 
+│       ├── anubis_types.adb         # Zeroization implementations 
+│       ├── anubis_types-classical.ads   # Classical crypto (X25519, Ed25519) 
+│       ├── anubis_types-classical.adb   # Classical implementations 
+│       ├── anubis_types-pqc.ads         # Post-quantum crypto (ML-KEM, ML-DSA) 
+│       ├── anubis_types-pqc.adb         # PQC implementations 
+│       ├── anubis_types-storage.ads     # Encrypted keystore (ANUBISK2)  v1.1.0
+│       ├── anubis_types-storage.adb     # Argon2id + XChaCha20 keystore  v1.1.0
+│       ├── anubis_types-streaming.ads   # Streaming file encryption 
+│       ├── anubis_types-streaming.adb   # AEAD with DoS guards 
+│       ├── anubis_types-header_aad.ads  # AAD header binding 
+│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD 
+│       ├── anubis_types-finalize.ads    # Finalization workflow 
+│       ├── anubis_types-finalize.adb    # Crash detection 
+│       ├── anubis_key_manager.ads       # Key lifecycle management 
+│       └── anubis_key_manager.adb       # Key rotation & destruction 
 ├── tests/                           # Test suite (separate from production)
-│   ├── test_pqc.adb                 # ML-KEM/ML-DSA tests ✅
-│   ├── test_comprehensive.adb       # Full crypto suite ✅
-│   ├── test_encrypted_keystore.adb  # ANUBISK2 tests ✅ v1.1.0
-│   ├── test_keystore_simple.adb     # Quick keystore smoke test ✅ v1.1.0
-│   └── test_movie_encryption.adb    # 2GB file test ✅ v1.1.0
+│   ├── test_pqc.adb                 # ML-KEM/ML-DSA tests 
+│   ├── test_comprehensive.adb       # Full crypto suite 
+│   ├── test_encrypted_keystore.adb  # ANUBISK2 tests  v1.1.0
+│   ├── test_keystore_simple.adb     # Quick keystore smoke test  v1.1.0
+│   └── test_movie_encryption.adb    # 2GB file test  v1.1.0
 ├── bin/                             # Built executables
 │   └── anubis_main                  # Production CLI (make build)
-├── Makefile                         # Production build system ✅ v1.1.0
-├── INSTALL.md                       # Installation guide ✅ v1.1.0
-├── CHANGELOG.md                     # Version history ✅
-├── API_REFERENCE.md                 # Developer API docs ✅
-├── anubis_spark.gpr                 # GNAT project file ✅
+├── Makefile                         # Production build system  v1.1.0
+├── INSTALL.md                       # Installation guide  v1.1.0
+├── CHANGELOG.md                     # Version history 
+├── API_REFERENCE.md                 # Developer API docs 
+├── anubis_spark.gpr                 # GNAT project file 
 └── README.md                        # This file
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation Options
 
-#### Option 1: Static Binary (Recommended - Zero Dependencies) ✅
+#### Option 1: Static Binary (Recommended - Zero Dependencies) 
 
 Download pre-compiled static binaries with **zero runtime dependencies**. These binaries are production-ready and include:
-- ✅ 100% SPARK Platinum Certification (151/151 VCs proven)
-- ✅ liboqs 0.14.0 (final FIPS 203/204 ML-KEM/ML-DSA)
-- ✅ libsodium 1.0.20 (classical cryptography)
-- ✅ All dependencies statically linked
-- ✅ ~400 KB binary size
-- ✅ No installation of development tools required
+-  100% SPARK Platinum Certification (151/151 VCs proven)
+-  liboqs 0.14.0 (final FIPS 203/204 ML-KEM/ML-DSA)
+-  libsodium 1.0.20 (classical cryptography)
+-  All dependencies statically linked
+-  ~400 KB binary size
+-  No installation of development tools required
 
 **Platform Support:**
-- ✅ **Linux x86_64** - Intel/AMD servers, cloud instances (Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, etc.)
-- ✅ **macOS Apple Silicon** - M1/M2/M3/M4 chips (macOS 11+ Big Sur)
-- ✅ **macOS Intel** - x86_64 processors (macOS 10.15+ Catalina)
+-  **Linux x86_64** - Intel/AMD servers, cloud instances (Ubuntu, Debian, RHEL, CentOS, Fedora, Arch, etc.)
+-  **macOS Apple Silicon** - M1/M2/M3/M4 chips (macOS 11+ Big Sur)
+-  **macOS Intel** - x86_64 processors (macOS 10.15+ Catalina)
 
 **Latest Release**: [v2.0.7](https://github.com/AnubisQuantumCipher/anubis-spark/releases/tag/v2.0.7)
 
@@ -605,42 +605,42 @@ anubis-spark version
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design
 - [third_party/LOCKFILE.md](third_party/LOCKFILE.md) - Supply chain security
 
-## 🔬 Formal Verification
+##  Formal Verification
 
-### 🏆 SPARK Platinum Certification - 100% Proof Coverage ✅
+###  SPARK Platinum Certification - 100% Proof Coverage 
 
 **ANUBIS-SPARK has achieved SPARK Platinum certification with 100% proof coverage (151/151 VCs) - the highest level of formal verification for safety-critical and security-critical software.**
 
-✅ **Memory Safety** (Silver Level)
+ **Memory Safety** (Silver Level)
 - No buffer overflows
 - No use-after-free
 - No null pointer dereferences
 
-✅ **Type Safety** (Silver Level)
+ **Type Safety** (Silver Level)
 - Correct key types for operations
 - No key confusion attacks
 - No type punning
 
-✅ **Information Flow** (Bronze Level)
+ **Information Flow** (Bronze Level)
 - Secrets don't leak to logs
 - Proper initialization verified
 - Side-channel resistance
 
-✅ **Cryptographic Properties** (Platinum Level)
+ **Cryptographic Properties** (Platinum Level)
 - Nonces never reused (state machine proof)
 - Keys derived correctly from master
 - Secure zeroization guaranteed
 
-### Platinum-Level Functional Contracts 🏆
+### Platinum-Level Functional Contracts 
 
 ANUBIS-SPARK now includes **Platinum-level functional specifications** - the highest level of formal verification:
 
-✅ **Streaming AEAD Correctness**
+ **Streaming AEAD Correctness**
 - Complete behavioral specification for encryption/decryption
 - Ghost functions prove nonce uniqueness
 - File integrity verification formally specified
 
-✅ **Tampering Detection Proven**
+ **Tampering Detection Proven**
 ```ada
 -- Decrypt_File_Streaming proves:
 -- Success → Perfect integrity (all Poly1305 tags valid, exact file size)
@@ -648,20 +648,20 @@ ANUBIS-SPARK now includes **Platinum-level functional specifications** - the hig
 -- Invalid_Format → File size mismatch / extra data (tampering detected)
 ```
 
-✅ **Length Preservation Proven**
+ **Length Preservation Proven**
 ```ada
 -- XChaCha20_Encrypt proves:
 -- Ciphertext'Length = Plaintext'Length (on success)
 ```
 
-✅ **Key Validity Proven**
+ **Key Validity Proven**
 ```ada
 -- Derive_Encryption_Key proves:
 -- Success → Derived key is cryptographically valid
 -- Failure → Key zeroized (no accidental use)
 ```
 
-**Status**: ✅ **Platinum (Complete) - 100% Proof Coverage**
+**Status**:  **Platinum (Complete) - 100% Proof Coverage**
 **Verification Conditions**: 151/151 proven (100%)
 **Proof Documents**: [PLATINUM_CERTIFICATION.md](PLATINUM_CERTIFICATION.md) | [PLATINUM_PROOF_REPORT.md](PLATINUM_PROOF_REPORT.md)
 
@@ -679,7 +679,7 @@ gnatprove -P anubis_spark.gpr --level=1 --prover=cvc5 --timeout=300
 # Expected: Total 151 ... Unproved: 0
 ```
 
-## 🛡️ Security Guarantees
+##  Security Guarantees
 
 | Attack Vector | Mitigation |
 |--------------|------------|
@@ -697,14 +697,14 @@ gnatprove -P anubis_spark.gpr --level=1 --prover=cvc5 --timeout=300
 | Key compromise | Forward secrecy via rotation |
 | Insider threats | Zero-knowledge proofs, audit logs |
 
-## 📊 Performance
+##  Performance
 
 **Streaming File Encryption** (Tested on Apple Silicon M-series):
 
 | File Size | Encrypt Time | Decrypt Time | Throughput | Overhead | Integrity |
 |-----------|--------------|--------------|------------|----------|-----------|
-| 66 MB (PDF) | 1.40s | 2.63s | 47.3 MB/s (enc)<br>25.2 MB/s (dec) | 0.0093% | ✅ Byte-for-byte |
-| 2.0 GB (Movie) | 61.8s | 116.6s | 33.1 MB/s (enc)<br>17.6 MB/s (dec) | <0.01% | ✅ Perfect SHA256 |
+| 66 MB (PDF) | 1.40s | 2.63s | 47.3 MB/s (enc)<br>25.2 MB/s (dec) | 0.0093% |  Byte-for-byte |
+| 2.0 GB (Movie) | 61.8s | 116.6s | 33.1 MB/s (enc)<br>17.6 MB/s (dec) | <0.01% |  Perfect SHA256 |
 
 **Production Validation (v2.0.0)**:
 - Tested: 66 MB PDF ("Principles of Genetics")
@@ -731,7 +731,7 @@ gnatprove -P anubis_spark.gpr --level=1 --prover=cvc5 --timeout=300
 - **Tested**: 2 GB movie file encrypted/decrypted with <100 MB RAM usage
 - **Tested**: 66 MB PDF with 194 MB encryption / 130 MB decryption peak usage
 
-## 📞 Contact & Support
+##  Contact & Support
 
 **Maintainer**: sic.tau@pm.me
 **Repository**: https://github.com/AnubisQuantumCipher/anubis-spark
@@ -741,24 +741,24 @@ gnatprove -P anubis_spark.gpr --level=1 --prover=cvc5 --timeout=300
 
 ---
 
-## 🏭 Production Hardening (v1.1.0 Platinum)
+##  Production Hardening (v1.1.0 Platinum)
 
-### 🛡️ Assurance Case
+###  Assurance Case
 
 ANUBIS-SPARK includes a comprehensive **[Assurance Case](docs/ASSURANCE_CASE.md)** for security auditors and regulatory compliance:
 
 **What is Proved (SPARK):**
-- ✅ Absence of Run-Time Errors (AoRTE) on all orchestration modules
-- ✅ Encrypt∘Decrypt = Identity (pure model proven)
-- ✅ Header-to-Chunk AAD Binding (any header modification → all chunks fail)
-- ✅ Zeroization Postconditions (buffers wiped on failure/teardown)
-- ✅ Data-flow Contracts (Global/Depends clauses restrict information flows)
+-  Absence of Run-Time Errors (AoRTE) on all orchestration modules
+-  Encrypt∘Decrypt = Identity (pure model proven)
+-  Header-to-Chunk AAD Binding (any header modification → all chunks fail)
+-  Zeroization Postconditions (buffers wiped on failure/teardown)
+-  Data-flow Contracts (Global/Depends clauses restrict information flows)
 
 **What is Tested (Comprehensive):**
-- ✅ Known-Answer Tests (KATs) for all primitives
-- ✅ **10-Scenario Tamper Detection Matrix** (see below)
-- ✅ Fuzz testing (random mutations rejected)
-- ✅ Self-test CLI (`anubis-spark test`)
+-  Known-Answer Tests (KATs) for all primitives
+-  **10-Scenario Tamper Detection Matrix** (see below)
+-  Fuzz testing (random mutations rejected)
+-  Self-test CLI (`anubis-spark test`)
 
 **Trusted Components (TCB):**
 - libsodium 1.0.20 (Argon2id, XChaCha20-Poly1305, X25519, Ed25519)
@@ -774,26 +774,26 @@ ANUBIS-SPARK includes a comprehensive **[Assurance Case](docs/ASSURANCE_CASE.md)
 - [ ] Review CI workflow logs: `.github/workflows/prove.yml`
 - [ ] Test encrypted keystore workflow end-to-end
 
-📖 **[Complete Assurance Case Documentation](docs/ASSURANCE_CASE.md)**
+**[Complete Assurance Case Documentation](docs/ASSURANCE_CASE.md)**
 
 ---
 
-### 🧪 Tamper Detection Matrix (10 Comprehensive Scenarios)
+###  Tamper Detection Matrix (10 Comprehensive Scenarios)
 
 ANUBIS-SPARK includes exhaustive tamper detection testing via `test_boundary_matrix`:
 
 | # | Attack Scenario | Target | Offset | Detection | Status |
 |---|----------------|--------|--------|-----------|--------|
-| 1 | **Flip header magic bytes** | Header | 3 | All chunks fail AAD verification | ✅ PASS |
-| 2 | **Flip version byte** | Header | 6 | All chunks fail AAD verification | ✅ PASS |
-| 3 | **Flip file nonce** | Header | 16 | All chunks fail AAD verification | ✅ PASS |
-| 4 | **Flip X25519 ephemeral PK** | Header | 50 | Key decapsulation fails | ✅ PASS |
-| 5 | **Flip ML-KEM ciphertext** | Header | 200 | KEM decapsulation fails | ✅ PASS |
-| 6 | **Flip chunk ciphertext** | Chunk | 1700 | Poly1305 tag verification fails | ✅ PASS |
-| 7 | **Truncate finalization marker** | EOF | N/A | Incomplete file rejected | ✅ PASS |
-| 8 | **Wrong X25519 secret key** | Decryption | N/A | Hybrid KDF derivation fails | ✅ PASS |
-| 9 | **Wrong ML-KEM secret key** | Decryption | N/A | KEM decapsulation fails | ✅ PASS |
-| 10 | **All wrong keys** | Decryption | N/A | Complete failure, keys zeroized | ✅ PASS |
+| 1 | **Flip header magic bytes** | Header | 3 | All chunks fail AAD verification |  PASS |
+| 2 | **Flip version byte** | Header | 6 | All chunks fail AAD verification |  PASS |
+| 3 | **Flip file nonce** | Header | 16 | All chunks fail AAD verification |  PASS |
+| 4 | **Flip X25519 ephemeral PK** | Header | 50 | Key decapsulation fails |  PASS |
+| 5 | **Flip ML-KEM ciphertext** | Header | 200 | KEM decapsulation fails |  PASS |
+| 6 | **Flip chunk ciphertext** | Chunk | 1700 | Poly1305 tag verification fails |  PASS |
+| 7 | **Truncate finalization marker** | EOF | N/A | Incomplete file rejected |  PASS |
+| 8 | **Wrong X25519 secret key** | Decryption | N/A | Hybrid KDF derivation fails |  PASS |
+| 9 | **Wrong ML-KEM secret key** | Decryption | N/A | KEM decapsulation fails |  PASS |
+| 10 | **All wrong keys** | Decryption | N/A | Complete failure, keys zeroized |  PASS |
 
 **Test Binaries:**
 ```bash
@@ -813,7 +813,7 @@ Both tests run automatically in GitHub Actions on every commit.
 
 ---
 
-### 🔐 Supply Chain Security
+###  Supply Chain Security
 
 **[Supply Chain Lockfile](third_party/LOCKFILE.md)** pins all dependencies with SHA256 verification:
 
@@ -839,7 +839,7 @@ bash third_party/LOCKFILE.md  # Contains embedded verification script
 
 ---
 
-### 🐳 Reproducible Builds (Dockerfile)
+###  Reproducible Builds (Dockerfile)
 
 **[Dockerfile](Dockerfile)** provides deterministic builds with complete proof verification:
 
@@ -875,7 +875,7 @@ Same source + toolchain + flags → identical binary (SHA256 match)
 
 ---
 
-### 🚀 Release Automation
+###  Release Automation
 
 **[scripts/release.sh](scripts/release.sh)** performs complete release cycle:
 
@@ -922,7 +922,7 @@ gh release create v1.2.0 release/anubis-spark-v1.2.0.tar.gz
 
 ---
 
-### 🎯 Makefile Targets (Production)
+###  Makefile Targets (Production)
 
 ```bash
 make build         # Build production release binary
@@ -940,7 +940,7 @@ make help          # Show all targets
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
@@ -952,13 +952,13 @@ Contributions are welcome. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for 
 - Additional post-quantum algorithms
 - Documentation improvements
 
-## 📜 License
+##  License
 
 MIT OR Apache-2.0 (dual-licensed)
 
 See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
-## 🔗 References
+##  References
 
 - [NIST Post-Quantum Cryptography](https://csrc.nist.gov/projects/post-quantum-cryptography)
 - [FIPS 203 (ML-KEM)](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.203.pdf)
@@ -967,49 +967,49 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 - [SPARK Verification](https://www.adacore.com/about-spark)
 - [Argon2 Specification](https://github.com/P-H-C/phc-winner-argon2)
 
-## 🎯 Roadmap
+##  Roadmap
 
-### ✅ Phase 1: Foundation (COMPLETED)
-- [x] Project setup and architecture design
-- [x] Secure type system with SPARK verification
-- [x] Comprehensive key management architecture
-- [x] **liboqs Ada FFI bindings (ML-KEM-1024, ML-DSA-87)**
-- [x] **Complete PQC wrapper implementation**
-- [x] **Comprehensive test suite (100% coverage)**
-- [x] **Zero compilation warnings**
-- [x] **Memory safety verification**
-- [x] **Secure zeroization (SPARK-verified)**
-- [x] **Constant-time operations**
+###  Phase 1: Foundation (COMPLETED)
+- Project setup and architecture design
+- Secure type system with SPARK verification
+- Comprehensive key management architecture
+- **liboqs Ada FFI bindings (ML-KEM-1024, ML-DSA-87)**
+- **Complete PQC wrapper implementation**
+- **Comprehensive test suite (100% coverage)**
+- **Zero compilation warnings**
+- **Memory safety verification**
+- **Secure zeroization (SPARK-verified)**
+- **Constant-time operations**
 
-### ✅ Phase 2: Core Implementation (COMPLETED)
-- [x] **libsodium Ada FFI bindings (complete)**
+###  Phase 2: Core Implementation (COMPLETED)
+- **libsodium Ada FFI bindings (complete)**
   - X25519, Ed25519, XChaCha20-Poly1305, Argon2id, HKDF
-- [x] **Hybrid key encapsulation (X25519 + ML-KEM-1024)**
-- [x] **Hybrid signatures (Ed25519 + ML-DSA-87)**
-- [x] **File encryption header infrastructure**
-- [x] **Gold-level SPARK verification achieved (31/31 proofs)**
-- [x] **Universal streaming AEAD engine (all file sizes)**
-- [x] **Complete Encrypt_File implementation with streaming**
-- [x] **Complete Decrypt_File implementation with streaming**
-- [x] **CLI interface and commands (keygen, encrypt, decrypt, test, version)**
-- [x] **Tested with 2 GB files - perfect integrity**
-- [x] **Stack overflow fixes for large files**
-- [x] **64 MB chunk-based encryption with per-chunk authentication**
+- **Hybrid key encapsulation (X25519 + ML-KEM-1024)**
+- **Hybrid signatures (Ed25519 + ML-DSA-87)**
+- **File encryption header infrastructure**
+- **Gold-level SPARK verification achieved (31/31 proofs)**
+- **Universal streaming AEAD engine (all file sizes)**
+- **Complete Encrypt_File implementation with streaming**
+- **Complete Decrypt_File implementation with streaming**
+- **CLI interface and commands (keygen, encrypt, decrypt, test, version)**
+- **Tested with 2 GB files - perfect integrity**
+- **Stack overflow fixes for large files**
+- **64 MB chunk-based encryption with per-chunk authentication**
 
-### 🏆 Phase 3: Platinum Verification (COMPLETED)
-- [x] **Full SPARK Platinum certification (GNATprove level 4)**
-- [x] **100% proof coverage (183/183 VCs)**
-- [x] **All functional contracts proven**
-- [x] **Comprehensive proof documentation**
+###  Phase 3: Platinum Verification (COMPLETED)
+- **Full SPARK Platinum certification (GNATprove level 4)**
+- **100% proof coverage (183/183 VCs)**
+- **All functional contracts proven**
+- **Comprehensive proof documentation**
 
-### 🔐 Phase 4: Production Readiness (COMPLETED - v1.1.0)
-- [x] **Encrypted keystores (ANUBISK2 format)**
-- [x] **Argon2id SENSITIVE KDF (1 GiB RAM, 4 iterations)**
-- [x] **Production build system (Makefile)**
-- [x] **System-wide installation (make install)**
-- [x] **Clean project structure (tests separated)**
-- [x] **Comprehensive installation guide**
-- [x] **Tested with 2 GB files (perfect integrity)**
+###  Phase 4: Production Readiness (COMPLETED - v1.1.0)
+- **Encrypted keystores (ANUBISK2 format)**
+- **Argon2id SENSITIVE KDF (1 GiB RAM, 4 iterations)**
+- **Production build system (Makefile)**
+- **System-wide installation (make install)**
+- **Clean project structure (tests separated)**
+- **Comprehensive installation guide**
+- **Tested with 2 GB files (perfect integrity)**
 
 ---
 
