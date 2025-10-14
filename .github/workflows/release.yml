@@ -174,7 +174,7 @@ jobs:
           path: release/anubis-spark-macos-x86_64.tar.gz*
 
   build-macos-arm64:
-    runs-on: macos-14
+    runs-on: macos-13  # Use Intel runner - GNAT toolchain is x86_64 only
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
