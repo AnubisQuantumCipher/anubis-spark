@@ -1,7 +1,7 @@
 # ANUBIS-SPARK Installation Prerequisites
 
-**Version**: 2.0.0
-**Last Updated**: 2025-10-13
+**Version**: 2.0.7
+**Last Updated**: 2025-10-14
 **Maintainer**: sic.tau@pm.me
 **Repository**: https://github.com/AnubisQuantumCipher/anubis-spark
 
@@ -9,66 +9,186 @@
 
 ## Overview
 
-This document provides complete installation requirements for building ANUBIS-SPARK from source. For binary releases, see the [Releases](https://github.com/AnubisQuantumCipher/anubis-spark/releases) page.
+This document provides complete installation requirements for building ANUBIS-SPARK from source.
+
+**⚡ Want to skip installation?** Download ready-to-use static binaries with zero dependencies from the [Releases](https://github.com/AnubisQuantumCipher/anubis-spark/releases/tag/v2.0.7) page - see Quick Start below.
 
 ---
 
-## Quick Start (Recommended)
+## Quick Start (Recommended) - No Build Required
 
 ### Using Static Binary Releases
 
-**No prerequisites required** - download pre-compiled binary for your platform:
+**✅ ZERO prerequisites required** - pre-compiled binaries include all dependencies statically linked:
+- 100% SPARK Platinum Certification (151/151 VCs proven)
+- liboqs 0.14.0 (final FIPS 203/204 ML-KEM/ML-DSA)
+- libsodium 1.0.20 (classical cryptography)
+- ~400 KB binary size
+- Works on any compatible system immediately
 
-**Linux (x86_64 / Intel/AMD)**:
+**Latest Release**: [v2.0.7](https://github.com/AnubisQuantumCipher/anubis-spark/releases/tag/v2.0.7)
+
+---
+
+#### Linux x86_64 (Intel/AMD servers, cloud instances)
+
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-x86_64.tar.gz
+# Download latest release (always up-to-date)
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz
+
+# Download checksum for verification
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz.sha256
+
+# Verify integrity
+sha256sum -c anubis-spark-linux-x86_64.tar.gz.sha256
+# Expected: anubis-spark-linux-x86_64.tar.gz: OK
+
+# Extract and run
 tar xzf anubis-spark-linux-x86_64.tar.gz
 cd anubis-spark-linux-x86_64
 ./anubis_main version
+
+# System-wide installation (optional)
+sudo install -m 755 anubis_main /usr/local/bin/anubis-spark
+anubis-spark version
 ```
 
-**Linux (ARM64 / Raspberry Pi)**:
-```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-arm64.tar.gz
-tar xzf anubis-spark-linux-arm64.tar.gz
-cd anubis-spark-linux-arm64
-./anubis_main version
-```
+**Supported Distributions**: Ubuntu 20.04+, Debian 11+, RHEL 8+, CentOS 8+, Fedora 35+, Arch, Alpine 3.15+
 
-**macOS (Apple Silicon / M1/M2/M3)**:
+---
+
+#### macOS Apple Silicon (M1/M2/M3/M4)
+
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-macos-arm64.tar.gz
+# Download latest release (always up-to-date)
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz
+
+# Download checksum for verification
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz.sha256
+
+# Verify integrity
+shasum -a 256 -c anubis-spark-macos-arm64.tar.gz.sha256
+# Expected: anubis-spark-macos-arm64.tar.gz: OK
+
+# Extract and run
 tar xzf anubis-spark-macos-arm64.tar.gz
 cd anubis-spark-macos-arm64
 ./anubis_main version
+
+# System-wide installation (optional)
+sudo install -m 755 anubis_main /usr/local/bin/anubis-spark
+anubis-spark version
 ```
 
-**macOS (Intel x86_64)**:
+**macOS Version**: Requires macOS 11.0 (Big Sur) or later
+
+---
+
+#### macOS Intel (x86_64)
+
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-macos-x86_64.tar.gz
+# Download latest release (always up-to-date)
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-x86_64.tar.gz
+
+# Download checksum for verification
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-x86_64.tar.gz.sha256
+
+# Verify integrity
+shasum -a 256 -c anubis-spark-macos-x86_64.tar.gz.sha256
+# Expected: anubis-spark-macos-x86_64.tar.gz: OK
+
+# Extract and run
 tar xzf anubis-spark-macos-x86_64.tar.gz
 cd anubis-spark-macos-x86_64
 ./anubis_main version
+
+# System-wide installation (optional)
+sudo install -m 755 anubis_main /usr/local/bin/anubis-spark
+anubis-spark version
 ```
+
+**macOS Version**: Requires macOS 10.15 (Catalina) or later
+
+---
+
+#### Quick Test After Installation
+
+```bash
+# Generate identity key
+anubis-spark keygen --output test.key
+
+# Encrypt sample file
+echo "Hello, Post-Quantum World!" > test.txt
+anubis-spark encrypt --key test.key --input test.txt
+
+# Decrypt file
+anubis-spark decrypt --key test.key --input test.txt.anubis
+
+# Verify output
+cat test.txt.anubis.decrypted
+# Expected: Hello, Post-Quantum World!
+
+# Run self-tests
+anubis-spark test
+```
+
+---
+
+### Platform Support Summary
+
+| Platform | Architecture | Binary Available | Build from Source |
+|----------|-------------|------------------|-------------------|
+| Linux | x86_64 (Intel/AMD) | ✅ YES | ✅ YES |
+| Linux | ARM64 (Raspberry Pi, etc.) | ❌ Not yet | ✅ YES |
+| macOS | Apple Silicon (M1/M2/M3/M4) | ✅ YES | ✅ YES |
+| macOS | Intel (x86_64) | ✅ YES | ✅ YES |
+| Windows | WSL2 (Ubuntu) | ✅ Use Linux binary | ✅ YES |
+| FreeBSD | x86_64 | ❌ Not yet | ⚠️ Experimental |
+
+**Note**: ARM64 Linux builds are not available in binary form due to Ada toolchain limitations. Linux ARM64 users must build from source (see instructions below).
 
 ### Using Docker
 
-**No local installation required** - run directly in container:
+**✅ ZERO local installation required** - run directly in container with all dependencies included:
+- Docker image: `ghcr.io/anubisquantumcipher/anubis-spark:latest`
+- Multi-architecture support: linux/amd64
+- Size: ~250 MB (runtime), includes full verification
+- Based on Ubuntu 22.04
 
 ```bash
-# Pull image from GitHub Container Registry
-docker pull ghcr.io/AnubisQuantumCipher/anubis-spark:latest
+# Pull latest image from GitHub Container Registry
+docker pull ghcr.io/anubisquantumcipher/anubis-spark:latest
 
-# Show version and help
-docker run --rm ghcr.io/AnubisQuantumCipher/anubis-spark:latest version
+# Show version and verify SPARK certification
+docker run --rm ghcr.io/anubisquantumcipher/anubis-spark:latest version
+# Expected: ANUBIS-SPARK v2.0.7, SPARK Platinum (151/151 VCs), liboqs 0.14.0, libsodium 1.0.20
 
-# Encrypt file (mount current directory as /data)
-docker run --rm -v $(pwd):/data ghcr.io/AnubisQuantumCipher/anubis-spark:latest \
+# Generate identity key (mount current directory as /data)
+docker run --rm -v $(pwd):/data ghcr.io/anubisquantumcipher/anubis-spark:latest \
   keygen --output /data/identity.key
 
-docker run --rm -v $(pwd):/data ghcr.io/AnubisQuantumCipher/anubis-spark:latest \
-  encrypt --key /data/identity.key --input /data/file.txt
+# Encrypt file
+echo "Hello, Post-Quantum World!" > test.txt
+docker run --rm -v $(pwd):/data ghcr.io/anubisquantumcipher/anubis-spark:latest \
+  encrypt --key /data/identity.key --input /data/test.txt
+
+# Decrypt file
+docker run --rm -v $(pwd):/data ghcr.io/anubisquantumcipher/anubis-spark:latest \
+  decrypt --key /data/identity.key --input /data/test.txt.anubis
+
+# Verify result
+cat test.txt.anubis.decrypted
+# Expected: Hello, Post-Quantum World!
+
+# Run cryptographic self-tests
+docker run --rm ghcr.io/anubisquantumcipher/anubis-spark:latest test
 ```
+
+**Docker Version Tags**:
+- `latest` - Always points to most recent stable release (v2.0.7)
+- `2.0.7` - Specific version tag
+- `2.0` - Latest 2.0.x release
+- `2` - Latest 2.x release
 
 ---
 
@@ -151,27 +271,26 @@ alr build
 
 ### 2. liboqs (Post-Quantum Cryptography)
 
-**Version Required**: 0.10.1 or later
+**Version Required**: 0.14.0 or later (final FIPS 203/204 ML-KEM/ML-DSA)
 
 liboqs provides ML-KEM-1024 and ML-DSA-87 implementations.
+
+**IMPORTANT**: ANUBIS-SPARK v2.0.7 requires liboqs 0.14.0 which includes the final NIST FIPS 203/204 standardized function names (not the IPD versions from 0.10.1).
 
 #### Linux (Ubuntu/Debian)
 
 ```bash
-# Option 1: From apt (if available)
-sudo apt update
-sudo apt install liboqs-dev
-
-# Option 2: Build from source
+# Build from source (apt version may be outdated)
 sudo apt install build-essential cmake ninja-build libssl-dev
-wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.10.1.tar.gz
-tar xzf 0.10.1.tar.gz
-cd liboqs-0.10.1
+wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz
+tar xzf 0.14.0.tar.gz
+cd liboqs-0.14.0
 mkdir build && cd build
 cmake -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DOQS_USE_OPENSSL=ON \
   ..
 ninja
 sudo ninja install
@@ -183,14 +302,15 @@ sudo ldconfig
 ```bash
 sudo dnf groupinstall "Development Tools"
 sudo dnf install cmake ninja-build openssl-devel
-wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.10.1.tar.gz
-tar xzf 0.10.1.tar.gz
-cd liboqs-0.10.1
+wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz
+tar xzf 0.14.0.tar.gz
+cd liboqs-0.14.0
 mkdir build && cd build
 cmake -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DOQS_USE_OPENSSL=ON \
   ..
 ninja
 sudo ninja install
@@ -201,20 +321,23 @@ sudo ldconfig
 
 ```bash
 brew install liboqs
+# Note: Verify version is 0.14.0 or later
+brew info liboqs | grep -E "liboqs:"
 ```
 
 #### macOS (From Source)
 
 ```bash
 brew install cmake ninja openssl@3
-wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.10.1.tar.gz
-tar xzf 0.10.1.tar.gz
-cd liboqs-0.10.1
+wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/0.14.0.tar.gz
+tar xzf 0.14.0.tar.gz
+cd liboqs-0.14.0
 mkdir build && cd build
 cmake -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_INSTALL_PREFIX=/opt/homebrew \
+  -DOQS_USE_OPENSSL=ON \
   ..
 ninja
 sudo ninja install
@@ -223,7 +346,7 @@ sudo ninja install
 **Verification**:
 ```bash
 pkg-config --modversion liboqs
-# Expected: 0.10.1 or later
+# Expected: 0.14.0 or later
 
 ls /usr/local/lib/liboqs.* || ls /opt/homebrew/lib/liboqs.*
 # Should show liboqs.a and/or liboqs.dylib/liboqs.so
@@ -566,33 +689,83 @@ alr build --release -- -j1
 
 ## Dependency Version Matrix
 
-| Component | Minimum Version | Tested Version | Notes |
-|-----------|----------------|----------------|-------|
-| **Alire** | 2.0.0 | 2.0.1 | Ada package manager |
-| **GNAT** | 14.0.0 | 14.2.1 | Ada compiler (via Alire) |
-| **GPRbuild** | 24.0.0 | 24.0.1 | Build system (via Alire) |
-| **GNATprove** | 14.0.0 | 14.1.1 | Optional, for proofs |
-| **liboqs** | 0.10.0 | 0.10.1 | Post-quantum crypto |
-| **libsodium** | 1.0.18 | 1.0.20 | Classical crypto |
-| **CMake** | 3.16 | 3.27 | For building liboqs |
-| **Ninja** | 1.10 | 1.11 | For building liboqs |
-| **Docker** | 20.10 | 24.0 | Optional, for containers |
+| Component | Minimum Version | Tested Version | Release v2.0.7 | Notes |
+|-----------|----------------|----------------|----------------|-------|
+| **Alire** | 2.0.0 | 2.0.1 | 2.0.1 | Ada package manager |
+| **GNAT** | 14.0.0 | 14.2.1 | 14.2.1 | Ada compiler (via Alire) |
+| **GPRbuild** | 24.0.0 | 24.0.1 | 24.0.1 | Build system (via Alire) |
+| **GNATprove** | 14.0.0 | 14.1.1 | 14.1.1 | Optional, for proofs |
+| **liboqs** | 0.14.0 | 0.14.0 | 0.14.0 | **REQUIRED** - final FIPS 203/204 |
+| **libsodium** | 1.0.18 | 1.0.20 | 1.0.20 | Classical crypto |
+| **CMake** | 3.16 | 3.27 | 3.27 | For building liboqs |
+| **Ninja** | 1.10 | 1.11 | 1.11 | For building liboqs |
+| **Docker** | 20.10 | 24.0 | 24.0 | Optional, for containers |
+
+**Breaking Change Alert**: liboqs 0.14.0 is REQUIRED for v2.0.7. Earlier versions (0.10.x, 0.11.x) used IPD (initial public draft) function names and are not compatible with the final NIST FIPS 203/204 standards.
 
 ---
 
 ## Binary Release Verification
 
-All binary releases include SHA256 checksums:
+All binary releases include SHA256 checksums for integrity verification:
+
+### Linux x86_64
 
 ```bash
-# Download binary and checksum
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-x86_64.tar.gz
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-x86_64.tar.gz.sha256
+# Download binary and checksum (always latest)
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz.sha256
 
 # Verify checksum
 sha256sum -c anubis-spark-linux-x86_64.tar.gz.sha256
-
 # Expected output: anubis-spark-linux-x86_64.tar.gz: OK
+
+# Manual verification (alternative)
+sha256sum anubis-spark-linux-x86_64.tar.gz
+cat anubis-spark-linux-x86_64.tar.gz.sha256
+# Compare the two hashes - they should match exactly
+```
+
+### macOS (Apple Silicon / Intel)
+
+```bash
+# Download binary and checksum (replace arch with arm64 or x86_64)
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz.sha256
+
+# Verify checksum
+shasum -a 256 -c anubis-spark-macos-arm64.tar.gz.sha256
+# Expected output: anubis-spark-macos-arm64.tar.gz: OK
+
+# Manual verification (alternative)
+shasum -a 256 anubis-spark-macos-arm64.tar.gz
+cat anubis-spark-macos-arm64.tar.gz.sha256
+# Compare the two hashes - they should match exactly
+```
+
+### Verifying Binary Authenticity
+
+**After extraction, verify the binary:**
+
+```bash
+# Extract archive
+tar xzf anubis-spark-*.tar.gz
+
+# Check binary info
+file anubis-spark-*/anubis_main
+# Linux: should show "ELF 64-bit LSB executable, x86-64"
+# macOS: should show "Mach-O 64-bit executable arm64/x86_64"
+
+# Run version check
+./anubis-spark-*/anubis_main version
+# Expected: ANUBIS-SPARK v2.0.7
+#           SPARK Platinum Certification: 151/151 VCs proven
+#           liboqs 0.14.0 (ML-KEM-1024, ML-DSA-87)
+#           libsodium 1.0.20 (X25519, Ed25519, XChaCha20-Poly1305, Argon2id)
+
+# Run self-tests
+./anubis-spark-*/anubis_main test
+# Expected: All tests PASSED
 ```
 
 ---
