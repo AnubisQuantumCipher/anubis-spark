@@ -118,30 +118,42 @@ package Anubis_Types is
    function Is_Zeroed (Key : ML_DSA_Secret_Key) return Boolean with Ghost;
    function Is_Zeroed (Key : Master_Key) return Boolean with Ghost;
 
+   -- PLATINUM SPARK: Ghost functions to check if public key data is zeroed
+   function Is_PK_Zeroed (Key : X25519_Public_Key) return Boolean with Ghost;
+   function Is_PK_Zeroed (Key : Ed25519_Public_Key) return Boolean with Ghost;
+   function Is_PK_Zeroed (Key : ML_KEM_Public_Key) return Boolean with Ghost;
+   function Is_PK_Zeroed (Key : ML_DSA_Public_Key) return Boolean with Ghost;
+
    -------------------------------------------------------------------------
    -- Zeroization: Securely erase keys from memory
    -- PLATINUM SPARK: Postconditions prove both validity flag AND data zeroed
    -------------------------------------------------------------------------
 
    procedure Zeroize (Key : in out X25519_Secret_Key) with
-      Post => not Is_Valid (Key) and Is_Zeroed (Key);
+      Global => null,
+      Post   => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out Ed25519_Secret_Key) with
-      Post => not Is_Valid (Key) and Is_Zeroed (Key);
+      Global => null,
+      Post   => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out ML_KEM_Secret_Key) with
-      Post => not Is_Valid (Key) and Is_Zeroed (Key);
+      Global => null,
+      Post   => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out ML_DSA_Secret_Key) with
-      Post => not Is_Valid (Key) and Is_Zeroed (Key);
+      Global => null,
+      Post   => not Is_Valid (Key) and Is_Zeroed (Key);
 
    procedure Zeroize (Key : in out Master_Key) with
-      Post => not Is_Valid (Key) and Is_Zeroed (Key);
+      Global => null,
+      Post   => not Is_Valid (Key) and Is_Zeroed (Key);
 
    -- Zeroize arbitrary byte array (for temporary buffers)
    -- PLATINUM SPARK: Postcondition proves all bytes are zero
    procedure Zeroize (Data : in out Byte_Array) with
-      Post => Is_All_Zero (Data);
+      Global => null,
+      Post   => Is_All_Zero (Data);
 
 private
 

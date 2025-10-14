@@ -159,6 +159,94 @@ package body Anubis_Entropy is
    end Has_Hardware_RNG;
 
    -------------------------------------------------------------------------
+   -- Entropy Validation Functions
+   -------------------------------------------------------------------------
+
+   -- Check if all bytes are zero
+   function Is_All_Zeros (Data : Byte_Array) return Boolean is
+   begin
+      for B of Data loop
+         if B /= 0 then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_All_Zeros;
+
+   -- Check if all bytes are the same (repeating pattern)
+   function Is_Repeating_Pattern (Data : Byte_Array) return Boolean is
+      First_Byte : constant Byte := Data (Data'First);
+   begin
+      for B of Data loop
+         if B /= First_Byte then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Repeating_Pattern;
+
+   -- Count set bits (Hamming weight)
+   function Hamming_Weight (Data : Byte_Array) return Natural is
+      Count : Natural := 0;
+      B_Val : Byte;
+   begin
+      for B of Data loop
+         B_Val := B;
+         -- Count bits in each byte
+         for Bit_Pos in 0 .. 7 loop
+            if (B_Val and 1) = 1 then
+               Count := Count + 1;
+            end if;
+            B_Val := B_Val / 2;  -- Shift right
+         end loop;
+      end loop;
+      return Count;
+   end Hamming_Weight;
+
+   -- Count unique byte values
+   function Unique_Byte_Count (Data : Byte_Array) return Natural is
+      Seen : array (Byte) of Boolean := (others => False);
+      Count : Natural := 0;
+   begin
+      for B of Data loop
+         if not Seen (B) then
+            Seen (B) := True;
+            Count := Count + 1;
+         end if;
+      end loop;
+      return Count;
+   end Unique_Byte_Count;
+
+   -- Comprehensive entropy validation
+   function Has_Sufficient_Entropy (Data : Byte_Array) return Boolean is
+   begin
+      -- Check 1: Not all zeros (complete RNG failure)
+      if Is_All_Zeros (Data) then
+         return False;
+      end if;
+
+      -- Check 2: Not repeating pattern (stuck RNG)
+      if Is_Repeating_Pattern (Data) then
+         return False;
+      end if;
+
+      -- Check 3: Sufficient Hamming weight (at least 25% bits set)
+      -- This catches low-entropy output like mostly zeros with a few bits
+      if Hamming_Weight (Data) < Data'Length * 2 then
+         return False;
+      end if;
+
+      -- Check 4: Sufficient unique bytes (at least 8 different values)
+      -- This catches patterns like incrementing sequences
+      if Unique_Byte_Count (Data) < 8 then
+         return False;
+      end if;
+
+      -- All checks passed
+      return True;
+   end Has_Sufficient_Entropy;
+
+   -------------------------------------------------------------------------
    -- Estimate Entropy Per Byte
    -------------------------------------------------------------------------
 

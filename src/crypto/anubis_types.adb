@@ -40,6 +40,19 @@ package body Anubis_Types is
    function Is_Zeroed (Key : Master_Key) return Boolean is
       (Is_All_Zero (Key.Data));
 
+   -- PLATINUM SPARK: Ghost functions for public key zeroization checking
+   function Is_PK_Zeroed (Key : X25519_Public_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_PK_Zeroed (Key : Ed25519_Public_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_PK_Zeroed (Key : ML_KEM_Public_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
+   function Is_PK_Zeroed (Key : ML_DSA_Public_Key) return Boolean is
+      (Is_All_Zero (Key.Data));
+
    -------------------------------------------------------------------------
    -- Secure Zeroization: Overwrites memory with zeros
    -- PLATINUM SPARK: Loop invariants prove complete zeroization

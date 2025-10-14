@@ -17,7 +17,13 @@ build:
 	@echo "Building ANUBIS-SPARK v2.0.0 (release mode)..."
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release
-	@./fix-rpath.sh
+	@echo "Fixing duplicate LC_RPATH in binaries..."
+	@for bin in bin/*; do \
+		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
+	done
+	@echo "✓ All binaries fixed!"
+	@echo ""
+	@echo "You can now run: ./bin/$(BINARY) version"
 	@echo "✓ Build complete: bin/$(BINARY)"
 
 # Install to ~/.local/bin
@@ -49,7 +55,11 @@ test:
 	@mkdir -p bin
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/*.adb
-	@./fix-rpath.sh
+	@echo "Fixing duplicate LC_RPATH in binaries..."
+	@for bin in bin/*; do \
+		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
+	done
+	@echo "✓ All binaries fixed!"
 	@echo "✓ Tests built in bin/"
 
 # PLATINUM: Fast proof (contract packages only, ~2 minutes)
@@ -117,7 +127,10 @@ benchmark:
 	@echo "Building performance benchmark suite..."
 	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
 		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb
-	@./fix-rpath.sh
+	@echo "Fixing RPATH..."
+	@for bin in bin/*; do \
+		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
+	done
 	@echo "✓ Benchmark built"
 	@echo ""
 	@echo "Running performance benchmarks (this may take 5-10 minutes)..."

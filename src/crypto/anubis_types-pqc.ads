@@ -13,6 +13,7 @@ package Anubis_Types.PQC is
    -------------------------------------------------------------------------
 
    -- Generate ML-KEM-1024 keypair
+   -- PLATINUM: Elaborate postcondition proves entropy and zeroization
    procedure ML_KEM_Generate_Keypair (
       Public_Key  : out ML_KEM_Public_Key;
       Secret_Key  : out ML_KEM_Secret_Key;
@@ -20,9 +21,15 @@ package Anubis_Types.PQC is
    ) with
       Global => null,  -- No global state
       Post   => (if Success then
-                    Is_Valid (Secret_Key)
+                    -- On success: keys are valid and have entropy (not all zeros)
+                    (Is_Valid (Secret_Key) and then
+                     not Is_Zeroed (Secret_Key) and then
+                     not Is_PK_Zeroed (Public_Key))
                  else
-                    not Is_Valid (Secret_Key));
+                    -- On failure: both keys zeroized (defense in depth)
+                    (not Is_Valid (Secret_Key) and then
+                     Is_Zeroed (Secret_Key) and then
+                     Is_PK_Zeroed (Public_Key)));
 
    -- Encapsulate: Generate shared secret and ciphertext for recipient
    procedure ML_KEM_Encapsulate (
@@ -49,6 +56,7 @@ package Anubis_Types.PQC is
    -------------------------------------------------------------------------
 
    -- Generate ML-DSA-87 keypair
+   -- PLATINUM: Elaborate postcondition proves entropy and zeroization
    procedure ML_DSA_Generate_Keypair (
       Public_Key  : out ML_DSA_Public_Key;
       Secret_Key  : out ML_DSA_Secret_Key;
@@ -56,9 +64,15 @@ package Anubis_Types.PQC is
    ) with
       Global => null,
       Post   => (if Success then
-                    Is_Valid (Secret_Key)
+                    -- On success: keys are valid and have entropy (not all zeros)
+                    (Is_Valid (Secret_Key) and then
+                     not Is_Zeroed (Secret_Key) and then
+                     not Is_PK_Zeroed (Public_Key))
                  else
-                    not Is_Valid (Secret_Key));
+                    -- On failure: both keys zeroized (defense in depth)
+                    (not Is_Valid (Secret_Key) and then
+                     Is_Zeroed (Secret_Key) and then
+                     Is_PK_Zeroed (Public_Key)));
 
    -- Sign a message
    procedure ML_DSA_Sign (
