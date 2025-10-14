@@ -103,7 +103,7 @@ jobs:
               ./configure --prefix=/opt/deps --enable-static --disable-shared && \
               make -j\$(nproc) && make install && \
               cd /workspace && \
-              wget https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-bin-aarch64-linux.zip && \
+              wget https://github.com/reznikmm/aarch64-alire-index/releases/download/v2.0.1/alr-2.0.1-bin-aarch64-linux.zip && \
               unzip alr-2.0.1-bin-aarch64-linux.zip && \
               chmod +x bin/alr && \
               ./bin/alr --non-interactive toolchain --select && \
