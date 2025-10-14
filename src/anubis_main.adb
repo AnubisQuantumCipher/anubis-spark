@@ -552,8 +552,10 @@ begin
                         Set_Exit_Status (Exit_Invalid_Input);
                         return;
                   end;
-                  if V = 0 or else V > 1_073_741_824 then
-                     Put_Line ("ERROR: --chunk-size must be in (0, 1,073,741,824]");
+                  if V < 4096 or else V > 1_073_741_824 then
+                     Put_Line ("ERROR: --chunk-size must be in range [4096, 1,073,741,824] (4 KB to 1 GB)");
+                     Put_Line ("  Recommended: 67108864 (64 MB) for balanced performance");
+                     Put_Line ("  Large files: 4194304-8388608 (4-8 MB) for higher throughput");
                      Set_Exit_Status (Exit_Invalid_Input);
                      return;
                   end if;
