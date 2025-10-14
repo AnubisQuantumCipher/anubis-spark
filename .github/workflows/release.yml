@@ -78,21 +78,47 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies via Homebrew
+      - name: Install build tools
         run: |
-          brew install liboqs libsodium openssl@3
+          brew install cmake ninja wget
+
+      - name: Build static liboqs
+        run: |
+          wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz
+          tar xzf ${LIBOQS_VERSION}.tar.gz
+          cd liboqs-${LIBOQS_VERSION}
+          mkdir build && cd build
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_INSTALL_PREFIX=$HOME/deps \
+            -DOQS_USE_OPENSSL=ON \
+            ..
+          ninja && ninja install
+
+      - name: Build static libsodium
+        run: |
+          wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz
+          tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz
+          cd libsodium-${LIBSODIUM_VERSION}
+          ./configure --prefix=$HOME/deps --enable-static --disable-shared
+          make -j$(sysctl -n hw.ncpu)
+          make install
 
       - name: Install Alire
         uses: alire-project/setup-alire@v3
         with:
           version: '2.0.1'
 
-      - name: Build ANUBIS-SPARK
+      - name: Build ANUBIS-SPARK with static linking
         run: |
+          export PKG_CONFIG_PATH=$HOME/deps/lib/pkgconfig
+          export ANUBIS_LIB_DIR=$HOME/deps/lib
+          export STATIC_LINK=true
           alr build --release
           strip bin/anubis_main
 
-      - name: Verify binary architecture
+      - name: Verify binary architecture and dependencies
         run: |
           echo "Binary architecture:"
           file bin/anubis_main
@@ -102,15 +128,21 @@ jobs:
             echo "❌ ERROR: Not an x86_64 binary!"
             exit 1
           fi
+          echo ""
+          echo "Dynamic library dependencies:"
+          otool -L bin/anubis_main
+          echo ""
+          echo "Checking for static linking (should only show system libraries):"
+          if otool -L bin/anubis_main | grep -q "libsodium\|liboqs"; then
+            echo "❌ ERROR: Binary still depends on external libsodium/liboqs!"
+            exit 1
+          else
+            echo "✅ SUCCESS: libsodium and liboqs are statically linked"
+          fi
 
-      - name: Make binary portable (works on both Intel and Apple Silicon)
+      - name: Test binary
         run: |
-          chmod +x scripts/make-portable-macos.sh
-          ./scripts/make-portable-macos.sh bin/anubis_main
-
-      - name: Fix RPATH duplicates
-        run: |
-          ./scripts/fix-rpath.sh bin/anubis_main
+          ./bin/anubis_main version
 
       - name: Create release archive
         run: |
