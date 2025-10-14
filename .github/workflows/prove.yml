@@ -75,7 +75,7 @@ jobs:
           ANUBIS_LIB_DIR: $HOME/deps/lib
         run: |
           eval "$(alr printenv)"
-          alr build -q
+          alr -q build
 
       - name: Unit tests / selftest
         run: ./bin/anubis_main test || echo "Selftests not implemented yet"
@@ -158,7 +158,7 @@ jobs:
           ANUBIS_LIB_DIR: $HOME/deps/lib
         run: |
           eval "$(alr printenv)"
-          alr build --release -q
+          alr -q build --release
 
       # Build and run boundary tests
       - name: Build boundary test
