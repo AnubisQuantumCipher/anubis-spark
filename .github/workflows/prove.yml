@@ -71,10 +71,9 @@ jobs:
           fi
 
       - name: Build
-        env:
-          ANUBIS_LIB_DIR: $HOME/deps/lib
         run: |
           eval "$(alr printenv)"
+          export ANUBIS_LIB_DIR="$HOME/deps/lib"
           alr -q build
 
       - name: Unit tests / selftest
@@ -154,10 +153,9 @@ jobs:
           fi
 
       - name: Build (release)
-        env:
-          ANUBIS_LIB_DIR: $HOME/deps/lib
         run: |
           eval "$(alr printenv)"
+          export ANUBIS_LIB_DIR="$HOME/deps/lib"
           alr -q build --release
 
       # Build and run boundary tests
