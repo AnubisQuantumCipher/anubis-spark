@@ -103,7 +103,7 @@ function Has_Entropy (Key : ML_KEM_Public_Key) return Boolean with Ghost;
 Ed25519_Valid := Classical.Ed25519_Verify (...);
 
 if not Ed25519_Valid then
-   return False;  -- ❌ SHORT-CIRCUIT
+   return False;  -- SHORT-CIRCUIT
 end if;
 
 ML_DSA_Valid := ML_DSA_Verify (...);
@@ -139,7 +139,7 @@ else
    for I in Secret_Key.Data'Range loop
       Secret_Key.Data (I) := 0;
    end loop;
-   Success := False;  -- ❌ Public_Key not zeroized!
+   Success := False;  -- Public_Key not zeroized!
 end if;
 ```
 
@@ -379,52 +379,52 @@ procedure Zeroize (Key : in out X25519_Secret_Key) with
 ## Implementation Strategy
 
 ### Phase 1: Strengthen Contracts (Week 1)
-1. ✅ Add entropy validation functions
-2. ✅ Enhance key generation postconditions
-3. ✅ Fix timing attack in signature verification
-4. ✅ Add public key zeroization on failure
-5. ✅ Enhance nonce construction validation
-6. ✅ Add frame conditions (Global => null)
+1. Add entropy validation functions
+2. Enhance key generation postconditions
+3. Fix timing attack in signature verification
+4. Add public key zeroization on failure
+5. Enhance nonce construction validation
+6. Add frame conditions (Global => null)
 
 ### Phase 2: Defensive Checks (Week 2)
-1. ✅ Add entropy checks after all RNG calls
-2. ✅ Validate chunk sizes and boundaries
-3. ✅ Verify derived keys have entropy
-4. ✅ Add constants package
+1. Add entropy checks after all RNG calls
+2. Validate chunk sizes and boundaries
+3. Verify derived keys have entropy
+4. Add constants package
 
 ### Phase 3: Verification (Week 2)
-1. ✅ Run GNATprove level 4
-2. ✅ Ensure 100% proof coverage maintained
-3. ✅ Run comprehensive test suite
-4. ✅ Run boundary tests
+1. Run GNATprove level 4
+2. Ensure 100% proof coverage maintained
+3. Run comprehensive test suite
+4. Run boundary tests
 
 ### Phase 4: Documentation (Week 2)
-1. ✅ Update contracts documentation
-2. ✅ Add security rationale comments
-3. ✅ Update PLATINUM_CERTIFICATION.md
-4. ✅ Create IMPROVEMENTS_APPLIED.md
+1. Update contracts documentation
+2. Add security rationale comments
+3. Update PLATINUM_CERTIFICATION.md
+4. Create IMPROVEMENTS_APPLIED.md
 
 ---
 
 ## Expected Outcomes
 
 ### Security Improvements
-- ✅ Entropy validation prevents weak key generation
-- ✅ Enhanced contracts prove more security properties
-- ✅ Timing attack eliminated
-- ✅ Defensive checks catch tampering earlier
+- Entropy validation prevents weak key generation
+- Enhanced contracts prove more security properties
+- Timing attack eliminated
+- Defensive checks catch tampering earlier
 
 ### Verification Improvements
-- ✅ More expressive contracts
-- ✅ Frame conditions prove no side effects
-- ✅ Enhanced ghost functions provide stronger guarantees
-- ✅ Maintain 100% proof coverage (151/151 VCs)
+- More expressive contracts
+- Frame conditions prove no side effects
+- Enhanced ghost functions provide stronger guarantees
+- Maintain 100% proof coverage (151/151 VCs)
 
 ### Code Quality Improvements
-- ✅ Named constants improve maintainability
-- ✅ Stronger typing through enhanced contracts
-- ✅ Better documentation of security properties
-- ✅ More defensive against implementation bugs
+- Named constants improve maintainability
+- Stronger typing through enhanced contracts
+- Better documentation of security properties
+- More defensive against implementation bugs
 
 ---
 
