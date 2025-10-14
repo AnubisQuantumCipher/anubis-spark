@@ -28,7 +28,7 @@ jobs:
             ubuntu:22.04 \
             bash -c "
               apt-get update && \
-              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip git && \
+              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip git curl && \
               wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz && \
               tar xzf ${LIBOQS_VERSION}.tar.gz && \
               cd liboqs-${LIBOQS_VERSION} && \
@@ -89,7 +89,7 @@ jobs:
             arm64v8/ubuntu:22.04 \
             bash -c "
               apt-get update && \
-              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip git && \
+              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip git curl && \
               wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz && \
               tar xzf ${LIBOQS_VERSION}.tar.gz && \
               cd liboqs-${LIBOQS_VERSION} && \
