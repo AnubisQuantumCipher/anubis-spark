@@ -50,6 +50,7 @@ jobs:
               eval \"\$(./bin/alr printenv)\" && \
               export PKG_CONFIG_PATH=/opt/deps/lib/pkgconfig && \
               export ANUBIS_LIB_DIR=/opt/deps/lib && \
+              export STATIC_LINK=true && \
               ./bin/alr build --release && \
               strip bin/anubis_main
             "
@@ -110,6 +111,7 @@ jobs:
               eval \"\$(./bin/alr printenv)\" && \
               export PKG_CONFIG_PATH=/opt/deps/lib/pkgconfig && \
               export ANUBIS_LIB_DIR=/opt/deps/lib && \
+              export STATIC_LINK=true && \
               ./bin/alr build --release && \
               strip bin/anubis_main
             "

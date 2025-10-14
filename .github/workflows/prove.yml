@@ -74,6 +74,7 @@ jobs:
         run: |
           eval "$(alr printenv)"
           export ANUBIS_LIB_DIR="$HOME/deps/lib"
+          export STATIC_LINK="true"
           alr -q build
 
       - name: Unit tests / selftest
@@ -156,6 +157,7 @@ jobs:
         run: |
           eval "$(alr printenv)"
           export ANUBIS_LIB_DIR="$HOME/deps/lib"
+          export STATIC_LINK="true"
           alr -q build --release
 
       # Build and run boundary tests
