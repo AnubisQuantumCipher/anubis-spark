@@ -72,67 +72,6 @@ jobs:
           name: anubis-spark-linux-x86_64
           path: release/anubis-spark-linux-x86_64.tar.gz*
 
-  build-linux-arm64:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build in ARM64 container
-        run: |
-          docker run --rm --platform linux/arm64 \
-            -v $PWD:/workspace \
-            -w /workspace \
-            arm64v8/ubuntu:22.04 \
-            bash -c "
-              apt-get update && \
-              apt-get install -y build-essential cmake ninja-build wget libssl-dev unzip git curl && \
-              wget https://github.com/open-quantum-safe/liboqs/archive/refs/tags/${LIBOQS_VERSION}.tar.gz && \
-              tar xzf ${LIBOQS_VERSION}.tar.gz && \
-              cd liboqs-${LIBOQS_VERSION} && \
-              mkdir build && cd build && \
-              cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/opt/deps -DOQS_USE_OPENSSL=ON .. && \
-              ninja && ninja install && \
-              cd /workspace && \
-              wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz && \
-              tar xzf libsodium-${LIBSODIUM_VERSION}.tar.gz && \
-              cd libsodium-${LIBSODIUM_VERSION} && \
-              ./configure --prefix=/opt/deps --enable-static --disable-shared && \
-              make -j\$(nproc) && make install && \
-              cd /workspace && \
-              wget https://github.com/reznikmm/aarch64-alire-index/releases/download/v2.0.1/alr-2.0.1-bin-aarch64-linux.zip && \
-              unzip alr-2.0.1-bin-aarch64-linux.zip && \
-              chmod +x bin/alr && \
-              ./bin/alr --non-interactive toolchain --select && \
-              ./bin/alr update && \
-              eval \"\$(./bin/alr printenv)\" && \
-              export PKG_CONFIG_PATH=/opt/deps/lib/pkgconfig && \
-              export ANUBIS_LIB_DIR=/opt/deps/lib && \
-              export STATIC_LINK=true && \
-              ./bin/alr build --release && \
-              strip bin/anubis_main
-            "
-
-      - name: Create release archive
-        run: |
-          mkdir -p release/anubis-spark-linux-arm64
-          cp bin/anubis_main release/anubis-spark-linux-arm64/
-          cp README.md release/anubis-spark-linux-arm64/
-          cp LICENSE-MIT release/anubis-spark-linux-arm64/
-          cp LICENSE-APACHE release/anubis-spark-linux-arm64/
-          cd release
-          tar czf anubis-spark-linux-arm64.tar.gz anubis-spark-linux-arm64
-          sha256sum anubis-spark-linux-arm64.tar.gz > anubis-spark-linux-arm64.tar.gz.sha256
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: anubis-spark-linux-arm64
-          path: release/anubis-spark-linux-arm64.tar.gz*
-
   build-macos-x86_64:
     runs-on: macos-13
     steps:
@@ -216,7 +155,7 @@ jobs:
           path: release/anubis-spark-macos-arm64.tar.gz*
 
   create-release:
-    needs: [build-linux-x86_64, build-linux-arm64, build-macos-x86_64, build-macos-arm64]
+    needs: [build-linux-x86_64, build-macos-x86_64, build-macos-arm64]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -228,8 +167,6 @@ jobs:
           files: |
             anubis-spark-linux-x86_64/anubis-spark-linux-x86_64.tar.gz
             anubis-spark-linux-x86_64/anubis-spark-linux-x86_64.tar.gz.sha256
-            anubis-spark-linux-arm64/anubis-spark-linux-arm64.tar.gz
-            anubis-spark-linux-arm64/anubis-spark-linux-arm64.tar.gz.sha256
             anubis-spark-macos-x86_64/anubis-spark-macos-x86_64.tar.gz
             anubis-spark-macos-x86_64/anubis-spark-macos-x86_64.tar.gz.sha256
             anubis-spark-macos-arm64/anubis-spark-macos-arm64.tar.gz
@@ -240,7 +177,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-docker:
-    needs: [build-linux-x86_64, build-linux-arm64]
+    needs: [build-linux-x86_64]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -277,7 +214,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
