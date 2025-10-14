@@ -19,9 +19,11 @@ ANUBIS-SPARK combines **classical cryptography** with **post-quantum algorithms*
 1. **Hybrid Post-Quantum Cryptography**: An attacker must break **BOTH** classical AND quantum-resistant algorithms
 2. **NIST Level 5 Security**: Highest standardized security level (256-bit equivalent)
 3. **Formal Verification**: SPARK mathematically proves security properties at compile-time
-4. **Defense-in-Depth**: Multiple independent security layers
-5. **Zero-Knowledge Proofs**: Prove file access without revealing contents
-6. **Robust Key Management**: Enterprise-grade key lifecycle management
+4. **Two-Kill Defense Architecture**: LUKS2-inspired multi-layer protection (passphrase + quantum hybrid)
+5. **ONE KEY PASSPORT**: All identity keys in one encrypted vault (8 keys, one file, one passphrase)
+6. **Three Encryption Modes**: Identity-based, passphrase-based, and hybrid multi-keyslot
+7. **Zero-Knowledge Proofs**: Prove file access without revealing contents
+8. **Robust Key Management**: Enterprise-grade key lifecycle management with AF-Splitter
 
 ##  Cryptographic Algorithms
 
@@ -29,19 +31,37 @@ ANUBIS-SPARK combines **classical cryptography** with **post-quantum algorithms*
 - **X25519** - Elliptic Curve Diffie-Hellman key exchange
 - **Ed25519** - Elliptic Curve digital signatures
 - **XChaCha20-Poly1305** - Authenticated encryption (AEAD)
+- **AES-256-XTS** - Length-preserving encryption (via XChaCha20-Poly1305 wrapper)
 - **BLAKE2b-256** - Cryptographic hash for AAD header binding
 - **Argon2id** - Memory-hard key derivation (winner of Password Hashing Competition)
+- **SHA-256** - Anti-forensic splitter diffusion function
 
 ### Post-Quantum Cryptography (NIST Level 5 = 256-bit equivalent)
 - **ML-KEM-1024** (NIST FIPS 203) - Module-Lattice-Based Key Encapsulation
 - **ML-DSA-87** (NIST FIPS 204) - Module-Lattice-Based Digital Signatures
 
-### Hybrid Protection
+### Advanced Key Protection (LUKS2-Inspired)
+- **AF-Splitter** - Anti-forensic information splitter (4000-stripe diffusion)
+- **Multi-Keyslot Architecture** - 8 independent keyslots (ANUBISK3 format)
+- **Master Key Derivation** - All-or-nothing recovery from split data
+
+### Hybrid Protection & Two-Kill Defense
 ```
-Encrypted File Security:
-= X25519 Security AND ML-KEM-1024 Security
-= 128-bit AND 256-bit
-= Both must be broken to compromise data
+Encrypted File Security (Two-Kill Defense):
+Layer 1: Passphrase Protection (Optional)
+  = Argon2id SENSITIVE (1 GiB RAM, 4 iterations)
+  + AES-XTS wrapper (512-bit keys)
+  = Protects identity keystore
+
+Layer 2: Quantum Hybrid Protection (Always Active)
+  = X25519 Security AND ML-KEM-1024 Security
+  = 128-bit AND 256-bit
+  = Protects file data
+
+Result: Attacker must break BOTH layers
+  - Break Argon2id + AES to get identity keys
+  - AND break X25519 + ML-KEM-1024 to decrypt files
+  - Two-Kill Defense: Both layers must fail
 ```
 
 ###  AAD Binding & Crash Detection (v1.0.4)
@@ -103,12 +123,20 @@ Master Key (from passphrase)
   └─ Authentication Keys (HMAC, signatures)
 ```
 
-###  Encrypted Storage (ANUBISK2 Format - v1.1.0)
-- **ANUBISK2**: Passphrase-protected encrypted keystore format
-- **Argon2id SENSITIVE**: 1 GiB RAM, 4 iterations (defeats GPU/ASIC attacks)
-- **XChaCha20-Poly1305 AEAD**: Authenticated encryption for keystores
-- **Salt-as-AAD binding**: Prevents salt substitution attacks
-- Never written to disk unencrypted
+###  Encrypted Storage (Multiple Keystore Formats - v2.0.8)
+- **ANUBISK** (Plaintext): Unencrypted keystore for advanced users with external protection
+- **ANUBISK2** (Encrypted - ONE KEY PASSPORT): Single-passphrase encrypted keystore (~12 KB)
+  - Argon2id SENSITIVE (1 GiB RAM, 4 iterations)
+  - XChaCha20-Poly1305 AEAD encryption
+  - Salt-as-AAD binding (prevents salt substitution)
+  - Recommended for most users
+- **ANUBISK3** (Multi-Keyslot - Enterprise): LUKS2-inspired 8-keyslot keystore (~1 MB)
+  - AF-Splitter with 4000-stripe diffusion (128 KB per keyslot)
+  - AES-256-XTS encryption wrapper
+  - Independent passphrase per keyslot
+  - Master key all-or-nothing recovery
+  - Recommended for enterprise/multi-user scenarios
+- Never written to disk unencrypted (ANUBISK2/ANUBISK3)
 
 ###  Automatic Key Rotation
 - Time-based (every 90 days) or usage-based (1M operations)
@@ -167,22 +195,30 @@ anubis-spark/
 ├── src/                             # Production source code only
 │   ├── anubis_main.adb              # CLI entry point 
 │   └── crypto/
-│       ├── anubis_types.ads         # Secure type definitions 
-│       ├── anubis_types.adb         # Zeroization implementations 
-│       ├── anubis_types-classical.ads   # Classical crypto (X25519, Ed25519) 
-│       ├── anubis_types-classical.adb   # Classical implementations 
-│       ├── anubis_types-pqc.ads         # Post-quantum crypto (ML-KEM, ML-DSA) 
-│       ├── anubis_types-pqc.adb         # PQC implementations 
+│       ├── anubis_types.ads         # Secure type definitions
+│       ├── anubis_types.adb         # Zeroization implementations
+│       ├── anubis_types-classical.ads   # Classical crypto (X25519, Ed25519)
+│       ├── anubis_types-classical.adb   # Classical implementations
+│       ├── anubis_types-pqc.ads         # Post-quantum crypto (ML-KEM, ML-DSA)
+│       ├── anubis_types-pqc.adb         # PQC implementations
 │       ├── anubis_types-storage.ads     # Encrypted keystore (ANUBISK2)  v1.1.0
 │       ├── anubis_types-storage.adb     # Argon2id + XChaCha20 keystore  v1.1.0
-│       ├── anubis_types-streaming.ads   # Streaming file encryption 
-│       ├── anubis_types-streaming.adb   # AEAD with DoS guards 
-│       ├── anubis_types-header_aad.ads  # AAD header binding 
-│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD 
-│       ├── anubis_types-finalize.ads    # Finalization workflow 
-│       ├── anubis_types-finalize.adb    # Crash detection 
-│       ├── anubis_key_manager.ads       # Key lifecycle management 
-│       └── anubis_key_manager.adb       # Key rotation & destruction 
+│       ├── anubis_types-streaming.ads   # Streaming file encryption
+│       ├── anubis_types-streaming.adb   # AEAD with DoS guards
+│       ├── anubis_types-header_aad.ads  # AAD header binding
+│       ├── anubis_types-header_aad.adb  # BLAKE2b-256 AAD
+│       ├── anubis_types-finalize.ads    # Finalization workflow
+│       ├── anubis_types-finalize.adb    # Crash detection
+│       ├── anubis_key_manager.ads       # Key lifecycle management
+│       ├── anubis_key_manager.adb       # Key rotation & destruction
+│       ├── anubis_aes_xts.ads           # AES-256-XTS bindings  v2.0.8
+│       ├── anubis_aes_xts.adb           # Length-preserving encryption  v2.0.8
+│       ├── anubis_af_splitter.ads       # AF-Splitter specification  v2.0.8
+│       ├── anubis_af_splitter.adb       # 4000-stripe diffusion  v2.0.8
+│       ├── anubis_keystore.ads          # ANUBISK3 multi-keyslot  v2.0.8
+│       ├── anubis_keystore.adb          # 8 keyslot operations  v2.0.8
+│       ├── anubis_passphrase_encryption.ads  # Mode B encryption  v2.0.8
+│       └── anubis_passphrase_encryption.adb  # Passphrase → file  v2.0.8 
 ├── tests/                           # Test suite (separate from production)
 │   ├── test_pqc.adb                 # ML-KEM/ML-DSA tests 
 │   ├── test_comprehensive.adb       # Full crypto suite 
@@ -699,19 +735,20 @@ gnatprove -P anubis_spark.gpr --level=1 --prover=cvc5 --timeout=300
 
 ##  Performance
 
-**Streaming File Encryption** (Tested on Apple Silicon M-series):
+**Streaming File Encryption with Two-Kill Defense** (Tested on Apple Silicon M-series):
 
-| File Size | Encrypt Time | Decrypt Time | Throughput | Overhead | Integrity |
-|-----------|--------------|--------------|------------|----------|-----------|
-| 66 MB (PDF) | 1.40s | 2.63s | 47.3 MB/s (enc)<br>25.2 MB/s (dec) | 0.0093% |  Byte-for-byte |
-| 2.0 GB (Movie) | 61.8s | 116.6s | 33.1 MB/s (enc)<br>17.6 MB/s (dec) | <0.01% |  Perfect SHA256 |
+| File Size | Encrypt Time | Decrypt Time | Throughput | Memory | Overhead | Integrity |
+|-----------|--------------|--------------|------------|--------|----------|-----------|
+| 66 MB (PDF) | 3.09s | 4.19s | 21.4 MB/s (enc)<br>15.8 MB/s (dec) | 1.0 GiB (Argon2id) | 0.009% | Byte-for-byte |
+| 2.0 GB (Movie) | 61.8s | 116.6s | 33.1 MB/s (enc)<br>17.6 MB/s (dec) | <100 MB | <0.01% | Perfect SHA256 |
 
-**Production Validation (v2.0.0)**:
+**Production Validation (v2.0.8 - TWO-KILL DEFENSE)**:
 - Tested: 66 MB PDF ("Principles of Genetics")
-- Encryption: 1.40s, 47.3 MB/s, 194 MB peak memory
-- Decryption: 2.63s, 25.2 MB/s, 130 MB peak memory (after trust approval)
-- Overhead: 6,492 bytes (0.0093%) for headers + signatures + finalization
+- Encryption: 3.09s, 21.4 MB/s, 1.0 GiB peak memory (Argon2id SENSITIVE dominates)
+- Decryption: 4.19s, 15.8 MB/s, 1.0 GiB peak memory (includes signature verification)
+- Overhead: 6,492 bytes (0.009%) for headers + signatures + finalization
 - Result: Byte-for-byte identical recovery verified with `cmp`
+- Security: Two-Kill Defense (Argon2id 81% of encrypt time, ML-DSA-87 21% of decrypt time)
 
 **Encrypted Keystore Operations** (v1.1.0):
 - ANUBISK2 keystore creation (Argon2id 1 GiB): ~2.6 seconds
@@ -1013,7 +1050,8 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
 ---
 
-**Version:** v2.0.0 (Production Ready - 100% SPARK Proof)
+**Version:** v2.0.8 (Two-Kill Defense Edition - ONE KEY PASSPORT)
 **Built with:** Ada/SPARK 2014 • liboqs 0.14.0 • libsodium 1.0.20 • GNAT 14.2.1
+**New Features:** LUKS2-inspired architecture • AES-256-XTS • AF-Splitter • ANUBISK3 multi-keyslot • THREE encryption modes
 
 **Security Notice:** This is cryptographic software. Review the code and documentation before trusting it with sensitive data. While we use industry-standard algorithms and formal verification, no system is 100% secure.

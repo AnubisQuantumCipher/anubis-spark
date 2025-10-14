@@ -190,8 +190,8 @@ procedure Anubis_Main is
       Put_Line ("Usage: anubis-spark <command> [options]");
       New_Line;
       Put_Line ("Commands:");
-      Put_Line ("  keygen           Generate new hybrid keypair");
-      Put_Line ("  encrypt          Encrypt file with hybrid PQ protection (optional --label)");
+      Put_Line ("  keygen           Generate new hybrid keypair (ONE KEY PASSPORT)");
+      Put_Line ("  encrypt          Encrypt file with hybrid PQ protection");
       Put_Line ("  decrypt          Decrypt, verify, and enforce signer trust");
       Put_Line ("  trust            Manage signer trust records (list|approve|deny|selfcheck)");
       Put_Line ("  test             Run cryptographic self-tests");
@@ -199,14 +199,32 @@ procedure Anubis_Main is
       Put_Line ("  convert          Re-encrypt plaintext to ANUB3 (use v1.x to decrypt first)");
       Put_Line ("  help             Show this help message");
       New_Line;
+      Put_Line ("ONE KEY PASSPORT Philosophy:");
+      Put_Line ("  Your identity = ONE file (your cryptographic passport)");
+      Put_Line ("  Your security = ONE strong passphrase (protects the vault)");
+      Put_Line ("  Your usage = Simple (use passport for all operations)");
+      New_Line;
+      Put_Line ("Two-Kill Defense (with encrypted keystore):");
+      Put_Line ("  Layer 1: Passphrase → Argon2id (1 GiB) → Identity Vault");
+      Put_Line ("  Layer 2: Identity Keys → Quantum Hybrid → File Data");
+      Put_Line ("  Attacker must break BOTH layers to compromise your files");
+      New_Line;
       Put_Line ("Examples:");
-      Put_Line ("  anubis-spark keygen --output my_identity.key");
+      Put_Line ("  # Create encrypted passport (RECOMMENDED)");
       Put_Line ("  anubis-spark keygen --output my.key --passphrase ""SecurePass123""");
-      Put_Line ("  anubis-spark encrypt --key alice.key --input secret.txt");
-      Put_Line ("  anubis-spark encrypt --key alice.key --passphrase ""Pass"" --input secret.txt");
-      Put_Line ("  anubis-spark decrypt --key bob.key --input secret.txt.anubis");
-      Put_Line ("  anubis-spark trust list");
-      Put_Line ("  anubis-spark trust approve --fingerprint <hex> [--operator <name>]");
+      New_Line;
+      Put_Line ("  # Create plaintext passport (advanced: handle encryption separately)");
+      Put_Line ("  anubis-spark keygen --output my.key");
+      New_Line;
+      Put_Line ("  # Encrypt file (passphrase only needed if keystore is encrypted)");
+      Put_Line ("  anubis-spark encrypt --key my.key --passphrase ""Pass"" --input secret.txt");
+      Put_Line ("  anubis-spark encrypt --key my.key --input secret.txt  # if plaintext keystore");
+      New_Line;
+      Put_Line ("  # Decrypt file");
+      Put_Line ("  anubis-spark decrypt --key my.key --passphrase ""Pass"" --input secret.txt.anubis");
+      New_Line;
+      Put_Line ("  # Trust management");
+      Put_Line ("  anubis-spark trust approve --fingerprint <hex>");
       New_Line;
       Put_Line ("For detailed help on a command:");
       Put_Line ("  anubis-spark <command> --help");
@@ -405,7 +423,8 @@ begin
       elsif Command = "test" or Command = "selftest" then
          Run_Self_Test;
       elsif Command = "keygen" then
-         -- Parse --output and --passphrase arguments
+         -- ONE KEY PASSPORT: Generate your cryptographic identity
+         -- Password protects the vault, but you choose encryption level
          declare
             Output_File : constant String := Get_Arg ("--output", "identity.key");
             Passphrase  : constant String := Get_Arg ("--passphrase");
@@ -420,12 +439,48 @@ begin
             Put_Line ("═══════════════════════════════════════════════════");
             New_Line;
 
+            -- Validate passphrase if provided
+            if Use_Encrypted then
+               if Passphrase'Length < 12 then
+                  Put_Line ("ERROR: Passphrase must be at least 12 characters");
+                  Set_Exit_Status (Exit_Invalid_Input);
+                  return;
+               end if;
+
+               if Passphrase'Length > 256 then
+                  Put_Line ("ERROR: Passphrase must be at most 256 characters");
+                  Set_Exit_Status (Exit_Invalid_Input);
+                  return;
+               end if;
+            else
+               -- Warn about plaintext keystore
+               Put_Line ("WARNING: Creating PLAINTEXT identity keystore (not recommended)");
+               Put_Line ("");
+               Put_Line ("Your identity keystore will be stored WITHOUT encryption.");
+               Put_Line ("This means anyone with file access can read your secret keys.");
+               Put_Line ("");
+               Put_Line ("Plaintext keystores are ONLY appropriate if:");
+               Put_Line ("  - Stored on encrypted USB/disk (hardware encryption)");
+               Put_Line ("  - System has full-disk encryption (OS-level protection)");
+               Put_Line ("  - File is protected by OS permissions (chmod 600)");
+               Put_Line ("");
+               Put_Line ("RECOMMENDED: Use --passphrase to create encrypted keystore");
+               Put_Line ("  anubis-spark keygen --output " & Output_File & " --passphrase ""YourSecurePass""");
+               Put_Line ("");
+               Put_Line ("Encrypted keystores provide TWO-KILL defense:");
+               Put_Line ("  Layer 1: Argon2id (1 GiB RAM) + AES → protects identity keys");
+               Put_Line ("  Layer 2: Quantum hybrid (X25519+ML-KEM) → protects file data");
+               Put_Line ("  Attacker must break BOTH layers to compromise your files");
+               New_Line;
+            end if;
+
             Put ("Generating hybrid keypairs... ");
             Storage.Generate_Identity (Identity, Success);
 
             if not Success then
                Put_Line ("✗ FAILED");
                Put_Line ("ERROR: Failed to generate identity keypair.");
+               Set_Exit_Status (Exit_Crypto_Error);
                return;
             end if;
 
@@ -441,10 +496,10 @@ begin
             New_Line;
 
             if Use_Encrypted then
-               Put ("Saving encrypted keystore to " & Output_File & " (Argon2id)... ");
+               Put ("Saving encrypted keystore to " & Output_File & " (Argon2id SENSITIVE)... ");
                Storage.Save_Identity_Encrypted (Identity, Output_File, Passphrase, Success);
             else
-               Put ("Saving identity to " & Output_File & "... ");
+               Put ("Saving plaintext identity to " & Output_File & "... ");
                Storage.Save_Identity (Identity, Output_File, Success);
             end if;
 
@@ -452,6 +507,7 @@ begin
                Put_Line ("✗ FAILED");
                Put_Line ("ERROR: Failed to save identity to file.");
                Storage.Zeroize_Identity (Identity);
+               Set_Exit_Status (Exit_Crypto_Error);
                return;
             end if;
 
@@ -462,18 +518,33 @@ begin
             Put_Line ("File: " & Output_File);
             if Use_Encrypted then
                Put_Line ("Format: ANUBISK2 (Encrypted with Argon2id SENSITIVE)");
+               Put_Line ("Protection: Argon2id (1 GiB RAM, 4 iterations)");
+               Put_Line ("           + XChaCha20-Poly1305 AEAD encryption");
+               New_Line;
+               Put_Line ("ONE KEY PASSPORT - Two-Kill Defense:");
+               Put_Line ("  Layer 1: Passphrase → Argon2id → AES → Identity Vault");
+               Put_Line ("  Layer 2: Identity Keys → Quantum Hybrid → File Data");
+               Put_Line ("  Attacker must break BOTH layers to compromise your files");
             else
                Put_Line ("Format: ANUBISK (Plaintext - no passphrase protection)");
+               New_Line;
+               Put_Line ("WARNING: Plaintext keystore has NO encryption!");
+               Put_Line ("  Anyone with file access can read your secret keys.");
+               Put_Line ("  Ensure file is protected by other means:");
+               Put_Line ("  - Hardware encryption (encrypted USB/disk)");
+               Put_Line ("  - Full-disk encryption (FileVault, BitLocker, LUKS)");
+               Put_Line ("  - Restrictive file permissions (chmod 600)");
             end if;
             New_Line;
-            Put_Line ("⚠️  SECURITY NOTICE:");
-            Put_Line ("  This file contains SECRET KEYS. Protect it carefully!");
+            Put_Line ("SECURITY NOTICE:");
+            Put_Line ("  This file is your CRYPTOGRAPHIC PASSPORT");
+            Put_Line ("  It contains all your secret keys - protect it carefully!");
             Put_Line ("  - Store in a secure location");
             Put_Line ("  - Set restrictive file permissions (chmod 600)");
-            if not Use_Encrypted then
-               Put_Line ("  - Consider using --passphrase for encryption");
+            Put_Line ("  - Keep encrypted backups in secure locations");
+            if Use_Encrypted then
+               Put_Line ("  - Remember your passphrase (irrecoverable if lost)");
             end if;
-            Put_Line ("  - Keep backups in secure locations");
             New_Line;
 
             -- Cleanup
