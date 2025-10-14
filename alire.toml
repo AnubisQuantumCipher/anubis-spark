@@ -1,9 +1,9 @@
 name = "anubis_spark"
 description = "Hybrid Post-Quantum File Encryption with SPARK Platinum Certification"
-version = "2.0.0"
+version = "2.0.8"
 
 authors = ["Anubis Quantum Cipher"]
-maintainers = ["anubis@quantumcipher.dev"]
+maintainers = ["sic.tau@pm.me"]
 maintainers-logins = ["AnubisQuantumCipher"]
 
 website = "https://github.com/AnubisQuantumCipher/anubis-spark"
@@ -52,7 +52,7 @@ windows = false
 
 
 [environment]
-ANUBIS_SPARK_VERSION.set = "2.0.0"
+ANUBIS_SPARK_VERSION.set = "2.0.8"
 ANUBIS_SPARK_CERTIFICATION.set = "PLATINUM"
 
 [[depends-on]]
