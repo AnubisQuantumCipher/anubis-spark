@@ -203,39 +203,82 @@ anubis-spark/
 
 ### Installation Options
 
-#### Option 1: Static Binary (Recommended - Zero Dependencies)
+#### Option 1: Static Binary (Recommended - Zero Dependencies) ✅
 
-Download pre-compiled binary for your platform:
+Download pre-compiled static binaries with **zero runtime dependencies**. These binaries are production-ready and include:
+- ✅ 100% SPARK Platinum Certification (151/151 VCs proven)
+- ✅ liboqs 0.14.0 (final FIPS 203/204 ML-KEM/ML-DSA)
+- ✅ libsodium 1.0.20 (classical cryptography)
+- ✅ All dependencies statically linked
+
+**Platform Support:**
+- ✅ Linux x86_64 (Intel/AMD servers, cloud instances)
+- ✅ macOS Apple Silicon (M1/M2/M3/M4)
+- ✅ macOS Intel (x86_64)
 
 **Linux x86_64** (Intel/AMD servers):
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-x86_64.tar.gz
+# Download latest release
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz
+
+# Verify checksum (optional but recommended)
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz.sha256
+sha256sum -c anubis-spark-linux-x86_64.tar.gz.sha256
+
+# Extract and install
 tar xzf anubis-spark-linux-x86_64.tar.gz
-sudo cp anubis-spark-linux-x86_64/anubis_main /usr/local/bin/anubis-spark
+sudo install -m 755 anubis-spark-linux-x86_64/anubis_main /usr/local/bin/anubis-spark
+
+# Verify installation
 anubis-spark version
 ```
 
-**Linux ARM64** (Raspberry Pi, cloud ARM):
+**macOS Apple Silicon** (M1/M2/M3/M4):
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-linux-arm64.tar.gz
-tar xzf anubis-spark-linux-arm64.tar.gz
-sudo cp anubis-spark-linux-arm64/anubis_main /usr/local/bin/anubis-spark
-anubis-spark version
-```
+# Download latest release
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz
 
-**macOS Apple Silicon** (M1/M2/M3):
-```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-macos-arm64.tar.gz
+# Verify checksum (optional but recommended)
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-arm64.tar.gz.sha256
+shasum -a 256 -c anubis-spark-macos-arm64.tar.gz.sha256
+
+# Extract and install
 tar xzf anubis-spark-macos-arm64.tar.gz
-sudo cp anubis-spark-macos-arm64/anubis_main /usr/local/bin/anubis-spark
+sudo install -m 755 anubis-spark-macos-arm64/anubis_main /usr/local/bin/anubis-spark
+
+# Verify installation
 anubis-spark version
 ```
 
 **macOS Intel** (x86_64):
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/download/v2.0.0/anubis-spark-macos-x86_64.tar.gz
+# Download latest release
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-x86_64.tar.gz
+
+# Verify checksum (optional but recommended)
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-x86_64.tar.gz.sha256
+shasum -a 256 -c anubis-spark-macos-x86_64.tar.gz.sha256
+
+# Extract and install
 tar xzf anubis-spark-macos-x86_64.tar.gz
-sudo cp anubis-spark-macos-x86_64/anubis_main /usr/local/bin/anubis-spark
+sudo install -m 755 anubis-spark-macos-x86_64/anubis_main /usr/local/bin/anubis-spark
+
+# Verify installation
+anubis-spark version
+```
+
+**User Installation** (no sudo required):
+```bash
+# Extract to user directory
+tar xzf anubis-spark-*.tar.gz
+mkdir -p ~/.local/bin
+cp anubis-spark-*/anubis_main ~/.local/bin/anubis-spark
+
+# Add to PATH if needed
+export PATH="$HOME/.local/bin:$PATH"
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
+
+# Verify
 anubis-spark version
 ```
 
