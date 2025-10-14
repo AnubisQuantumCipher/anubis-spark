@@ -22,7 +22,7 @@ jobs:
           tar xzf 0.10.1.tar.gz
           cd liboqs-0.10.1
           mkdir build && cd build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps ..
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps -DOQS_USE_OPENSSL=ON ..
           ninja && ninja install
 
       - name: Build libsodium from source
@@ -107,7 +107,7 @@ jobs:
           tar xzf 0.10.1.tar.gz
           cd liboqs-0.10.1
           mkdir build && cd build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps ..
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$HOME/deps -DOQS_USE_OPENSSL=ON ..
           ninja && ninja install
 
       - name: Build libsodium from source
