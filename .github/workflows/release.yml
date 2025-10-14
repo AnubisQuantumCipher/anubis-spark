@@ -72,8 +72,8 @@ jobs:
           name: anubis-spark-linux-x86_64
           path: release/anubis-spark-linux-x86_64.tar.gz*
 
-  build-macos-x86_64:
-    runs-on: macos-13  # Intel runner
+  build-macos-universal:
+    runs-on: macos-13  # Intel runner - GNAT toolchain is x86_64 only
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -103,7 +103,7 @@ jobs:
             exit 1
           fi
 
-      - name: Make binary portable
+      - name: Make binary portable (works on both Intel and Apple Silicon)
         run: |
           chmod +x scripts/make-portable-macos.sh
           ./scripts/make-portable-macos.sh bin/anubis_main
@@ -114,80 +114,23 @@ jobs:
 
       - name: Create release archive
         run: |
-          mkdir -p release/anubis-spark-macos-x86_64
-          cp bin/anubis_main release/anubis-spark-macos-x86_64/
-          cp README.md release/anubis-spark-macos-x86_64/
-          cp LICENSE-MIT release/anubis-spark-macos-x86_64/
-          cp LICENSE-APACHE release/anubis-spark-macos-x86_64/
+          mkdir -p release/anubis-spark-macos-universal
+          cp bin/anubis_main release/anubis-spark-macos-universal/
+          cp README.md release/anubis-spark-macos-universal/
+          cp LICENSE-MIT release/anubis-spark-macos-universal/
+          cp LICENSE-APACHE release/anubis-spark-macos-universal/
           cd release
-          tar czf anubis-spark-macos-x86_64.tar.gz anubis-spark-macos-x86_64
-          shasum -a 256 anubis-spark-macos-x86_64.tar.gz > anubis-spark-macos-x86_64.tar.gz.sha256
+          tar czf anubis-spark-macos-universal.tar.gz anubis-spark-macos-universal
+          shasum -a 256 anubis-spark-macos-universal.tar.gz > anubis-spark-macos-universal.tar.gz.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: anubis-spark-macos-x86_64
-          path: release/anubis-spark-macos-x86_64.tar.gz*
-
-  build-macos-arm64:
-    runs-on: macos-14  # Native Apple Silicon runner
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies via Homebrew
-        run: |
-          brew install liboqs libsodium openssl@3
-
-      - name: Install Alire
-        uses: alire-project/setup-alire@v3
-        with:
-          version: '2.0.1'
-
-      - name: Build ANUBIS-SPARK
-        run: |
-          alr build --release
-          strip bin/anubis_main
-
-      - name: Verify binary architecture
-        run: |
-          echo "Binary architecture:"
-          file bin/anubis_main
-          if file bin/anubis_main | grep -q "arm64"; then
-            echo "✅ Correct ARM64 binary"
-          else
-            echo "❌ ERROR: Not an ARM64 binary!"
-            exit 1
-          fi
-
-      - name: Make binary portable
-        run: |
-          chmod +x scripts/make-portable-macos.sh
-          ./scripts/make-portable-macos.sh bin/anubis_main
-
-      - name: Fix RPATH duplicates
-        run: |
-          ./scripts/fix-rpath.sh bin/anubis_main
-
-      - name: Create release archive
-        run: |
-          mkdir -p release/anubis-spark-macos-arm64
-          cp bin/anubis_main release/anubis-spark-macos-arm64/
-          cp README.md release/anubis-spark-macos-arm64/
-          cp LICENSE-MIT release/anubis-spark-macos-arm64/
-          cp LICENSE-APACHE release/anubis-spark-macos-arm64/
-          cd release
-          tar czf anubis-spark-macos-arm64.tar.gz anubis-spark-macos-arm64
-          shasum -a 256 anubis-spark-macos-arm64.tar.gz > anubis-spark-macos-arm64.tar.gz.sha256
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: anubis-spark-macos-arm64
-          path: release/anubis-spark-macos-arm64.tar.gz*
+          name: anubis-spark-macos-universal
+          path: release/anubis-spark-macos-universal.tar.gz*
 
   create-release:
-    needs: [build-linux-x86_64, build-macos-x86_64, build-macos-arm64]
+    needs: [build-linux-x86_64, build-macos-universal]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -201,10 +144,8 @@ jobs:
           files: |
             anubis-spark-linux-x86_64/anubis-spark-linux-x86_64.tar.gz
             anubis-spark-linux-x86_64/anubis-spark-linux-x86_64.tar.gz.sha256
-            anubis-spark-macos-x86_64/anubis-spark-macos-x86_64.tar.gz
-            anubis-spark-macos-x86_64/anubis-spark-macos-x86_64.tar.gz.sha256
-            anubis-spark-macos-arm64/anubis-spark-macos-arm64.tar.gz
-            anubis-spark-macos-arm64/anubis-spark-macos-arm64.tar.gz.sha256
+            anubis-spark-macos-universal/anubis-spark-macos-universal.tar.gz
+            anubis-spark-macos-universal/anubis-spark-macos-universal.tar.gz.sha256
           draft: false
           prerelease: false
         env:
