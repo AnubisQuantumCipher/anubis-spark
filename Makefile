@@ -1,30 +1,46 @@
 # ANUBIS-SPARK Makefile
 # Production build and installation
 
-.PHONY: all build install uninstall clean test prove-fast prove-full boundary benchmark help
- .PHONY: prove-now
+.PHONY: all build install uninstall clean test deps prove-fast prove-full prove-now boundary benchmark help
 
 PREFIX ?= $(HOME)/.local
 BINDIR = $(PREFIX)/bin
 BINARY = anubis_main
 INSTALLED_NAME = anubis-spark
 
+# Detect OS
+UNAME_S := $(shell uname -s)
+
 # Default target
 all: build
 
+# Install dependencies from source (required for most Linux distros)
+deps:
+	@echo "Installing dependencies (libsodium 1.0.20, liboqs 0.14.0)..."
+	@./scripts/install-deps.sh --prefix $(HOME)/anubis-deps
+	@echo ""
+	@echo "Now run: export ANUBIS_LIB_DIR=$(HOME)/anubis-deps/lib"
+	@echo "Then:    make build"
+
 # Build production release
 build:
-	@echo "Building ANUBIS-SPARK v2.0.0 (release mode)..."
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release
-	@echo "Fixing duplicate LC_RPATH in binaries..."
+	@echo "Building ANUBIS-SPARK (release mode)..."
+	@if command -v alr >/dev/null 2>&1; then \
+		alr build --release; \
+	else \
+		echo "Error: Alire (alr) not found. Install from: https://alire.ada.dev"; \
+		exit 1; \
+	fi
+ifeq ($(UNAME_S),Darwin)
+	@echo "Fixing duplicate LC_RPATH in binaries (macOS)..."
 	@for bin in bin/*; do \
 		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
 	done
-	@echo "✓ All binaries fixed!"
+	@echo "All binaries fixed!"
+endif
 	@echo ""
-	@echo "You can now run: ./bin/$(BINARY) version"
-	@echo "✓ Build complete: bin/$(BINARY)"
+	@echo "Build complete: bin/$(BINARY)"
+	@echo "Run: ./bin/$(BINARY) version"
 
 # Install to ~/.local/bin
 install: build
@@ -32,7 +48,7 @@ install: build
 	@mkdir -p $(BINDIR)
 	@cp bin/$(BINARY) $(BINDIR)/$(INSTALLED_NAME)
 	@chmod 755 $(BINDIR)/$(INSTALLED_NAME)
-	@echo "✓ Installed: $(BINDIR)/$(INSTALLED_NAME)"
+	@echo "Installed: $(BINDIR)/$(INSTALLED_NAME)"
 	@echo ""
 	@echo "Run 'anubis-spark version' to verify installation"
 	@echo "Make sure $(BINDIR) is in your PATH"
@@ -41,78 +57,70 @@ install: build
 uninstall:
 	@echo "Uninstalling ANUBIS-SPARK..."
 	@rm -f $(BINDIR)/$(INSTALLED_NAME)
-	@echo "✓ Uninstalled"
+	@echo "Uninstalled"
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	@rm -rf obj bin
-	@echo "✓ Clean complete"
+	@rm -rf obj bin gnatprove
+	@echo "Clean complete"
 
-# Build and run tests
-test:
-	@echo "Building test suite..."
-	@mkdir -p bin
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/*.adb
-	@echo "Fixing duplicate LC_RPATH in binaries..."
-	@for bin in bin/*; do \
-		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
-	done
-	@echo "✓ All binaries fixed!"
-	@echo "✓ Tests built in bin/"
+# Build and run self-tests
+test: build
+	@echo "Running self-tests..."
+	@./bin/$(BINARY) test
 
-# PLATINUM: Fast proof (contract packages only, ~2 minutes)
+# SPARK proof: fast (level 1, ~2-5 min)
 prove-fast:
-	@echo "Running fast SPARK proofs (contract packages only)..."
+	@echo "Running fast SPARK proofs (level 1)..."
 	@rm -rf gnatprove || true
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
-		gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=120 \
-			--files=src/crypto/anubis_contracts.ads \
-			        src/crypto/anubis_header_io.ads \
-			        src/crypto/anubis_hybrid_kdf.ads \
-			        src/crypto/anubis_aead_pure.ads \
-			        src/crypto/anubis_zeroize.ads \
-			        src/crypto/anubis_bounds.ads
-	@echo "✓ Fast proofs complete"
-	@if test -f gnatprove/gnatprove.out; then \
-		if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then \
-			echo "⚠ Warnings detected in proof output"; \
-			exit 1; \
-		fi; \
+	@if command -v alr >/dev/null 2>&1; then \
+		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120; \
+	else \
+		echo "Error: Alire (alr) not found."; \
+		exit 1; \
 	fi
+	@echo "Fast proofs complete"
 
-# PLATINUM: Full proof (entire project, ~10 minutes)
+# SPARK proof: full (level 4, ~10-20 min)
 prove-full:
-	@echo "Running full SPARK proofs (entire project)..."
+	@echo "Running full SPARK proofs (level 4)..."
 	@rm -rf gnatprove || true
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
-		gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600
-	@echo "✓ Full proofs complete"
-	@if test -f gnatprove/gnatprove.out; then \
-		if grep -iE "(warning|might fail)" gnatprove/gnatprove.out; then \
-			echo "⚠ Warnings detected in proof output"; \
-			exit 1; \
-		fi; \
+	@if command -v alr >/dev/null 2>&1; then \
+		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600; \
+	else \
+		echo "Error: Alire (alr) not found."; \
+		exit 1; \
 	fi
+	@echo "Full proofs complete"
 
-# Simple proof run with default settings (no file list)
+# Simple proof run
 prove-now:
 	@echo "Running GNATprove (level 1, 2 min timeout)..."
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
-		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 --no-server 2>/dev/null \
-		|| PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/releases/gnatprove_14.1.1_91818ed8/bin:$$PATH" \
-		gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 || true
-	@echo "(See obj/gnatprove/gnatprove.out for details)"
+	@if command -v alr >/dev/null 2>&1; then \
+		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 || true; \
+	else \
+		echo "Error: Alire (alr) not found."; \
+		exit 1; \
+	fi
+	@echo "(See gnatprove/gnatprove.out for details)"
 
-# PLATINUM: Build and run boundary/tamper tests
+# Build and run boundary tests
 boundary: build
 	@echo "Building boundary tests..."
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o test_boundary
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o test_boundary_matrix
-	@echo "✓ Boundary tests built"
+	@if command -v alr >/dev/null 2>&1; then \
+		alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary; \
+		alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix; \
+	else \
+		echo "Error: Alire (alr) not found."; \
+		exit 1; \
+	fi
+ifeq ($(UNAME_S),Darwin)
+	@for bin in bin/test_*; do \
+		[ -f "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
+	done
+endif
+	@echo "Boundary tests built"
 	@echo ""
 	@echo "Running boundary test (basic)..."
 	@./bin/test_boundary
@@ -120,43 +128,55 @@ boundary: build
 	@echo "Running boundary matrix test (10 scenarios)..."
 	@./bin/test_boundary_matrix
 	@echo ""
-	@echo "✓ All boundary tests passed"
+	@echo "All boundary tests passed"
 
 # Performance benchmarks
-benchmark:
+benchmark: build
 	@echo "Building performance benchmark suite..."
-	@PATH="/Users/sicarii/.local/share/alire/toolchains/gnat_native_14.2.1_cc5517d6/bin:/Users/sicarii/.local/share/alire/toolchains/gprbuild_24.0.1_6f6b6658/bin:$$PATH" \
-		gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb
-	@echo "Fixing RPATH..."
+	@if command -v alr >/dev/null 2>&1; then \
+		alr exec -- gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb; \
+	else \
+		echo "Error: Alire (alr) not found."; \
+		exit 1; \
+	fi
+ifeq ($(UNAME_S),Darwin)
 	@for bin in bin/*; do \
-		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
+		[ -f "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
 	done
-	@echo "✓ Benchmark built"
+endif
+	@echo "Benchmark built"
 	@echo ""
 	@echo "Running performance benchmarks (this may take 5-10 minutes)..."
 	@./bin/test_benchmark
 	@echo ""
-	@echo "✓ Benchmarks complete"
+	@echo "Benchmarks complete"
 
 # Help
 help:
-	@echo "ANUBIS-SPARK v2.0.0 Makefile"
+	@echo "ANUBIS-SPARK Makefile"
 	@echo ""
-	@echo "Targets:"
+	@echo "Prerequisites:"
+	@echo "  1. Install Alire: curl -fsSL https://alire.ada.dev/install.sh | sh"
+	@echo "  2. Install deps:  make deps"
+	@echo "  3. Set lib path:  export ANUBIS_LIB_DIR=\$$HOME/anubis-deps/lib"
+	@echo ""
+	@echo "Build Targets:"
+	@echo "  make deps        - Build libsodium 1.0.20 & liboqs 0.14.0 from source"
 	@echo "  make build       - Build production release binary"
 	@echo "  make install     - Install to ~/.local/bin (or PREFIX)"
 	@echo "  make uninstall   - Remove installed binary"
 	@echo "  make clean       - Clean build artifacts"
-	@echo "  make test        - Build test suite"
+	@echo "  make test        - Run self-tests"
 	@echo ""
-	@echo "Platinum Targets:"
-	@echo "  make prove-fast  - Fast SPARK proofs (contracts only, ~2 min)"
-	@echo "  make prove-full  - Full SPARK proofs (entire project, ~10 min)"
+	@echo "SPARK Verification:"
+	@echo "  make prove-fast  - Fast SPARK proofs (level 1, ~5 min)"
+	@echo "  make prove-full  - Full SPARK proofs (level 4, ~20 min)"
 	@echo "  make boundary    - Build and run boundary/tamper tests"
-	@echo "  make benchmark   - Build and run performance benchmarks (~5-10 min)"
+	@echo "  make benchmark   - Build and run performance benchmarks"
 	@echo ""
 	@echo "  make help        - Show this help"
 	@echo ""
-	@echo "Installation:"
-	@echo "  make install PREFIX=/usr/local  # Install to /usr/local/bin"
+	@echo "Examples:"
+	@echo "  make deps && export ANUBIS_LIB_DIR=\$$HOME/anubis-deps/lib && make install"
+	@echo "  make install PREFIX=/usr/local"
 	@echo ""

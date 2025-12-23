@@ -31,22 +31,22 @@ ANUBIS-SPARK is an Ada/SPARK interface to established C cryptography libraries. 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  CLI Interface (anubis-spark)                           │
-├─────────────────────────────────────────────────────────┤
-│  Ada Wrapper Layer (some SPARK contracts)               │
-│   ├─ Key management                                     │
-│   ├─ File encryption/decryption orchestration           │
-│   └─ Keystore operations                                │
-├─────────────────────────────────────────────────────────┤
-│  Ada FFI Bindings                                       │
-│   ├─ libsodium bindings (classical crypto)             │
-│   └─ liboqs bindings (post-quantum crypto)             │
-├─────────────────────────────────────────────────────────┤
-│  C Libraries (actual crypto implementations)            │
-│   ├─ libsodium 1.0.20                                  │
-│   └─ liboqs 0.14.0                                     │
-└─────────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  CLI Interface (anubis-spark)                            |
++----------------------------------------------------------+
+|  Ada Wrapper Layer (some SPARK contracts)                |
+|   +- Key management                                      |
+|   +- File encryption/decryption orchestration            |
+|   +- Keystore operations                                 |
++----------------------------------------------------------+
+|  Ada FFI Bindings                                        |
+|   +- libsodium bindings (classical crypto)               |
+|   +- liboqs bindings (post-quantum crypto)               |
++----------------------------------------------------------+
+|  C Libraries (actual crypto implementations)             |
+|   +- libsodium 1.0.20                                    |
+|   +- liboqs 0.14.0                                       |
++----------------------------------------------------------+
 ```
 
 ## Cryptographic Algorithms
@@ -91,26 +91,104 @@ anubis-spark version
 
 ### Option 2: Build from Source
 
-**Prerequisites:**
+#### Prerequisites
+
+**1. Install build tools:**
+
 ```bash
-# macOS
-brew install libsodium liboqs pkg-config
-
 # Ubuntu/Debian
-sudo apt-get install libsodium-dev liboqs-dev pkg-config build-essential
+sudo apt-get update
+sudo apt-get install -y build-essential cmake ninja-build libssl-dev wget
 
-# Install Alire (Ada package manager)
+# macOS
+xcode-select --install
+brew install cmake ninja openssl
+```
+
+**2. Install Alire (Ada package manager):**
+
+```bash
+# Linux
 curl -fsSL https://alire.ada.dev/install.sh | sh
 export PATH="$HOME/.alire/bin:$PATH"
+
+# macOS (Homebrew)
+brew install alire
+
+# Verify
+alr --version
 ```
 
-**Build:**
+**3. Build cryptographic libraries from source:**
+
+> **IMPORTANT**: System packages of libsodium (apt/brew) may be too old. You need:
+> - **libsodium 1.0.20+** (for HKDF support: `crypto_kdf_hkdf_sha256_*`)
+> - **liboqs 0.14.0+** (for ML-KEM/ML-DSA function names)
+
 ```bash
+# Clone the repository
 git clone https://github.com/AnubisQuantumCipher/anubis-spark
 cd anubis-spark
-alr build --release
-./bin/anubis_main version
+
+# Build libsodium 1.0.20 and liboqs 0.14.0 from source
+./scripts/install-deps.sh
+
+# Set library path (add to your .bashrc/.zshrc)
+export ANUBIS_LIB_DIR="$HOME/anubis-deps/lib"
 ```
+
+#### Build
+
+```bash
+# Standard build
+make build
+
+# Or with Alire directly
+alr build --release
+
+# Run self-tests
+./bin/anubis_main test
+```
+
+#### Install
+
+```bash
+# Install to ~/.local/bin
+make install
+
+# Or to /usr/local/bin
+make install PREFIX=/usr/local
+```
+
+### macOS with Homebrew (Alternative)
+
+If you have recent Homebrew packages:
+
+```bash
+# Install dependencies (check versions first!)
+brew install libsodium liboqs openssl
+
+# Check versions - need libsodium >= 1.0.20
+brew info libsodium | head -1
+
+# Build
+export ANUBIS_LIB_DIR="/opt/homebrew/lib"
+make build
+```
+
+### Troubleshooting
+
+**"undefined reference to crypto_kdf_hkdf_sha256_extract"**
+- Your libsodium is too old. Run `./scripts/install-deps.sh` to build 1.0.20 from source.
+
+**"undefined reference to OQS_KEM_ml_kem_1024_keypair"**
+- Your liboqs is too old (pre-0.14). Run `./scripts/install-deps.sh` to build 0.14.0 from source.
+
+**"gprbuild: not found"**
+- Alire isn't in PATH. Run: `export PATH="$HOME/.alire/bin:$PATH"` and `alr toolchain --select`
+
+**"Could NOT find OpenSSL"**
+- Install OpenSSL dev headers: `sudo apt install libssl-dev` (Linux) or `brew install openssl` (macOS)
 
 ## Usage
 
@@ -207,7 +285,7 @@ MIT OR Apache-2.0 (dual-licensed)
 ---
 
 **Current Version**: v2.0.8
-**Dependencies**: libsodium 1.0.20, liboqs 0.14.0, OpenSSL (macOS only)
-**Ada Compiler**: GNAT FSF 14.2.1 or later
+**Dependencies**: libsodium 1.0.20+, liboqs 0.14.0+, OpenSSL (runtime)
+**Ada Compiler**: GNAT FSF 14.2.1 or later (via Alire)
 
 **Security Notice**: This software provides an Ada interface to established cryptographic libraries. Review the code and underlying libraries before using with sensitive data. The security properties depend primarily on libsodium and liboqs implementations.
