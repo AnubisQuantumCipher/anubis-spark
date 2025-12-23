@@ -10,6 +10,11 @@
 *.dylib
 *.dll
 
+# Bootstrap local directories (created by ./bootstrap)
+/.tools/
+/.deps/
+/env.sh
+
 # Alire cache
 /alire/
 /config/
@@ -68,7 +73,4 @@ keystore.dat
 # Documentation build artifacts
 /docs/_build/
 /docs/.doctrees/
-/obj/
 /lib/
-/alire/
-/config/

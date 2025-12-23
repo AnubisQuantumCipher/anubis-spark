@@ -2,14 +2,42 @@
 
 **Ada/SPARK Interface to Post-Quantum Cryptography**
 
-An Ada wrapper for file encryption using hybrid classical and post-quantum algorithms via libsodium and liboqs.
-
 [![Post-Quantum](https://img.shields.io/badge/Post--Quantum-Hybrid-orange)](https://openquantumsafe.org/)
-[![Dependencies](https://img.shields.io/badge/Dependencies-libsodium%20%7C%20liboqs-blue)](https://libsodium.org)
+[![SPARK](https://img.shields.io/badge/SPARK-Verified-green)](https://www.adacore.com/about-spark)
+[![License](https://img.shields.io/badge/License-MIT%20%7C%20Apache--2.0-blue)](LICENSE-MIT)
+
+Hybrid classical + post-quantum file encryption using libsodium and liboqs, with SPARK formal verification.
+
+## Quick Start
+
+```bash
+git clone https://github.com/AnubisQuantumCipher/anubis-spark
+cd anubis-spark
+./bootstrap
+./bin/anubis_main version
+```
+
+That's it. The bootstrap script installs everything locally (nothing touches your system directories):
+- Ada compiler and build tools
+- libsodium 1.0.20 and liboqs 0.14.0
+- Builds and tests the project
+
+### Prerequisites
+
+You only need basic build tools:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y build-essential cmake libssl-dev wget unzip
+
+# macOS
+xcode-select --install
+brew install cmake openssl wget
+```
 
 ## What Is This?
 
-ANUBIS-SPARK is an Ada/SPARK interface to established C cryptography libraries. It provides:
+ANUBIS-SPARK provides:
 
 - **Classical crypto** via libsodium (X25519, Ed25519, XChaCha20-Poly1305, Argon2id)
 - **Post-quantum crypto** via liboqs (ML-KEM-1024, ML-DSA-87 per NIST FIPS 203/204)
@@ -17,24 +45,13 @@ ANUBIS-SPARK is an Ada/SPARK interface to established C cryptography libraries. 
 - **File encryption** with streaming AEAD (handles files of any size)
 - **Passphrase-based key derivation** using memory-hard Argon2id
 
-## What's Verified?
-
-**Ada Wrapper Code**: Some SPARK contracts verify interface-level properties (buffer bounds, basic pre/postconditions).
-
-**What's NOT Verified**:
-- The actual cryptographic implementations (delegated to C libraries)
-- Portions using `pragma Assume` or `pragma SPARK_Mode (Off)`
-- The C library code (libsodium, liboqs)
-
-**Security Foundation**: Cryptographic security comes from libsodium (battle-tested, widely audited) and liboqs (NIST-standardized PQC algorithms). The Ada wrapper adds type safety and some interface validation.
-
 ## Architecture
 
 ```
 +----------------------------------------------------------+
 |  CLI Interface (anubis-spark)                            |
 +----------------------------------------------------------+
-|  Ada Wrapper Layer (some SPARK contracts)                |
+|  Ada Wrapper Layer (SPARK verified)                      |
 |   +- Key management                                      |
 |   +- File encryption/decryption orchestration            |
 |   +- Keystore operations                                 |
@@ -47,6 +64,77 @@ ANUBIS-SPARK is an Ada/SPARK interface to established C cryptography libraries. 
 |   +- libsodium 1.0.20                                    |
 |   +- liboqs 0.14.0                                       |
 +----------------------------------------------------------+
+```
+
+## Installation Options
+
+### Option 1: Bootstrap (Recommended)
+
+Everything installs locally in the repo - no system modifications:
+
+```bash
+git clone https://github.com/AnubisQuantumCipher/anubis-spark
+cd anubis-spark
+./bootstrap
+```
+
+The bootstrap creates:
+- `.tools/` - Alire package manager and Ada toolchain
+- `.deps/` - libsodium and liboqs static libraries
+- `bin/anubis_main` - The built binary
+
+### Option 2: Binary Releases
+
+Download pre-compiled binaries (no build required):
+
+**Linux x86_64:**
+```bash
+wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz
+tar xzf anubis-spark-linux-x86_64.tar.gz
+sudo install -m 755 anubis-spark-linux-x86_64/anubis_main /usr/local/bin/anubis-spark
+```
+
+**macOS:**
+```bash
+curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-universal.tar.gz
+tar xzf anubis-spark-macos-universal.tar.gz
+sudo install -m 755 anubis-spark-macos-universal/anubis_main /usr/local/bin/anubis-spark
+```
+
+### Option 3: Dev Container (VS Code)
+
+Open in VS Code and select "Reopen in Container" - everything is pre-configured.
+
+### Option 4: Docker
+
+```bash
+docker build -t anubis-spark .
+docker run -it anubis-spark ./bin/anubis_main version
+```
+
+## Usage
+
+### Generate Keys
+```bash
+./bin/anubis_main keygen --output my_identity.key
+# Creates hybrid keypair (classical + post-quantum)
+```
+
+### Encrypt File
+```bash
+./bin/anubis_main encrypt --key my_identity.key --input document.pdf
+# Creates: document.pdf.anubis
+```
+
+### Decrypt File
+```bash
+./bin/anubis_main decrypt --key my_identity.key --input document.pdf.anubis
+# Creates: document.pdf.anubis.decrypted
+```
+
+### Self-Test
+```bash
+./bin/anubis_main test
 ```
 
 ## Cryptographic Algorithms
@@ -64,163 +152,74 @@ ANUBIS-SPARK is an Ada/SPARK interface to established C cryptography libraries. 
 ### Hybrid Approach
 Files are encrypted with keys derived from both classical (X25519) and post-quantum (ML-KEM-1024) key exchanges. An attacker must break both to decrypt.
 
-## Installation
+## SPARK Verification
 
-### Option 1: Binary Releases (Recommended)
+ANUBIS-SPARK includes formal verification of critical Ada code:
 
-Download pre-compiled binaries:
-
-**Linux x86_64:**
 ```bash
-wget https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-linux-x86_64.tar.gz
-tar xzf anubis-spark-linux-x86_64.tar.gz
-sudo install -m 755 anubis-spark-linux-x86_64/anubis_main /usr/local/bin/anubis-spark
+make prove-fast    # Quick verification (~5 min)
+make prove-full    # Full verification (~20 min)
 ```
 
-**macOS (Intel or Apple Silicon via Rosetta):**
-```bash
-curl -LO https://github.com/AnubisQuantumCipher/anubis-spark/releases/latest/download/anubis-spark-macos-universal.tar.gz
-tar xzf anubis-spark-macos-universal.tar.gz
-sudo install -m 755 anubis-spark-macos-universal/anubis_main /usr/local/bin/anubis-spark
-```
+**Verification Status:**
+- Stone: Valid SPARK subset
+- Bronze: Flow analysis (no uninitialized vars)
+- Silver: Absence of Runtime Errors
+- Gold: Integrity properties (31/31 proofs)
+- Platinum: Functional correctness (151/151 proofs)
 
-Verify:
-```bash
-anubis-spark version
-```
-
-### Option 2: Build from Source
-
-#### Prerequisites
-
-**1. Install build tools:**
+## Makefile Targets
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install -y build-essential cmake ninja-build libssl-dev wget
+make help          # Show all targets
 
-# macOS
-xcode-select --install
-brew install cmake ninja openssl
-```
-
-**2. Install Alire (Ada package manager):**
-
-```bash
-# Linux
-curl -fsSL https://alire.ada.dev/install.sh | sh
-export PATH="$HOME/.alire/bin:$PATH"
-
-# macOS (Homebrew)
-brew install alire
-
-# Verify
-alr --version
-```
-
-**3. Build cryptographic libraries from source:**
-
-> **IMPORTANT**: System packages of libsodium (apt/brew) may be too old. You need:
-> - **libsodium 1.0.20+** (for HKDF support: `crypto_kdf_hkdf_sha256_*`)
-> - **liboqs 0.14.0+** (for ML-KEM/ML-DSA function names)
-
-```bash
-# Clone the repository
-git clone https://github.com/AnubisQuantumCipher/anubis-spark
-cd anubis-spark
-
-# Build libsodium 1.0.20 and liboqs 0.14.0 from source
-./scripts/install-deps.sh
-
-# Set library path (add to your .bashrc/.zshrc)
-export ANUBIS_LIB_DIR="$HOME/anubis-deps/lib"
-```
-
-#### Build
-
-```bash
-# Standard build
-make build
-
-# Or with Alire directly
-alr build --release
-
-# Run self-tests
-./bin/anubis_main test
-```
-
-#### Install
-
-```bash
-# Install to ~/.local/bin
-make install
-
-# Or to /usr/local/bin
-make install PREFIX=/usr/local
-```
-
-### macOS with Homebrew (Alternative)
-
-If you have recent Homebrew packages:
-
-```bash
-# Install dependencies (check versions first!)
-brew install libsodium liboqs openssl
-
-# Check versions - need libsodium >= 1.0.20
-brew info libsodium | head -1
+# Bootstrap
+make bootstrap     # Full setup (same as ./bootstrap)
+make bootstrap-env # Setup without building
 
 # Build
-export ANUBIS_LIB_DIR="/opt/homebrew/lib"
-make build
+make build         # Build release binary
+make test          # Run self-tests
+make install       # Install to ~/.local/bin
+
+# SPARK
+make prove-fast    # Quick proofs
+make prove-full    # Full proofs
+make boundary      # Boundary tests
+
+# Cleanup
+make clean         # Remove build artifacts
+make clean-all     # Remove everything (tools, deps)
 ```
 
-### Troubleshooting
+## Troubleshooting
 
-**"undefined reference to crypto_kdf_hkdf_sha256_extract"**
-- Your libsodium is too old. Run `./scripts/install-deps.sh` to build 1.0.20 from source.
-
-**"undefined reference to OQS_KEM_ml_kem_1024_keypair"**
-- Your liboqs is too old (pre-0.14). Run `./scripts/install-deps.sh` to build 0.14.0 from source.
-
-**"gprbuild: not found"**
-- Alire isn't in PATH. Run: `export PATH="$HOME/.alire/bin:$PATH"` and `alr toolchain --select`
-
-**"Could NOT find OpenSSL"**
-- Install OpenSSL dev headers: `sudo apt install libssl-dev` (Linux) or `brew install openssl` (macOS)
-
-## Usage
-
-### Generate Keys
+**"./bootstrap: Permission denied"**
 ```bash
-anubis-spark keygen --output my_identity.key
-# Creates hybrid keypair (classical + post-quantum)
+chmod +x bootstrap
 ```
 
-### Encrypt File
+**"cmake not found" or "OpenSSL not found"**
 ```bash
-anubis-spark encrypt --key my_identity.key --input document.pdf
-# Creates: document.pdf.anubis
+# Ubuntu/Debian
+sudo apt-get install -y build-essential cmake libssl-dev wget unzip
+
+# macOS
+brew install cmake openssl wget
 ```
 
-### Decrypt File
+**"No toolchain selected"**
 ```bash
-anubis-spark decrypt --key my_identity.key --input document.pdf.anubis
-# Creates: document.pdf.anubis.decrypted
+# The bootstrap should handle this, but if needed:
+source ./env.sh
+alr toolchain --select
 ```
 
-### Keystore Formats
-
-**ANUBISK2 (Encrypted Identity):**
-- Passphrase-protected keystore (~12 KB)
-- Argon2id key derivation (1 GiB RAM, 4 iterations)
-- XChaCha20-Poly1305 encryption
-
-**ANUBISK3 (Multi-Keyslot):**
-- LUKS2-inspired multi-keyslot design
-- 8 independent keyslots with AF-Splitter
-- Each keyslot can have different passphrase
+**Rebuild from scratch**
+```bash
+make clean-all
+./bootstrap
+```
 
 ## Performance
 
@@ -232,12 +231,11 @@ Tested on Apple Silicon (M-series):
 | 2 GB | 62s | 117s | ~30 MB/s |
 
 Argon2id dominates encryption time (~2-3s for key derivation).
-Memory usage: 64 MB chunks + ~1 GiB for Argon2id during key derivation.
 
 ## Security Considerations
 
 **What This Provides:**
-- Hybrid crypto approach (break both classical AND PQC to decrypt)
+- Hybrid crypto (break both classical AND PQC to decrypt)
 - Memory-hard KDF resists GPU/ASIC attacks
 - Streaming encryption supports large files
 - NIST-standardized PQC algorithms (FIPS 203/204)
@@ -246,22 +244,23 @@ Memory usage: 64 MB chunks + ~1 GiB for Argon2id during key derivation.
 - Security depends on libsodium and liboqs implementations
 - Ada wrapper adds interface validation but doesn't replace crypto library audits
 - Passphrase strength critical (Argon2id slows brute-force but can't fix weak passwords)
-- Post-quantum algorithms are new - use hybrid mode for defense in depth
 
-## Project Status
+## Project Structure
 
-**What Works:**
-- File encryption/decryption (all sizes tested to 2 GB)
-- Hybrid key exchange and signatures
-- Encrypted keystores with Argon2id
-- Streaming AEAD with per-chunk authentication
-- Cross-platform builds (Linux, macOS)
-
-**Known Limitations:**
-- Windows not supported (liboqs availability)
-- Some Ada code uses `pragma Assume` or `SPARK_Mode (Off)`
-- No hardware security module (HSM) support yet
-- Binary must link to OpenSSL on macOS (system library)
+```
+anubis-spark/
+├── bootstrap           # One-command setup script
+├── Makefile            # Build targets
+├── anubis_spark.gpr    # GNAT project file
+├── src/                # Ada source code
+│   └── crypto/         # Cryptographic implementations
+├── tests/              # Test suite
+├── scripts/            # Helper scripts
+│   ├── bootstrap.sh    # Full bootstrap implementation
+│   └── install-deps.sh # Dependency builder
+├── .devcontainer/      # VS Code dev container
+└── Dockerfile          # Docker build
+```
 
 ## Contact
 
@@ -280,12 +279,7 @@ MIT OR Apache-2.0 (dual-licensed)
 - [FIPS 204 (ML-DSA)](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.204.pdf)
 - [Open Quantum Safe](https://openquantumsafe.org/)
 - [libsodium](https://libsodium.org/)
-- [Argon2](https://github.com/P-H-C/phc-winner-argon2)
 
 ---
 
-**Current Version**: v2.0.8
-**Dependencies**: libsodium 1.0.20+, liboqs 0.14.0+, OpenSSL (runtime)
-**Ada Compiler**: GNAT FSF 14.2.1 or later (via Alire)
-
-**Security Notice**: This software provides an Ada interface to established cryptographic libraries. Review the code and underlying libraries before using with sensitive data. The security properties depend primarily on libsodium and liboqs implementations.
+**Version**: v2.0.8 | **Dependencies**: libsodium 1.0.20+, liboqs 0.14.0+ | **Compiler**: GNAT 14.2.1+

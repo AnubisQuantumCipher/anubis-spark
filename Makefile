@@ -1,12 +1,16 @@
 # ANUBIS-SPARK Makefile
 # Production build and installation
 
-.PHONY: all build install uninstall clean test deps prove-fast prove-full prove-now boundary benchmark help
+.PHONY: all bootstrap build install uninstall clean test deps prove-fast prove-full prove-now boundary benchmark help
 
 PREFIX ?= $(HOME)/.local
 BINDIR = $(PREFIX)/bin
 BINARY = anubis_main
 INSTALLED_NAME = anubis-spark
+
+# Local directories (created by bootstrap)
+TOOLS_DIR := $(CURDIR)/.tools
+DEPS_DIR := $(CURDIR)/.deps
 
 # Detect OS
 UNAME_S := $(shell uname -s)
@@ -14,21 +18,42 @@ UNAME_S := $(shell uname -s)
 # Default target
 all: build
 
-# Install dependencies from source (required for most Linux distros)
-deps:
-	@echo "Installing dependencies (libsodium 1.0.20, liboqs 0.14.0)..."
-	@./scripts/install-deps.sh --prefix $(HOME)/anubis-deps
-	@echo ""
-	@echo "Now run: export ANUBIS_LIB_DIR=$(HOME)/anubis-deps/lib"
-	@echo "Then:    make build"
+#===============================================================================
+# Bootstrap - One command setup
+#===============================================================================
 
-# Build production release
+# Full bootstrap: installs toolchain + deps + builds
+bootstrap:
+	@./bootstrap
+
+# Bootstrap without building (just setup environment)
+bootstrap-env:
+	@./bootstrap --skip-build
+
+# Clean bootstrap and start fresh
+bootstrap-clean:
+	@./bootstrap --clean
+
+#===============================================================================
+# Build targets
+#===============================================================================
+
+# Build production release (requires bootstrap or manual setup)
 build:
 	@echo "Building ANUBIS-SPARK (release mode)..."
-	@if command -v alr >/dev/null 2>&1; then \
-		alr build --release; \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr build --release; \
+	elif command -v alr >/dev/null 2>&1; then \
+		if [ -n "$$ANUBIS_LIB_DIR" ]; then \
+			alr build --release; \
+		elif [ -d "$(DEPS_DIR)/lib" ]; then \
+			ANUBIS_LIB_DIR="$(DEPS_DIR)/lib" alr build --release; \
+		else \
+			echo "Error: ANUBIS_LIB_DIR not set. Run './bootstrap' first or set manually."; \
+			exit 1; \
+		fi; \
 	else \
-		echo "Error: Alire (alr) not found. Install from: https://alire.ada.dev"; \
+		echo "Error: Alire (alr) not found. Run './bootstrap' first."; \
 		exit 1; \
 	fi
 ifeq ($(UNAME_S),Darwin)
@@ -36,13 +61,25 @@ ifeq ($(UNAME_S),Darwin)
 	@for bin in bin/*; do \
 		[ -f "$$bin" ] && [ -x "$$bin" ] && ./scripts/fix-rpath.sh "$$bin" > /dev/null 2>&1 || true; \
 	done
-	@echo "All binaries fixed!"
 endif
 	@echo ""
 	@echo "Build complete: bin/$(BINARY)"
 	@echo "Run: ./bin/$(BINARY) version"
 
-# Install to ~/.local/bin
+# Install dependencies from source (standalone, without full bootstrap)
+deps:
+	@echo "Installing dependencies (libsodium 1.0.20, liboqs 0.14.0)..."
+	@./scripts/install-deps.sh --prefix "$(DEPS_DIR)"
+	@echo ""
+	@echo "Dependencies installed to: $(DEPS_DIR)"
+	@echo "Now run: export ANUBIS_LIB_DIR=$(DEPS_DIR)/lib"
+	@echo "Then:    make build"
+
+#===============================================================================
+# Installation
+#===============================================================================
+
+# Install to ~/.local/bin (or PREFIX)
 install: build
 	@echo "Installing ANUBIS-SPARK to $(BINDIR)..."
 	@mkdir -p $(BINDIR)
@@ -59,22 +96,26 @@ uninstall:
 	@rm -f $(BINDIR)/$(INSTALLED_NAME)
 	@echo "Uninstalled"
 
-# Clean build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	@rm -rf obj bin gnatprove
-	@echo "Clean complete"
+#===============================================================================
+# Testing
+#===============================================================================
 
 # Build and run self-tests
 test: build
 	@echo "Running self-tests..."
 	@./bin/$(BINARY) test
 
+#===============================================================================
+# SPARK Verification
+#===============================================================================
+
 # SPARK proof: fast (level 1, ~2-5 min)
 prove-fast:
 	@echo "Running fast SPARK proofs (level 1)..."
 	@rm -rf gnatprove || true
-	@if command -v alr >/dev/null 2>&1; then \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120; \
+	elif command -v alr >/dev/null 2>&1; then \
 		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120; \
 	else \
 		echo "Error: Alire (alr) not found."; \
@@ -86,7 +127,9 @@ prove-fast:
 prove-full:
 	@echo "Running full SPARK proofs (level 4)..."
 	@rm -rf gnatprove || true
-	@if command -v alr >/dev/null 2>&1; then \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600; \
+	elif command -v alr >/dev/null 2>&1; then \
 		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=4 --timeout=600; \
 	else \
 		echo "Error: Alire (alr) not found."; \
@@ -97,23 +140,26 @@ prove-full:
 # Simple proof run
 prove-now:
 	@echo "Running GNATprove (level 1, 2 min timeout)..."
-	@if command -v alr >/dev/null 2>&1; then \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 || true; \
+	elif command -v alr >/dev/null 2>&1; then \
 		alr exec -- gnatprove -P anubis_spark.gpr --mode=prove --level=1 --timeout=120 || true; \
-	else \
-		echo "Error: Alire (alr) not found."; \
-		exit 1; \
 	fi
 	@echo "(See gnatprove/gnatprove.out for details)"
+
+#===============================================================================
+# Advanced Testing
+#===============================================================================
 
 # Build and run boundary tests
 boundary: build
 	@echo "Building boundary tests..."
-	@if command -v alr >/dev/null 2>&1; then \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary; \
+		. "$(CURDIR)/env.sh" && alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix; \
+	elif command -v alr >/dev/null 2>&1; then \
 		alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary.adb -o bin/test_boundary; \
 		alr exec -- gnatmake -P anubis_spark.gpr tests/test_boundary_matrix.adb -o bin/test_boundary_matrix; \
-	else \
-		echo "Error: Alire (alr) not found."; \
-		exit 1; \
 	fi
 ifeq ($(UNAME_S),Darwin)
 	@for bin in bin/test_*; do \
@@ -133,11 +179,10 @@ endif
 # Performance benchmarks
 benchmark: build
 	@echo "Building performance benchmark suite..."
-	@if command -v alr >/dev/null 2>&1; then \
+	@if [ -f "$(CURDIR)/env.sh" ]; then \
+		. "$(CURDIR)/env.sh" && alr exec -- gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb; \
+	elif command -v alr >/dev/null 2>&1; then \
 		alr exec -- gprbuild -P anubis_spark.gpr -XBUILD_MODE=release tests/test_benchmark.adb; \
-	else \
-		echo "Error: Alire (alr) not found."; \
-		exit 1; \
 	fi
 ifeq ($(UNAME_S),Darwin)
 	@for bin in bin/*; do \
@@ -151,32 +196,56 @@ endif
 	@echo ""
 	@echo "Benchmarks complete"
 
+#===============================================================================
+# Cleanup
+#===============================================================================
+
+# Clean build artifacts (keep tools and deps)
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf obj bin gnatprove
+	@echo "Clean complete"
+
+# Clean everything including local tools and deps
+clean-all: clean
+	@echo "Cleaning local tools and dependencies..."
+	@rm -rf $(TOOLS_DIR) $(DEPS_DIR) env.sh
+	@echo "Full clean complete"
+
+#===============================================================================
 # Help
+#===============================================================================
+
 help:
 	@echo "ANUBIS-SPARK Makefile"
 	@echo ""
-	@echo "Prerequisites:"
-	@echo "  1. Install Alire: curl -fsSL https://alire.ada.dev/install.sh | sh"
-	@echo "  2. Install deps:  make deps"
-	@echo "  3. Set lib path:  export ANUBIS_LIB_DIR=\$$HOME/anubis-deps/lib"
+	@echo "Quick Start (recommended):"
+	@echo "  ./bootstrap              Full setup: toolchain + deps + build"
+	@echo "  ./bin/anubis_main test   Run self-tests"
+	@echo ""
+	@echo "Bootstrap Targets:"
+	@echo "  make bootstrap           Same as ./bootstrap"
+	@echo "  make bootstrap-env       Setup without building"
+	@echo "  make bootstrap-clean     Clean and reinstall everything"
 	@echo ""
 	@echo "Build Targets:"
-	@echo "  make deps        - Build libsodium 1.0.20 & liboqs 0.14.0 from source"
-	@echo "  make build       - Build production release binary"
-	@echo "  make install     - Install to ~/.local/bin (or PREFIX)"
-	@echo "  make uninstall   - Remove installed binary"
-	@echo "  make clean       - Clean build artifacts"
-	@echo "  make test        - Run self-tests"
+	@echo "  make build               Build production release"
+	@echo "  make deps                Build crypto libraries only"
+	@echo "  make install             Install to ~/.local/bin"
+	@echo "  make uninstall           Remove installed binary"
+	@echo "  make test                Run self-tests"
 	@echo ""
 	@echo "SPARK Verification:"
-	@echo "  make prove-fast  - Fast SPARK proofs (level 1, ~5 min)"
-	@echo "  make prove-full  - Full SPARK proofs (level 4, ~20 min)"
-	@echo "  make boundary    - Build and run boundary/tamper tests"
-	@echo "  make benchmark   - Build and run performance benchmarks"
+	@echo "  make prove-fast          Fast proofs (level 1, ~5 min)"
+	@echo "  make prove-full          Full proofs (level 4, ~20 min)"
+	@echo "  make boundary            Run boundary/tamper tests"
+	@echo "  make benchmark           Run performance benchmarks"
 	@echo ""
-	@echo "  make help        - Show this help"
+	@echo "Cleanup:"
+	@echo "  make clean               Remove build artifacts"
+	@echo "  make clean-all           Remove everything (tools, deps, artifacts)"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make deps && export ANUBIS_LIB_DIR=\$$HOME/anubis-deps/lib && make install"
+	@echo "  ./bootstrap && ./bin/anubis_main version"
 	@echo "  make install PREFIX=/usr/local"
 	@echo ""

@@ -1,0 +1,16 @@
+#!/bin/bash
+# ANUBIS-SPARK Bootstrap
+# One command to set up everything and build
+#
+# Usage: ./bootstrap [--help] [--clean] [--skip-build]
+#
+# This script installs all dependencies locally within the repo:
+#   .tools/    - Alire toolchain (GNAT, gprbuild, gnatprove)
+#   .deps/     - Crypto libraries (libsodium, liboqs)
+#
+# Nothing is installed to your system directories.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${SCRIPT_DIR}/scripts/bootstrap.sh" "$@"

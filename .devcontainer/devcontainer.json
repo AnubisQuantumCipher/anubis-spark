@@ -1,0 +1,30 @@
+{
+    "name": "ANUBIS-SPARK Development",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    "features": {},
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "AdaCore.ada",
+                "ms-vscode.cpptools"
+            ],
+            "settings": {
+                "ada.projectFile": "anubis_spark.gpr",
+                "ada.defaultCharset": "UTF-8",
+                "editor.tabSize": 3,
+                "editor.insertSpaces": true,
+                "files.trimTrailingWhitespace": true
+            }
+        }
+    },
+    "postCreateCommand": "./bootstrap --skip-alire",
+    "remoteUser": "root",
+    "containerEnv": {
+        "ANUBIS_LIB_DIR": "/usr/local/lib"
+    },
+    "mounts": [],
+    "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"]
+}
