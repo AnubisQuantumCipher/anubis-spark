@@ -518,7 +518,7 @@ package body Anubis_Types.File_Encryption is
    end Encrypt_File;
 
    -------------------------------------------------------------------------
-   -- High-Level File Decryption (Stub for now - full implementation next)
+   -- High-Level File Decryption
    -------------------------------------------------------------------------
 
    procedure Decrypt_File (

@@ -40,6 +40,7 @@ project Anubis_Spark is
    end Builder;
 
    -- Environment variables for library paths (set by build system)
+   -- CI sets ANUBIS_LIB_DIR=$HOME/deps/lib; macOS Homebrew uses /opt/homebrew/lib
    Lib_Dir := external ("ANUBIS_LIB_DIR", "/opt/homebrew/lib");
 
    package Linker is
